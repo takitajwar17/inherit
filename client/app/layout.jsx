@@ -1,13 +1,13 @@
-import "./globals.css";
-import { Kanit } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { light } from "@clerk/themes";
-import Header from "./components/Header";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import ClientLayout from "./components/ClientLayout";
+import { Kanit } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ClientLayout from "./components/ClientLayout";
+import Header from "./components/Header";
+import "./globals.css";
 
 const kanit = Kanit({
   subsets: ["latin"],
@@ -16,8 +16,8 @@ const kanit = Kanit({
 });
 
 export const metadata = {
-  title: "Kolab",
-  description: "Dev Classroom",
+  title: "Inherit",
+  description: "Inherit: A Unified Learning & Coding Platform",
 };
 
 export default function RootLayout({ children }) {
