@@ -1,14 +1,15 @@
 "use client";
-import { useState } from "react";
+
 import Link from "next/link";
+import { useState } from "react";
 import { FaChevronDown, FaCodepen } from "react-icons/fa";
+import { MdAddBox, MdNotifications } from "react-icons/md";
+import { SiGoogleclassroom } from "react-icons/si";
 import {
   TbLayoutDashboardFilled,
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarLeftExpandFilled,
 } from "react-icons/tb";
-import { SiGoogleclassroom } from "react-icons/si";
-import { MdAddBox, MdNotifications } from "react-icons/md";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);

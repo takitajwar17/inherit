@@ -2,22 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-
 .cl-formButtonPrimary {
-    font-size: 14px;
-    text-transform: none;
-    background-color: #cf4500;
-  }
-  
-  .cl-formButtonPrimary:hover,
-  .cl-formButtonPrimary:focus,
-  .cl-formButtonPrimary:active {
-    background-color: #000000;
-  }
+  font-size: 14px;
+  text-transform: none;
+  background-color: #111827;
+}
 
-  /* General Styles */
+.cl-formButtonPrimary:hover,
+.cl-formButtonPrimary:focus,
+.cl-formButtonPrimary:active {
+  background-color: #000000;
+}
+
+/* General Styles */
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.6;
 }
 

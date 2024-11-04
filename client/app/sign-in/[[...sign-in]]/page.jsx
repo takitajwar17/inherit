@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { SignIn } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 const SignInPage = () => {
   useEffect(() => {

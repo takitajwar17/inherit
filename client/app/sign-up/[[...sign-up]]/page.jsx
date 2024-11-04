@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { SignUp } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 const SignUpPage = () => {
   useEffect(() => {
@@ -10,7 +10,7 @@ const SignUpPage = () => {
 
   return (
     <>
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center w-full mt-6">
         <SignUp afterSignUpUrl="dashboard" />
       </div>
     </>
