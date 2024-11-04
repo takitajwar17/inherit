@@ -58,7 +58,7 @@ const JoinCourseModal = ({ isOpen, onClose, onJoin }) => {
               You're currently signed in as
             </p>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-orange text-white flex items-center justify-center font-medium">
+              <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-medium">
                 <img
                   src={user.profileImageUrl}
                   alt="profile image"
@@ -89,7 +89,7 @@ const JoinCourseModal = ({ isOpen, onClose, onJoin }) => {
                   value={courseCode}
                   onChange={(e) => setCourseCode(e.target.value)}
                   placeholder="Course code"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                 />
               </div>
 
@@ -117,7 +117,7 @@ const JoinCourseModal = ({ isOpen, onClose, onJoin }) => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-orange text-white rounded-lg hover:bg-opacity-90"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-opacity-90"
               >
                 Join
               </button>

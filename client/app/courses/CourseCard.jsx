@@ -70,7 +70,7 @@ const CourseCard = ({
         </div>
       </div>
       <p className="text-gray-500 mb-4">{course.description}</p>
-      <button className="bg-orange hover:bg-opacity-80 text-white py-2 px-4 rounded-lg">
+      <button className="bg-indigo-600 hover:bg-opacity-80 text-white py-2 px-4 rounded-lg">
         View Course
       </button>
     </div>

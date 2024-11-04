@@ -99,7 +99,7 @@ export default function EditCoursePage({ params }) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-orange"
+            className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-indigo-600"
           />
         </div>
         <div className="mb-6">
@@ -109,7 +109,7 @@ export default function EditCoursePage({ params }) {
           <textarea
             value={details}
             onChange={(e) => setDetails(e.target.value)}
-            className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-orange"
+            className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-indigo-600"
             rows="4"
           ></textarea>
         </div>
@@ -122,7 +122,7 @@ export default function EditCoursePage({ params }) {
               type="text"
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value)}
-              className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-orange"
+              className="mt-2 block w-full border border-gray-300 rounded-lg p-3 focus:border-indigo-600"
             />
             <button
               type="button"
@@ -145,7 +145,7 @@ export default function EditCoursePage({ params }) {
                   onChange={(e) =>
                     handleScheduleChange(index, "day", e.target.value)
                   }
-                  className="block w-1/2 border border-gray-300 rounded-lg p-3 focus:border-orange"
+                  className="block w-1/2 border border-gray-300 rounded-lg p-3 focus:border-indigo-600"
                 >
                   <option value="">Select Day</option>
                   <option value="monday">Monday</option>
@@ -162,7 +162,7 @@ export default function EditCoursePage({ params }) {
                   onChange={(e) =>
                     handleScheduleChange(index, "time", e.target.value)
                   }
-                  className="block w-1/2 border border-gray-300 rounded-lg p-3 focus:border-orange"
+                  className="block w-1/2 border border-gray-300 rounded-lg p-3 focus:border-indigo-600"
                 />
               </div>
             ))}
@@ -178,7 +178,7 @@ export default function EditCoursePage({ params }) {
         <div className="flex space-x-6">
           <button
             type="submit"
-            className="bg-orange text-white px-6 py-3 rounded-lg hover:bg-red-600 transition"
+            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition"
           >
             Update
           </button>

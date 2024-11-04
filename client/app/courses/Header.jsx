@@ -1,6 +1,6 @@
 "use client";
-import { BsPlus } from "react-icons/bs";
 import Link from "next/link";
+import { BsPlus } from "react-icons/bs";
 
 const Header = ({
   plusMenuOpen,
@@ -13,7 +13,7 @@ const Header = ({
       <h1 className="text-3xl font-bold mb-2">Courses</h1>
       <div className="relative" ref={plusMenuRef}>
         <button
-          className="text-orange hover:bg-orange-700 font-bold text-4xl p-2 rounded-full"
+          className="text-orange hover:bg-indigo-600 hover:text-white font-bold text-4xl p-1 rounded-full"
           onClick={() => setPlusMenuOpen(!plusMenuOpen)}
         >
           <BsPlus size={36} />

@@ -14,11 +14,11 @@ import {
   Youtube,
 } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 function FeatureCard({ icon, title, description }) {
   return (
-    <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+    <div className="bg-white p-6 md:p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
       <div className="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 mb-6">
         {icon}
       </div>
@@ -30,9 +30,9 @@ function FeatureCard({ icon, title, description }) {
 
 function SDGCard({ icon, number, title, description }) {
   return (
-    <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-      <div className="flex items-center mb-6">
-        <div className="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 mr-6">
+    <div className="bg-white p-6 md:p-10 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center mb-6">
+        <div className="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 mb-4 sm:mb-0 sm:mr-6">
           {icon}
         </div>
         <div>
@@ -49,6 +49,7 @@ function SDGCard({ icon, number, title, description }) {
 
 const LandingPage = () => {
   const { isSignedIn, isLoaded } = useUser(); // Access user authentication state
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for mobile menu
 
   // While the user state is loading, you might want to show a loader or nothing
   if (!isLoaded) {
@@ -59,13 +60,55 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header and Navigation */}
       <header className="relative overflow-hidden">
-        <nav className="absolute top-0 w-full z-10 px-8 py-6">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <Terminal className="h-10 w-10 text-indigo-600" />
-              <span className="text-3xl font-bold text-gray-900">Inherit</span>
+        <nav className="fixed top-0 w-full z-20 bg-white shadow-md">
+          <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-8 py-4">
+            {/* Logo */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <Terminal className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-600" />
+              <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Inherit
+              </span>
             </div>
-            <div className="hidden md:flex space-x-10">
+
+            {/* Hamburger Menu Button (Visible on Mobile) */}
+            <button
+              className="md:hidden focus:outline-none"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle Menu"
+            >
+              {isMenuOpen ? (
+                <svg
+                  className="w-6 h-6 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-6 h-6 text-gray-900"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              )}
+            </button>
+
+            {/* Desktop Navigation Links (Hidden on Mobile) */}
+            <div className="hidden md:flex space-x-6 items-center">
               <Link
                 href="#features"
                 className="text-lg text-gray-600 hover:text-gray-900"
@@ -84,37 +127,74 @@ const LandingPage = () => {
               >
                 SDGs
               </Link>
+              <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
+                <button className="bg-indigo-600 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors">
+                  Get Started
+                </button>
+              </Link>
             </div>
-            <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
-              <button className="bg-indigo-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors">
-                Get Started
-              </button>
-            </Link>
           </div>
+
+          {/* Mobile Navigation Links (Visible on Mobile Only) */}
+          {isMenuOpen && (
+            <div className="md:hidden bg-white shadow-md">
+              <div className="flex flex-col space-y-4 px-4 py-6">
+                <Link
+                  href="#features"
+                  className="text-lg text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Features
+                </Link>
+                <Link
+                  href="#mission"
+                  className="text-lg text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Mission
+                </Link>
+                <Link
+                  href="#sdgs"
+                  className="text-lg text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  SDGs
+                </Link>
+                <Link
+                  href={isSignedIn ? "/dashboard" : "/sign-in"}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <button className="bg-indigo-600 text-white px-6 py-2 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors w-full">
+                    Get Started
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Hero Section */}
-        <div className="pt-40 pb-24 px-8">
+        <div className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center">
-              <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
                 Empowering Future
                 <span className="text-indigo-600"> Tech Leaders</span> in
                 Bangladesh
               </h1>
-              <p className="text-2xl text-gray-700 mb-12 max-w-3xl mx-auto">
+              <p className="text-lg sm:text-xl text-gray-700 mb-10 max-w-3xl mx-auto px-4">
                 Bridge the digital divide with our unified learning platform.
                 Making coding education accessible, collaborative, and
                 empowering for everyone.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-6">
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
-                  <button className="bg-indigo-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                  <button className="bg-indigo-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center w-full sm:w-auto">
                     Start Learning <ChevronRight className="ml-3 h-6 w-6" />
                   </button>
                 </Link>
                 <Link href="/watch-demo">
-                  <button className="border-2 border-gray-300 text-gray-700 px-10 py-4 rounded-full text-lg font-semibold hover:border-indigo-600 hover:text-indigo-600 transition-colors">
+                  <button className="border-2 border-gray-300 text-gray-700 px-10 py-4 rounded-full text-lg font-semibold hover:border-indigo-600 hover:text-indigo-600 transition-colors w-full sm:w-auto">
                     Watch Demo
                   </button>
                 </Link>
@@ -124,9 +204,9 @@ const LandingPage = () => {
         </div>
 
         {/* Statistics Section */}
-        <div className="bg-white py-16">
-          <div className="max-w-7xl mx-auto px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+        <div className="bg-white py-12 sm:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
               <div className="text-center">
                 <div className="text-4xl font-bold text-indigo-600">7.5K+</div>
                 <div className="text-lg text-gray-700">Yearly IT Demand</div>
@@ -148,12 +228,12 @@ const LandingPage = () => {
         </div>
 
         {/* Features Section */}
-        <div id="features" className="py-24 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-8">
-            <h2 className="text-4xl font-bold text-center mb-20">
+        <div id="features" className="py-16 sm:py-24 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-20">
               Platform Features
             </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
               <FeatureCard
                 icon={<Youtube />}
                 title="Learn Page"
@@ -189,12 +269,12 @@ const LandingPage = () => {
         </div>
 
         {/* SDGs Section */}
-        <div id="sdgs" className="py-24">
-          <div className="max-w-7xl mx-auto px-8">
-            <h2 className="text-4xl font-bold text-center mb-20">
+        <div id="sdgs" className="py-16 sm:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-20">
               Supporting UN Sustainable Development Goals
             </h2>
-            <div className="grid md:grid-cols-2 gap-16">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-16">
               <SDGCard
                 icon={<GraduationCap />}
                 number="4"
@@ -230,9 +310,9 @@ const LandingPage = () => {
         </div>
 
         {/* Footer */}
-        <footer className="bg-gray-900 text-gray-400 py-16">
-          <div className="max-w-7xl mx-auto px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+        <footer className="bg-gray-900 text-gray-400 py-12 sm:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
               <div>
                 <h3 className="text-white font-semibold text-xl mb-6">
                   Platform

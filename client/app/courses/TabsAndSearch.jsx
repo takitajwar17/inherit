@@ -7,7 +7,7 @@ const TabsAndSearch = ({ activeTab, setActiveTab, tabs }) => {
             key={tab}
             className={`py-2 px-4 rounded-lg ${
               activeTab === tab
-                ? "bg-orange text-white"
+                ? "bg-indigo-600 text-white"
                 : "bg-gray-100 text-gray-600"
             } hover:bg-red-100`}
             onClick={() => setActiveTab(tab)}
