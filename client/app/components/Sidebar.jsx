@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaChevronDown, FaCodepen } from "react-icons/fa";
 import { MdAddBox, MdNotifications } from "react-icons/md";
 import { SiGoogleclassroom } from "react-icons/si";
@@ -14,6 +14,26 @@ import {
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        // desktop breakpoint
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, [setIsOpen]);
+
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
@@ -23,9 +43,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   };
 
   return (
-    <div className="pt-20 flex flex-row">
+    <div className="flex flex-row">
       <div
-        className={`fixed top-20 left-0 h-full bg-white transition-transform z-50 shadow-xl ${
+        className={`fixed top-20 left-0 h-full bg-sky-50 transition-transform z-50 shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -88,7 +108,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <div
         className={`fixed z-50 ${
           isOpen ? "translate-x-56" : "translate-x-0"
-        } mt-2 p-2 bg-white flex rounded-r-md transition-transform shadow-lg`}
+        } mt-20 p-2 bg-sky-50 flex rounded-r-md transition-transform shadow-lg`}
       >
         {!isOpen ? (
           <button
