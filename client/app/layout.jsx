@@ -6,7 +6,6 @@ import { Kanit } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ClientLayout from "./components/ClientLayout";
-import Header from "./components/Header";
 import "./globals.css";
 
 const kanit = Kanit({
@@ -29,12 +28,11 @@ export default function RootLayout({ children }) {
     >
       <html lang="en">
         <body className={kanit.className}>
-          <Header />
           {/* Retain ClientLayout to manage conditional Sidebar rendering */}
           <ClientLayout>
             <main>
               {/* Keep the new background styling from the incoming changes */}
-              <div className="flex items-start justify-center min-h-screen min-w-full bg-orange bg-opacity-30">
+              <div className="flex items-start justify-center min-h-screen min-w-full">
                 <div className="w-full h-full">{children}</div>
               </div>
             </main>
