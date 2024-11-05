@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FaChevronDown, FaCodepen } from "react-icons/fa";
+import {
+  FaChevronDown,
+  FaCodepen,
+  FaComments,
+  FaQuestionCircle,
+} from "react-icons/fa";
 import { MdAddBox, MdNotifications } from "react-icons/md";
 import { SiGoogleclassroom } from "react-icons/si";
 import {
@@ -52,55 +57,45 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <nav className="flex flex-col w-56 p-4 pr-12 space-y-4">
           <Link
             href="/dashboard"
-            className="flex items-center text-gray-900 hover:text-indigo-600"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <TbLayoutDashboardFilled className="mr-2" />
             Dashboard
           </Link>
           <Link
-            href="/courses"
-            className="flex items-center text-gray-900 hover:text-indigo-600"
+            href="/learn"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <SiGoogleclassroom className="mr-2" />
-            Courses
+            Learn
           </Link>
           <Link
-            href="/projects"
-            className="flex items-center text-gray-900 hover:text-indigo-600"
+            href="/playground"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <FaCodepen className="mr-2" />
-            My Projects
+            Playground
           </Link>
-          <div>
-            <button
-              onClick={toggleSubMenu}
-              className="flex items-center text-gray-900 hover:text-indigo-600 w-full"
-            >
-              <MdAddBox className="mr-2" />
-              Create new
-              <FaChevronDown
-                className={`ml-auto transition-transform ${
-                  isSubMenuOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            {isSubMenuOpen && (
-              <div className="ml-4 mt-2 space-y-2 flex flex-col">
-                <Link href="/" className="text-gray-700 hover:text-indigo-600">
-                  Course
-                </Link>
-                <Link href="/" className="text-gray-700 hover:text-indigo-600">
-                  Project
-                </Link>
-              </div>
-            )}
-          </div>
           <Link
-            href="/"
-            className="flex items-center text-gray-900 hover:text-indigo-600"
+            href="/dev-discuss"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <FaComments className="mr-2" />
+            DevDiscuss
+          </Link>
+          <Link
+            href="/notifications"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <MdNotifications className="mr-2" />
             Notifications
+          </Link>
+          <Link
+            href="/help"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <FaQuestionCircle className="mr-2" />
+            Help
           </Link>
         </nav>
       </div>
