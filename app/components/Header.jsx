@@ -4,8 +4,11 @@
 import { UserButton } from "@clerk/nextjs";
 import { Terminal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const router = useRouter();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-20 flex items-center justify-between px-8 py-4 bg-gray-900">
       {/* Logo Section - Replaced with Terminal icon and text */}
@@ -17,7 +20,12 @@ const Header = () => {
       {/* Optional: Add navigation links or user-related buttons */}
       <div className="flex items-center space-x-4">
         {/* Example: User Button */}
-        <UserButton />
+        <UserButton
+          afterSignOutUrl="/"
+          signOutCallback={() => {
+            router.push("/");
+          }}
+        />
       </div>
     </nav>
   );
