@@ -17,6 +17,13 @@ const kanit = Kanit({
 export const metadata = {
   title: "Inherit",
   description: "Inherit: A Unified Learning & Coding Platform",
+  openGraph: {
+    type: "website",
+    url: "https://inherit-xtradrill.vercel.app",
+    title: "Inherit",
+    description: "Inherit: A Unified Learning & Coding Platform",
+    image: "../public/inherit.svg",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -27,6 +34,16 @@ export default function RootLayout({ children }) {
       }}
     >
       <html lang="en">
+        <head>
+          <meta property="og:type" content={metadata.openGraph.type} />
+          <meta property="og:url" content={metadata.openGraph.url} />
+          <meta property="og:title" content={metadata.openGraph.title} />
+          <meta
+            property="og:description"
+            content={metadata.openGraph.description}
+          />
+          <meta property="og:image" content={metadata.openGraph.image} />
+        </head>
         <body className={kanit.className}>
           {/* Retain ClientLayout to manage conditional Sidebar rendering */}
           <ClientLayout>
