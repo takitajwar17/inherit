@@ -23,7 +23,7 @@ export const metadata = {
     title: "Inherit",
     description: "Inherit: A Unified Learning & Coding Platform",
     image:
-      "https://github.com/takitajwar17/inherit/blob/main/public/inherit.svg",
+      "https://github.com/takitajwar17/inherit/blob/main/public/inherit.png",
   },
 };
 
