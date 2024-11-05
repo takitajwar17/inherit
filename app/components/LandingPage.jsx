@@ -176,28 +176,39 @@ const LandingPage = () => {
         {/* Hero Section */}
         <div className="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-                Empowering Future
-                <span className="text-indigo-600"> Tech Leaders</span> in
-                Bangladesh
-              </h1>
-              <p className="text-lg sm:text-xl text-gray-700 mb-10 max-w-3xl mx-auto px-4">
-                Bridge the digital divide with our unified learning platform.
-                Making coding education accessible, collaborative, and
-                empowering for everyone.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
-                  <button className="bg-indigo-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center w-full sm:w-auto">
-                    Start Learning <ChevronRight className="ml-3 h-6 w-6" />
-                  </button>
-                </Link>
-                <Link href="/watch-demo">
-                  <button className="border-2 border-gray-300 text-gray-700 px-10 py-4 rounded-full text-lg font-semibold hover:border-indigo-600 hover:text-indigo-600 transition-colors w-full sm:w-auto">
-                    Watch Demo
-                  </button>
-                </Link>
+            <div className="flex flex-col md:flex-row items-center text-center md:text-left">
+              <div className="md:w-1/2">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+                  Empowering Future
+                  <span className="text-indigo-600"> Tech Leaders</span> in
+                  Bangladesh
+                </h1>
+                <p className="text-lg sm:text-xl text-gray-700 mb-10 max-w-3xl mx-auto md:mx-0 px-4">
+                  Bridge the digital divide with our unified learning platform.
+                  Making coding education accessible, collaborative, and
+                  empowering for everyone.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center md:justify-start gap-4">
+                  <Link href={isSignedIn ? "/dashboard" : "/sign-in"}>
+                    <button className="bg-indigo-600 text-white px-10 py-4 rounded-full text-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center w-full sm:w-auto">
+                      Start Learning <ChevronRight className="ml-3 h-6 w-6" />
+                    </button>
+                  </Link>
+                  <Link href="/watch-demo">
+                    <button className="border-2 border-gray-300 text-gray-700 px-10 py-4 rounded-full text-lg font-semibold hover:border-indigo-600 hover:text-indigo-600 transition-colors w-full sm:w-auto">
+                      Watch Demo
+                    </button>
+                  </Link>
+                </div>
+              </div>
+              <div className="md:w-1/2 mt-8 md:mt-0">
+                <img
+                  src="/hero.png"
+                  alt="hero"
+                  width={1000}
+                  height={1000}
+                  className="max-h-[70vh] object-contain object-center 2xl:max-h-[50vh]"
+                />
               </div>
             </div>
           </div>
