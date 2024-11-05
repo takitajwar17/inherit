@@ -92,7 +92,9 @@ export default function QuestionCard({ question }) {
               {question.title}
             </Link>
           </h2>
-          <p className="text-muted-foreground mb-4">{question.description}</p>
+          <p className="text-muted-foreground mb-4 line-clamp-2">
+            {question.description}
+          </p>
 
           <div className="flex justify-between items-center">
             <div className="flex gap-2">
