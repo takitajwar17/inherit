@@ -88,9 +88,7 @@ export default function QuestionCard({ question }) {
         {/* Content */}
         <div className="flex-1">
           <h2 className="text-xl font-semibold mb-2 hover:text-blue-600">
-            <Link href={`/dev-discuss/questions/${question._id}`}>
-              {question.title}
-            </Link>
+            <Link href={`/dev-discuss/${question._id}`}>{question.title}</Link>
           </h2>
           <p className="text-muted-foreground mb-4 line-clamp-2">
             {question.description}
