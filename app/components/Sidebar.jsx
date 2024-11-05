@@ -51,7 +51,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     <div className="flex flex-row">
       <div
         className={`fixed top-20 left-0 h-full bg-sky-50 transition-transform z-50 shadow-2xl ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-[85%]"
         }`}
       >
         <nav className="flex flex-col w-56 p-4 pr-12 space-y-4">
@@ -98,28 +98,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             Help
           </Link>
         </nav>
-      </div>
-
-      <div
-        className={`fixed z-50 ${
-          isOpen ? "translate-x-56" : "translate-x-0"
-        } mt-20 p-2 bg-sky-50 flex rounded-r-md transition-transform shadow-lg`}
-      >
-        {!isOpen ? (
-          <button
-            onClick={toggleSidebar}
-            className="text-indigo-600 hover:text-indigo-700"
-          >
-            <TbLayoutSidebarLeftExpandFilled fontSize="22px" />
-          </button>
-        ) : (
-          <button
-            onClick={toggleSidebar}
-            className="text-indigo-600 hover:text-indigo-700"
-          >
-            <TbLayoutSidebarLeftCollapseFilled fontSize="22px" />
-          </button>
-        )}
+        <div className="absolute right-2 top-2">
+          {!isOpen ? (
+            <button
+              onClick={toggleSidebar}
+              className="text-indigo-600 hover:text-indigo-700"
+            >
+              <TbLayoutSidebarLeftExpandFilled fontSize="22px" />
+            </button>
+          ) : (
+            <button
+              onClick={toggleSidebar}
+              className="text-indigo-600 hover:text-indigo-700"
+            >
+              <TbLayoutSidebarLeftCollapseFilled fontSize="22px" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
