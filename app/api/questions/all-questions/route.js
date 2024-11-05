@@ -5,6 +5,8 @@ import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs"; // Adjust if using a different auth provider
 import { NextResponse } from "next/server";
 
+// app/api/questions/all-questions/route.js
+
 export async function GET() {
   try {
     await connect();
@@ -15,25 +17,20 @@ export async function GET() {
     }
 
     // Fetch questions authored by the user
-    const ownedQuestions = await Question.find({ author: userId });
+    const ownedQuestions = await Question.find({ author: userId }).lean();
 
     // Fetch questions not authored by the user
-    const otherQuestions = await Question.find({ author: { $ne: userId } });
+    const otherQuestions = await Question.find({
+      author: { $ne: userId },
+    }).lean();
 
-    // Combine both owned and other questions
+    // No need to exclude any fields; ensure voters is included
+
     const questions = {
       owned: ownedQuestions,
       others: otherQuestions,
     };
 
-    // If there are no questions at all, return a suitable message
-    if (ownedQuestions.length === 0 && otherQuestions.length === 0) {
-      return NextResponse.json({
-        message: "No questions found.",
-      });
-    }
-
-    // Return the combined question details
     return NextResponse.json(questions);
   } catch (error) {
     console.error("Error fetching questions:", error);

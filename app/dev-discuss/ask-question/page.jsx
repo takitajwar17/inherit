@@ -14,15 +14,35 @@ import { createQuestion } from "../../../lib/actions/question"; // Adjust the im
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState("");
   const router = useRouter();
   const { userId } = useAuth(); // Get the authenticated user's ID
+
+  const handleTagInputKeyDown = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      const newTag = tagInput.trim();
+      if (newTag && !tags.includes(newTag)) {
+        setTags([...tags, newTag]);
+        setTagInput("");
+      }
+    } else if (e.key === "Backspace" && !tagInput) {
+      e.preventDefault();
+      // Remove the last tag when Backspace is pressed and input is empty
+      setTags(tags.slice(0, -1));
+    }
+  };
+
+  const handleRemoveTag = (index) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate input fields
-    if (!title || !description || !tags) {
+    if (!title || !description || tags.length === 0) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -71,11 +91,35 @@ export default function AskQuestionPage() {
           {/* Tags Field */}
           <div>
             <label className="block text-sm font-medium mb-2">Tags</label>
-            <Input
-              placeholder="e.g., javascript, react, tailwindcss"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
+            <div className="flex flex-wrap items-center gap-2 border border-input rounded-md p-2 focus-within:border-ring">
+              {tags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
+                >
+                  <span>{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(index)}
+                    className="ml-1 text-blue-500 hover:text-blue-700 focus:outline-none"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInputKeyDown}
+                className="flex-grow border-none focus:ring-0 p-0 m-0"
+                placeholder="Add a tag"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Press <strong>space</strong> or <strong>enter</strong> to add a
+              tag.
+            </p>
           </div>
 
           {/* Submit Button */}
