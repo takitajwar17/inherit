@@ -22,7 +22,8 @@ export const metadata = {
     url: "https://inherit-xtradrill.vercel.app",
     title: "Inherit",
     description: "Inherit: A Unified Learning & Coding Platform",
-    image: "../public/inherit.svg",
+    image:
+      "https://github.com/takitajwar17/inherit/blob/main/public/inherit.svg",
   },
 };
 
