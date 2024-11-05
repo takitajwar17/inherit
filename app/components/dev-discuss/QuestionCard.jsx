@@ -37,7 +37,7 @@ export default function QuestionCard({ question }) {
       });
       const data = await response.json();
       if (response.ok) {
-        setVotes(data.votes);
+        setVotes((prevVotes) => prevVotes + 1);
         setUserVote(1);
       } else {
         toast.error(data.error || "Failed to upvote");
@@ -59,7 +59,7 @@ export default function QuestionCard({ question }) {
       });
       const data = await response.json();
       if (response.ok) {
-        setVotes(data.votes);
+        setVotes((prevVotes) => prevVotes - 1);
         setUserVote(-1);
       } else {
         toast.error(data.error || "Failed to downvote");
