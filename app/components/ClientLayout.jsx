@@ -32,7 +32,11 @@ export default function ClientLayout({ children }) {
       <main
         className={`w-full transition-all duration-300 ${
           !isHomePage ? "pt-20" : ""
-        } ${shouldRenderSidebar && isOpen ? "pl-56" : ""}`}
+        } ${
+          shouldRenderSidebar && isOpen && window.innerWidth >= 768
+            ? "pl-56"
+            : ""
+        }`}
       >
         <div className="flex items-start justify-center min-h-screen w-full">
           <div className="w-full">{children}</div>
