@@ -138,8 +138,9 @@ export default function AskQuestionPage() {
             </label>
           </div>
           <p className="text-sm text-gray-500">
-            Note: Community members can still answer your question; If you check
-            the box, this will serve as an initial point of reference.
+            <strong>Note:</strong> Community members can still answer your
+            question; If you check the box, this will serve as an{" "}
+            <strong>initial point of reference</strong>.
           </p>
 
           {/* Submit Button */}
