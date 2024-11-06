@@ -16,6 +16,7 @@ export default function AskQuestionPage() {
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
+  const [aiResponseRequested, setAiResponseRequested] = useState(false); // New state for AI response checkbox
   const router = useRouter();
   const { userId } = useAuth(); // Get the authenticated user's ID
 
@@ -29,7 +30,6 @@ export default function AskQuestionPage() {
       }
     } else if (e.key === "Backspace" && !tagInput) {
       e.preventDefault();
-      // Remove the last tag when Backspace is pressed and input is empty
       setTags(tags.slice(0, -1));
     }
   };
@@ -41,16 +41,19 @@ export default function AskQuestionPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate input fields
     if (!title || !description || tags.length === 0) {
       toast.error("Please fill in all fields");
       return;
     }
 
     try {
-      // Call the createQuestion function to save the data
-      const question = await createQuestion(title, description, tags, userId);
-
+      const question = await createQuestion(
+        title,
+        description,
+        tags,
+        userId,
+        aiResponseRequested
+      ); // Pass aiResponseRequested
       console.log("Question created:", question);
       toast.success("Question posted successfully!");
       router.push("/dev-discuss"); // Redirect to the discussion page
@@ -121,6 +124,23 @@ export default function AskQuestionPage() {
               tag.
             </p>
           </div>
+
+          {/* AI Response Checkbox */}
+          <div className="flex items-center mb-4">
+            <input
+              type="checkbox"
+              checked={aiResponseRequested}
+              onChange={(e) => setAiResponseRequested(e.target.checked)}
+              className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label className="ml-2 text-sm text-gray-700">
+              Request an AI-generated answer
+            </label>
+          </div>
+          <p className="text-sm text-gray-500">
+            Note: Community members can still answer your question; If you check
+            the box, this will serve as an initial point of reference.
+          </p>
 
           {/* Submit Button */}
           <div className="flex justify-end">
