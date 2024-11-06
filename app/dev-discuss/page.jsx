@@ -14,7 +14,7 @@ export default function Home() {
   const [questions, setQuestions] = useState({ owned: [], others: [] });
   const [loading, setLoading] = useState(true);
 
-  const tabs = ["all", "owned"];
+  const tabs = ["all", "my questions"];
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -46,7 +46,7 @@ export default function Home() {
   let displayedQuestions = [];
   if (selectedTab === "all") {
     displayedQuestions = [...questions.owned, ...questions.others];
-  } else if (selectedTab === "owned") {
+  } else if (selectedTab === "my questions") {
     displayedQuestions = questions.owned;
   }
 
