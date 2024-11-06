@@ -1,4 +1,3 @@
-// dev-discuss/[Id]/page.jsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,13 @@ export default function QuestionDetailPage({ params }) {
   const [questionData, setQuestionData] = useState(null);
   const [votes, setVotes] = useState(0);
   const [userVote, setUserVote] = useState(0);
+  const [replyContent, setReplyContent] = useState("");
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchQuestion = async () => {
       const question = await getQuestionById(Id);
+      question.replies = question.replies || []; // Initialize replies array if undefined
       setQuestionData(question);
       setVotes(question.votes);
     };
@@ -33,6 +34,29 @@ export default function QuestionDetailPage({ params }) {
     if (userVote !== -1) {
       setVotes(votes - 1);
       setUserVote(-1);
+    }
+  };
+
+  const handlePostReply = async () => {
+    if (!replyContent.trim()) return;
+
+    const response = await fetch(`/api/questions/${Id}/reply`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content: replyContent }),
+    });
+
+    if (response.ok) {
+      const { reply } = await response.json();
+      setQuestionData((prevData) => ({
+        ...prevData,
+        replies: [...prevData.replies, reply],
+      }));
+      setReplyContent(""); // Clear textarea after posting
+    } else {
+      console.error("Failed to post reply");
     }
   };
 
@@ -128,8 +152,12 @@ export default function QuestionDetailPage({ params }) {
             rows="4"
             className="w-full p-3 border rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200"
             placeholder="Write your answer here..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
           />
-          <Button className="mt-4">Post Reply</Button>
+          <Button className="mt-4" onClick={handlePostReply}>
+            Post Reply
+          </Button>
         </div>
       </div>
     </main>
