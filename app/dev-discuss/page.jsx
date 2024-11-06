@@ -2,6 +2,7 @@
 
 "use client";
 
+import QuestionsLoading from "@/app/components/dev-discuss/Loading";
 import QuestionFilters from "@/app/components/dev-discuss/QuestionFilters";
 import QuestionHeader from "@/app/components/dev-discuss/QuestionHeader";
 import QuestionList from "@/app/components/dev-discuss/QuestionList";
@@ -43,7 +44,7 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <QuestionsLoading />;
   }
 
   let displayedQuestions = [];

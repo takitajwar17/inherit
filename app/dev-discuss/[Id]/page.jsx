@@ -2,6 +2,7 @@
 
 // QuestionDetailPage component
 
+import QuestionDetailLoading from "@/app/components/dev-discuss/QuestionDetailLoading";
 import { Button } from "@/components/ui/button";
 import { getQuestionById } from "@/lib/actions/question";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -94,7 +95,7 @@ export default function QuestionDetailPage({ params }) {
   };
 
   if (!questionData) {
-    return <div>Loading...</div>;
+    return <QuestionDetailLoading />; // Use the loading component instead of loading text
   }
 
   return (
