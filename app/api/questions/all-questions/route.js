@@ -35,9 +35,21 @@ export async function GET() {
       .lean()
       .sort({ createdAt: -1 });
 
+    // Fetch all questions
+    const allQuestions = await Question.find({}).lean();
+
+    // Calculate weighted score and sort questions
+    const popularNow = allQuestions
+      .map((question) => ({
+        ...question,
+        score: question.votes + question.answers * 2, // Calculate weighted score
+      }))
+      .sort((a, b) => b.score - a.score); // Sort by score in descending order
+
     const questions = {
       owned: ownedQuestions,
       others: otherQuestions,
+      popularNow, // Update popularNow with the new array
     };
 
     return NextResponse.json(questions);

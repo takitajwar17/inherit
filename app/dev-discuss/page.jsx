@@ -11,10 +11,14 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [selectedTab, setSelectedTab] = useState("all");
-  const [questions, setQuestions] = useState({ owned: [], others: [] });
+  const [questions, setQuestions] = useState({
+    owned: [],
+    others: [],
+    popularNow: [],
+  });
   const [loading, setLoading] = useState(true);
 
-  const tabs = ["all", "my questions"];
+  const tabs = ["all", "my questions", "popular"];
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -25,6 +29,7 @@ export default function Home() {
           setQuestions({
             owned: data.owned,
             others: data.others,
+            popularNow: data.popularNow,
           });
         } else {
           console.error("Failed to fetch questions");
@@ -48,6 +53,8 @@ export default function Home() {
     displayedQuestions = [...questions.owned, ...questions.others];
   } else if (selectedTab === "my questions") {
     displayedQuestions = questions.owned;
+  } else if (selectedTab === "popular") {
+    displayedQuestions = questions.popularNow;
   }
 
   return (
