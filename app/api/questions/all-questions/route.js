@@ -1,9 +1,9 @@
 // app/api/questions/all-questions/route.js
 
 import Question from "@/lib/models/questionModel";
-import User from "@/lib/models/userModel"; // Import User model
+import User from "@/lib/models/userModel";
 import { connect } from "@/lib/mongodb/mongoose";
-import { auth } from "@clerk/nextjs"; // Adjust if using a different auth provider
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -21,35 +21,22 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const userName = user.userName; // Get the userName
+    const userName = user.userName;
 
-    // Fetch questions authored by the user using userName
+    // Fetch questions authored by the user
     const ownedQuestions = await Question.find({ author: userName })
       .lean()
       .sort({ createdAt: -1 });
 
     // Fetch questions not authored by the user
-    const otherQuestions = await Question.find({
-      author: { $ne: userName },
-    })
+    const otherQuestions = await Question.find({ author: { $ne: userName } })
       .lean()
       .sort({ createdAt: -1 });
 
-    // Fetch all questions
-    const allQuestions = await Question.find({}).lean();
-
-    // Calculate weighted score and sort questions
-    const popularNow = allQuestions
-      .map((question) => ({
-        ...question,
-        score: question.votes + question.answers * 2, // Calculate weighted score
-      }))
-      .sort((a, b) => b.score - a.score); // Sort by score in descending order
-
+    // Remove popularNow from backend response
     const questions = {
       owned: ownedQuestions,
       others: otherQuestions,
-      popularNow, // Update popularNow with the new array
     };
 
     return NextResponse.json(questions);

@@ -14,7 +14,6 @@ export default function Home() {
   const [questions, setQuestions] = useState({
     owned: [],
     others: [],
-    popularNow: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +28,6 @@ export default function Home() {
           setQuestions({
             owned: data.owned,
             others: data.others,
-            popularNow: data.popularNow,
           });
         } else {
           console.error("Failed to fetch questions");
@@ -45,7 +43,7 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>; // Replace with a loading component if desired
+    return <div>Loading...</div>;
   }
 
   let displayedQuestions = [];
@@ -54,7 +52,12 @@ export default function Home() {
   } else if (selectedTab === "my questions") {
     displayedQuestions = questions.owned;
   } else if (selectedTab === "popular") {
-    displayedQuestions = questions.popularNow;
+    displayedQuestions = [...questions.owned, ...questions.others]
+      .map((question) => ({
+        ...question,
+        score: question.votes + question.answers * 2, // Calculate weighted score
+      }))
+      .sort((a, b) => b.score - a.score); // Sort by score in descending order
   }
 
   return (
