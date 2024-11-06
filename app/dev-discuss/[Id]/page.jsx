@@ -1,62 +1,95 @@
 "use client";
 
+// QuestionDetailPage component
+
 import { Button } from "@/components/ui/button";
 import { getQuestionById } from "@/lib/actions/question";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 export default function QuestionDetailPage({ params }) {
   const { Id } = params;
+
   const [questionData, setQuestionData] = useState(null);
   const [votes, setVotes] = useState(0);
   const [userVote, setUserVote] = useState(0);
   const [replyContent, setReplyContent] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchQuestion = async () => {
       const question = await getQuestionById(Id);
-      question.replies = question.replies || []; // Initialize replies array if undefined
+      question.replies = question.replies || [];
       setQuestionData(question);
       setVotes(question.votes);
     };
     fetchQuestion();
   }, [Id]);
 
-  const handleUpvote = () => {
-    if (userVote !== 1) {
-      setVotes(votes + 1);
-      setUserVote(1);
+  const handleUpvote = async () => {
+    if (userVote === 1) return;
+    try {
+      const response = await fetch(`/api/questions/${Id}/upvote`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        setVotes((prev) => prev + 1);
+        setUserVote(1);
+      } else {
+        toast.error("Failed to upvote");
+      }
+    } catch (error) {
+      console.error("Error upvoting:", error);
+      toast.error("Error upvoting. Please try again.");
     }
   };
 
-  const handleDownvote = () => {
-    if (userVote !== -1) {
-      setVotes(votes - 1);
-      setUserVote(-1);
+  const handleDownvote = async () => {
+    if (userVote === -1) return;
+    try {
+      const response = await fetch(`/api/questions/${Id}/downvote`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        setVotes((prev) => prev - 1);
+        setUserVote(-1);
+      } else {
+        toast.error("Failed to downvote");
+      }
+    } catch (error) {
+      console.error("Error downvoting:", error);
+      toast.error("Error downvoting. Please try again.");
     }
   };
 
   const handlePostReply = async () => {
     if (!replyContent.trim()) return;
-
-    const response = await fetch(`/api/questions/${Id}/reply`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ content: replyContent }),
-    });
-
-    if (response.ok) {
-      const { reply } = await response.json();
-      setQuestionData((prevData) => ({
-        ...prevData,
-        replies: [...prevData.replies, reply],
-      }));
-      setReplyContent(""); // Clear textarea after posting
-    } else {
-      console.error("Failed to post reply");
+    setIsPosting(true);
+    try {
+      const response = await fetch(`/api/questions/${Id}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: replyContent }),
+      });
+      if (response.ok) {
+        const { reply, answers } = await response.json();
+        setQuestionData((prevData) => ({
+          ...prevData,
+          replies: [...prevData.replies, reply],
+          answers,
+        }));
+        setReplyContent("");
+      } else {
+        toast.error("Failed to post reply");
+      }
+    } catch (error) {
+      console.error("Error posting reply:", error);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -111,7 +144,6 @@ export default function QuestionDetailPage({ params }) {
               />
             </Button>
           </div>
-
           <div className="flex-1">
             <p className="text-lg mb-6">{questionData.description}</p>
             <p className="text-muted-foreground">
@@ -155,8 +187,12 @@ export default function QuestionDetailPage({ params }) {
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
           />
-          <Button className="mt-4" onClick={handlePostReply}>
-            Post Reply
+          <Button
+            className="mt-4"
+            onClick={handlePostReply}
+            disabled={isPosting}
+          >
+            {isPosting ? "Posting..." : "Post Reply"}
           </Button>
         </div>
       </div>

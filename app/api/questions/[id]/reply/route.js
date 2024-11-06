@@ -3,7 +3,7 @@
 import Question from "@/lib/models/questionModel";
 import User from "@/lib/models/userModel";
 import { connect } from "@/lib/mongodb/mongoose";
-import { auth } from "@clerk/nextjs"; // Adjust based on your auth provider
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function POST(request, { params }) {
@@ -26,26 +26,30 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Retrieve user details
     const user = await User.findOne({ clerkId: userId });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Prepare the reply object
     const reply = {
       author: user.userName,
       content,
       createdAt: new Date(),
     };
 
-    // Ensure replies array is initialized if it does not exist
     question.replies = question.replies || [];
     question.replies.push(reply);
 
+    // Increment answers count
+    question.answers = question.replies.length;
+
     await question.save();
 
-    return NextResponse.json({ success: true, reply });
+    return NextResponse.json({
+      success: true,
+      reply,
+      answers: question.answers,
+    });
   } catch (error) {
     console.error("Error adding reply:", error);
     return NextResponse.json(
