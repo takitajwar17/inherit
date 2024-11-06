@@ -1,7 +1,5 @@
 "use client";
 
-// QuestionDetailPage component
-
 import QuestionDetailLoading from "@/app/components/dev-discuss/QuestionDetailLoading";
 import { Button } from "@/components/ui/button";
 import { getQuestionById } from "@/lib/actions/question";
@@ -20,17 +18,20 @@ export default function QuestionDetailPage({ params }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
     const fetchQuestion = async () => {
       const question = await getQuestionById(Id);
       question.replies = question.replies || [];
       setQuestionData(question);
       setVotes(question.votes);
     };
+
     fetchQuestion();
   }, [Id]);
 
   const handleUpvote = async () => {
     if (userVote === 1) return;
+
     try {
       const response = await fetch(`/api/questions/${Id}/upvote`, {
         method: "POST",
@@ -49,6 +50,7 @@ export default function QuestionDetailPage({ params }) {
 
   const handleDownvote = async () => {
     if (userVote === -1) return;
+
     try {
       const response = await fetch(`/api/questions/${Id}/downvote`, {
         method: "POST",
@@ -68,6 +70,7 @@ export default function QuestionDetailPage({ params }) {
   const handlePostReply = async () => {
     if (!replyContent.trim()) return;
     setIsPosting(true);
+
     try {
       const response = await fetch(`/api/questions/${Id}/reply`, {
         method: "POST",
@@ -76,6 +79,7 @@ export default function QuestionDetailPage({ params }) {
         },
         body: JSON.stringify({ content: replyContent }),
       });
+
       if (response.ok) {
         const { reply, answers } = await response.json();
         setQuestionData((prevData) => ({
@@ -95,7 +99,7 @@ export default function QuestionDetailPage({ params }) {
   };
 
   if (!questionData) {
-    return <QuestionDetailLoading />; // Use the loading component instead of loading text
+    return <QuestionDetailLoading />;
   }
 
   return (
@@ -153,6 +157,14 @@ export default function QuestionDetailPage({ params }) {
             </p>
           </div>
         </div>
+
+        {/* AI Answer Section (if exists) */}
+        {questionData.aiAnswerRequested && questionData.aiAnswer.content && (
+          <section className="bg-gray-100 p-6 mb-8 rounded-lg">
+            <h2 className="text-2xl font-semibold mb-4">AI Generated Answer</h2>
+            <p className="text-lg">{questionData.aiAnswer.content}</p>
+          </section>
+        )}
 
         {/* Replies Section */}
         <section>
