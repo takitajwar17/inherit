@@ -1,11 +1,11 @@
+// pages/api/socket.js
 import { Server } from "socket.io";
 
 let io;
 
-export default function handler(req, res) {
+export default function SocketHandler(req, res) {
   if (!io) {
     io = new Server(res.socket.server, {
-      path: "/api/socket",
       cors: {
         origin: process.env.NEXT_PUBLIC_FRONTEND_URL,
         methods: ["GET", "POST"],
@@ -53,6 +53,8 @@ export default function handler(req, res) {
     });
 
     console.log("Socket.IO server initialized");
+  } else {
+    console.log("Socket.IO server already initialized");
   }
 
   res.end();

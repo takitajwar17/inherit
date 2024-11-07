@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 const Playground = () => {
@@ -25,6 +25,9 @@ const Playground = () => {
       alert("Please enter a valid 7-character room code.");
     }
   };
+
+  // Log the environment context
+  console.log("Environment Context:", process.env);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
