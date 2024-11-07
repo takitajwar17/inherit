@@ -59,7 +59,7 @@ const RoomPage = () => {
       </div>
 
       <CodeEditor code={code} roomId={roomId} onCodeChange={handleCodeChange} />
-      <ExecutionBlock code={code} />
+      {/* <ExecutionBlock code={code} /> */}
     </div>
   );
 };

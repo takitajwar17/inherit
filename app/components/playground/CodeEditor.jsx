@@ -2,10 +2,15 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Editor } from "@monaco-editor/react";
 import { io } from "socket.io-client";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { CODE_SNIPPETS } from "@/app/constants";
+import Output from "@/components/ui/Output";
 
 const CodeEditor = ({ roomId }) => {
   const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("javascript");
   const socketRef = useRef(null);
+  const editorRef = useRef(null);
 
   useEffect(() => {
     // Initialize Socket.IO client
@@ -30,16 +35,24 @@ const CodeEditor = ({ roomId }) => {
     socketRef.current.emit("codeUpdate", newCode);
   };
 
+  const onSelect = (language) => {
+    setLanguage(language);
+    setCode(CODE_SNIPPETS[language]);
+  };
+
   return (
     <div className="h-full w-full border border-gray-300 rounded">
+      <LanguageSelector language={language} onSelect={onSelect} />
       <Editor
         height="90vh"
-        defaultLanguage="javascript"
-        defaultValue="// Start coding here..."
+        defaultLanguage={language}
+        defaultValue={CODE_SNIPPETS[language]}
         value={code}
         onChange={handleEditorChange}
         theme="vs-dark"
+        onMount={(editor) => (editorRef.current = editor)}
       />
+      <Output editorRef={editorRef} language={language} />
     </div>
   );
 };
