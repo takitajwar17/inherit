@@ -23,22 +23,28 @@ const Output = ({ editorRef, language }) => {
   };
 
   return (
-    <div className="w-1/2">
-      <span className="mb-2 text-lg block">Output</span>
-      <button
-        className="mb-4 border border-green-500 text-green-500 px-4 py-2 rounded"
-        disabled={isLoading}
-        onClick={runCode}
-      >
-        {isLoading ? "Running..." : "Run Code"}
-      </button>
+    <div className="p-4 bg-white shadow-md">
+      <span className="mb-2 text-black text-lg font-semibold">Output</span>
+      <div className="flex justify-end mb-4">
+        <button
+          className="border border-blue-500 bg-blue-500 px-4 py-2 rounded hover:bg-blue-400 text-white transition duration-200"
+          disabled={isLoading}
+          onClick={runCode}
+        >
+          {isLoading ? "Running..." : "Run Code"}
+        </button>
+      </div>
       <div
         className={`h-75vh p-2 border rounded-md ${
-          isError ? "border-red-500" : "border-gray-700"
-        }`}
+          isError ? "border-red-500" : "border-gray-300"
+        } bg-gray-100`}
       >
         {output
-          ? output.map((line, i) => <p key={i}>{line}</p>)
+          ? output.map((line, i) => (
+              <p key={i} className="text-black">
+                {line}
+              </p>
+            ))
           : 'Click "Run Code" to see the output here'}
       </div>
     </div>

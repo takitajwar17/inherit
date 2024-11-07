@@ -8,23 +8,22 @@ const LanguageSelector = ({ language, onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="ml-2 mb-4">
-      <span className="mb-2 text-lg block">Language:</span>
+    <div className="ml-2 mb-2">
       <div className="relative inline-block text-left">
         <button
-          className="bg-gray-800 text-white px-4 py-2 rounded"
+          className="border-blue-600 border-2 text-blue-600 px-2 py-1 rounded hover:bg-blue-700 hover:text-white transition duration-200"
           onClick={() => setIsOpen(!isOpen)}
         >
           {language}
         </button>
         {isOpen && (
-          <div className="absolute z-10 mt-2 w-48 rounded-md shadow-lg bg-[#110c1b]">
+          <div className="absolute z-10 mt-2 w-48 rounded-md shadow-lg bg-white">
             {languages.map(([lang, version]) => (
               <button
                 key={lang}
                 className={`${
-                  lang === language ? "text-blue-400 bg-gray-900" : "text-white"
-                } block w-full text-left px-4 py-2 hover:bg-gray-900`}
+                  lang === language ? "text-blue-500 bg-gray-200" : "text-black"
+                } block w-full text-left px-4 py-2 hover:bg-gray-300 transition duration-200`}
                 onClick={() => onSelect(lang)}
               >
                 {lang}
