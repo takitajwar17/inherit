@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import CodeEditor from "../../components/playground/CodeEditor";
 import CollaboratorAvatars from "../../components/playground/CollaboratorAvatars";
 import ExecutionBlock from "../../components/playground/ExecutionBlock";
-import { useAuth } from "@clerk/nextjs";
-import { io } from "socket.io-client";
 
 const RoomPage = () => {
   const { roomId } = useParams();
@@ -17,8 +17,10 @@ const RoomPage = () => {
 
   useEffect(() => {
     // Connect to Socket.IO server
+    // Use this in your client components where you initialize Socket.IO
     socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
-      query: { roomId, userId: userId },
+      path: "/api/socket",
+      query: { roomId, userId },
     });
 
     // Listen for collaborators

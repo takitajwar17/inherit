@@ -1,4 +1,3 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverActions: true,
@@ -6,9 +5,10 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/socket",
-        destination: "/api/socket",
+        source: "/api/webhooks/socket",
+        destination: "/api/webhooks/socket",
       },
+      // Add other rewrite rules as needed
     ];
   },
 };

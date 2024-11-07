@@ -37,6 +37,7 @@
     "react-toastify": "^10.0.6",
     "remark-gfm": "^4.0.0",
     "sharp": "^0.33.5",
+    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "svix": "^1.37.0",
     "tailwind-merge": "^2.5.4",
