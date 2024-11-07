@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { getQuestionById } from "@/lib/actions/question";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown"; // Import react-markdown
 import { toast } from "react-toastify";
+import remarkGfm from "remark-gfm"; // Import GitHub-flavored markdown (optional)
 
 export default function QuestionDetailPage({ params }) {
   const { Id } = params;
@@ -150,7 +152,10 @@ export default function QuestionDetailPage({ params }) {
             </Button>
           </div>
           <div className="flex-1">
-            <p className="text-lg mb-6">{questionData.description}</p>
+            {/* Render question description as markdown */}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-lg mb-6">
+              {questionData.description}
+            </ReactMarkdown>
             <p className="text-muted-foreground">
               <span className="font-semibold">{questionData.answers}</span>{" "}
               answers
@@ -162,7 +167,9 @@ export default function QuestionDetailPage({ params }) {
         {questionData.aiAnswerRequested && questionData.aiAnswer.content && (
           <section className="bg-gray-100 p-6 mb-8 rounded-lg">
             <h2 className="text-2xl font-semibold mb-4">AI Generated Answer</h2>
-            <p className="text-lg">{questionData.aiAnswer.content}</p>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {questionData.aiAnswer.content}
+            </ReactMarkdown>
           </section>
         )}
 
