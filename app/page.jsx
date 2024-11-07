@@ -1,7 +1,7 @@
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
-const LandingPage = dynamic(() => import('./components/LandingPage'), {
-  ssr: false
+const LandingPage = dynamic(() => import("./components/LandingPage"), {
+  ssr: false,
 });
 
 export default function Home() {

@@ -1,17 +1,17 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 const CHANNEL_IDS = [
-  'UC8butISFwT-Wl7EV0hUK0BQ', // freeCodeCamp.org
-  'UC59K-uG2A5ogwIrHw4bmlEg', // Telusko Learnings
+  "UC8butISFwT-Wl7EV0hUK0BQ", // freeCodeCamp.org
+  "UC59K-uG2A5ogwIrHw4bmlEg", // Telusko Learnings
 ];
 
 const LearnPage = () => {
   const [videos, setVideos] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -20,22 +20,22 @@ const LearnPage = () => {
 
   const fetchVideos = async () => {
     try {
-      const promises = CHANNEL_IDS.map(channelId =>
+      const promises = CHANNEL_IDS.map((channelId) =>
         axios.get(`https://www.googleapis.com/youtube/v3/search`, {
           params: {
-            part: 'snippet',
+            part: "snippet",
             channelId: channelId,
             maxResults: 5,
-            order: 'date',
+            order: "date",
             key: API_KEY,
           },
         })
       );
       const results = await Promise.all(promises);
-      const allVideos = results.flatMap(result => result.data.items);
+      const allVideos = results.flatMap((result) => result.data.items);
       setVideos(allVideos);
     } catch (error) {
-      console.error('Error fetching videos', error);
+      console.error("Error fetching videos", error);
     }
   };
 
@@ -59,13 +59,18 @@ const LearnPage = () => {
       </header>
       <main>
         <div className="video-grid">
-          {videos.map(video => (
-            <div key={video.id.videoId} className="video-card">
-              <a href={`https://www.youtube.com/watch?v=${video.id.videoId}`} target="_blank" rel="noopener noreferrer">
-                <img src={video.snippet.thumbnails.medium.url} alt={video.snippet.title} />
-                <h3>{video.snippet.title}</h3>
-                <p>{video.snippet.channelTitle}</p>
-              </a>
+          {videos.map((video) => (
+            <div
+              key={video.id.videoId}
+              className="video-card"
+              onClick={() => router.push(`/learn/${video.id.videoId}`)}
+            >
+              <img
+                src={video.snippet.thumbnails.medium.url}
+                alt={video.snippet.title}
+              />
+              <h3>{video.snippet.title}</h3>
+              <p>{video.snippet.channelTitle}</p>
             </div>
           ))}
         </div>
