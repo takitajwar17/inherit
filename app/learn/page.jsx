@@ -10,57 +10,53 @@ const CHANNEL_IDS = [
   "UC59K-uG2A5ogwIrHw4bmlEg", // Telusko
 ];
 
-// Function to get a random API key
-const getRandomApiKey = () => {
-  const apiKeys = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.split(',');
-  const randomIndex = Math.floor(Math.random() * apiKeys.length);
-  return apiKeys[randomIndex];
-};
-
 const LearnPage = () => {
   const [videos, setVideos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
 
   const formatDuration = (duration) => {
-    console.log('Duration input:', duration); // Debug log
-    if (!duration) return '0:00'; // Handle null or undefined duration
-    
-    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-    if (!match) return '0:00'; // Handle invalid format
-    
-    const hours = (match[1] || '').replace('H', '');
-    const minutes = (match[2] || '').replace('M', '');
-    const seconds = (match[3] || '').replace('S', '');
+    console.log("Duration input:", duration); // Debug log
+    if (!duration) return "0:00"; // Handle null or undefined duration
 
-    let formattedDuration = '';
-    
+    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    if (!match) return "0:00"; // Handle invalid format
+
+    const hours = (match[1] || "").replace("H", "");
+    const minutes = (match[2] || "").replace("M", "");
+    const seconds = (match[3] || "").replace("S", "");
+
+    let formattedDuration = "";
+
     if (hours) {
       formattedDuration += `${hours}:`;
-      formattedDuration += `${minutes.padStart(2, '0')}:`;
+      formattedDuration += `${minutes.padStart(2, "0")}:`;
     } else if (minutes) {
       formattedDuration += `${minutes}:`;
     } else {
-      formattedDuration += '0:';
+      formattedDuration += "0:";
     }
-    
-    formattedDuration += seconds.padStart(2, '0');
-    
+
+    formattedDuration += seconds.padStart(2, "0");
+
     return formattedDuration;
   };
 
   const getVideoDetails = async (videoIds) => {
     try {
-      const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
-        params: {
-          part: 'contentDetails',
-          id: videoIds.join(','),
-          key: getRandomApiKey(),
-        },
-      });
+      const response = await axios.get(
+        `https://www.googleapis.com/youtube/v3/videos`,
+        {
+          params: {
+            part: "contentDetails",
+            id: videoIds.join(","),
+            key: getRandomApiKey(),
+          },
+        }
+      );
       return response.data.items;
     } catch (error) {
-      console.error('Error fetching video details:', error);
+      console.error("Error fetching video details:", error);
       return [];
     }
   };
@@ -80,20 +76,22 @@ const LearnPage = () => {
       );
       const results = await Promise.all(promises);
       const allVideos = results.flatMap((result) => result.data.items);
-      
+
       // Get video durations
-      const videoIds = allVideos.map(video => video.id.videoId);
+      const videoIds = allVideos.map((video) => video.id.videoId);
       const videoDetails = await getVideoDetails(videoIds);
-      
+
       // Merge duration information with video data
-      const videosWithDuration = allVideos.map(video => {
-        const details = videoDetails.find(detail => detail.id === video.id.videoId);
+      const videosWithDuration = allVideos.map((video) => {
+        const details = videoDetails.find(
+          (detail) => detail.id === video.id.videoId
+        );
         return {
           ...video,
           contentDetails: details?.contentDetails || null,
         };
       });
-      
+
       setVideos(videosWithDuration);
     } catch (error) {
       console.error("Error fetching videos", error);
@@ -116,20 +114,22 @@ const LearnPage = () => {
       );
       const results = await Promise.all(promises);
       const allVideos = results.flatMap((result) => result.data.items);
-      
+
       // Get video durations
-      const videoIds = allVideos.map(video => video.id.videoId);
+      const videoIds = allVideos.map((video) => video.id.videoId);
       const videoDetails = await getVideoDetails(videoIds);
-      
+
       // Merge duration information with video data
-      const videosWithDuration = allVideos.map(video => {
-        const details = videoDetails.find(detail => detail.id === video.id.videoId);
+      const videosWithDuration = allVideos.map((video) => {
+        const details = videoDetails.find(
+          (detail) => detail.id === video.id.videoId
+        );
         return {
           ...video,
           contentDetails: details?.contentDetails || null,
         };
       });
-      
+
       setVideos(videosWithDuration);
     } catch (error) {
       console.error("Error fetching videos by search", error);
@@ -141,7 +141,7 @@ const LearnPage = () => {
   }, []);
 
   useEffect(() => {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes shimmer {
         0% {
@@ -175,16 +175,18 @@ const LearnPage = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && searchTerm.trim()) {
+                      if (e.key === "Enter" && searchTerm.trim()) {
                         fetchVideosBySearch();
                       }
                     }}
                     placeholder="Search for coding tutorials..."
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-sm"
                   />
-                  <button 
-                    onClick={() => searchTerm.trim() && fetchVideosBySearch()} 
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${!searchTerm.trim() && 'opacity-50 cursor-not-allowed'}`}
+                  <button
+                    onClick={() => searchTerm.trim() && fetchVideosBySearch()}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                      !searchTerm.trim() && "opacity-50 cursor-not-allowed"
+                    }`}
                   >
                     Search
                   </button>
@@ -192,25 +194,27 @@ const LearnPage = () => {
               </div>
             </div>
             <button
-              onClick={() => router.push('/roadmaps')}
+              onClick={() => router.push("/roadmaps")}
               className="group relative overflow-hidden inline-flex items-center gap-2 px-8 py-4 border-2 border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:via-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-shimmer"></div>
               <div className="relative flex flex-col items-start">
-                <span className="text-sm font-semibold text-blue-100 mb-0.5">Getting Lost in Videos? 🤔</span>
+                <span className="text-sm font-semibold text-blue-100 mb-0.5">
+                  Getting Lost in Videos? 🤔
+                </span>
                 <span className="flex items-center gap-2 text-white font-bold">
                   Get Your AI Learning Path
-                  <svg 
-                    className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-200" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-200"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M13 7l5 5m0 0l-5 5m5-5H6" 
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
                     />
                   </svg>
                 </span>
@@ -231,12 +235,12 @@ const LearnPage = () => {
                   className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full"
                 >
                   {/* Thumbnail Skeleton */}
-                  <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                  <div className="relative" style={{ paddingBottom: "56.25%" }}>
                     <div className="absolute inset-0 bg-gray-200 animate-pulse">
                       <div className="absolute bottom-2 right-2 w-12 h-5 bg-gray-300 rounded animate-pulse"></div>
                     </div>
                   </div>
-                  
+
                   {/* Content Skeleton */}
                   <div className="flex flex-col flex-grow p-5">
                     {/* Title Skeleton */}
@@ -244,7 +248,7 @@ const LearnPage = () => {
                       <div className="h-5 bg-gray-200 rounded w-full animate-pulse"></div>
                       <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse"></div>
                     </div>
-                    
+
                     {/* Footer Skeleton */}
                     <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
                       <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
@@ -261,7 +265,7 @@ const LearnPage = () => {
                 className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
                 onClick={() => router.push(`/learn/${video.id.videoId}`)}
               >
-                <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                <div className="relative" style={{ paddingBottom: "56.25%" }}>
                   <img
                     src={video.snippet.thumbnails.medium.url}
                     alt={video.snippet.title}
@@ -279,9 +283,14 @@ const LearnPage = () => {
                     {video.snippet.title}
                   </h3>
                   <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
-                    <p className="text-sm text-gray-600">{video.snippet.channelTitle}</p>
+                    <p className="text-sm text-gray-600">
+                      {video.snippet.channelTitle}
+                    </p>
                     <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(video.snippet.publishedAt), { addSuffix: true })}
+                      {formatDistanceToNow(
+                        new Date(video.snippet.publishedAt),
+                        { addSuffix: true }
+                      )}
                     </p>
                   </div>
                 </div>
