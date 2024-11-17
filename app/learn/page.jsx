@@ -10,6 +10,13 @@ const CHANNEL_IDS = [
   "UC59K-uG2A5ogwIrHw4bmlEg", // Telusko
 ];
 
+// Function to get a random API key
+const getRandomApiKey = () => {
+  const apiKeys = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.split(",");
+  const randomIndex = Math.floor(Math.random() * apiKeys.length);
+  return apiKeys[randomIndex];
+};
+
 const LearnPage = () => {
   const [videos, setVideos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
