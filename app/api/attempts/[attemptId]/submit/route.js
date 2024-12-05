@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
-import Quest from '@/lib/models/questModel';
 import Attempt from '@/lib/models/attemptModel';
+import Quest from '@/lib/models/questModel';
+import { auth } from '@clerk/nextjs';
 
 export async function POST(request, { params }) {
   try {
     await connect();
+
+    const { userId } = auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { answers, isAutoSubmit } = await request.json();
 
-    // Find attempt and validate
+    // Find the attempt and verify ownership
     const attempt = await Attempt.findById(params.attemptId);
     if (!attempt) {
       return NextResponse.json(
@@ -17,14 +27,21 @@ export async function POST(request, { params }) {
       );
     }
 
-    if (attempt.status !== 'in-progress') {
+    if (attempt.userId !== userId) {
       return NextResponse.json(
-        { error: 'Attempt is already completed' },
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    if (attempt.status === 'completed') {
+      return NextResponse.json(
+        { error: 'Attempt already completed' },
         { status: 400 }
       );
     }
 
-    // Get quest details
+    // Get quest to check end time
     const quest = await Quest.findById(attempt.questId);
     if (!quest) {
       return NextResponse.json(
@@ -33,52 +50,30 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Process answers and calculate points
-    let totalPoints = 0;
-    const processedAnswers = answers.map(({ questionId, answer }) => {
-      const question = quest.questions.id(questionId);
-      if (!question) return null;
+    const now = new Date();
+    const endTime = new Date(quest.endTime);
+    if (now > endTime && !isAutoSubmit) {
+      return NextResponse.json(
+        { error: 'Quest has ended' },
+        { status: 400 }
+      );
+    }
 
-      let isCorrect = false;
-      let points = 0;
-
-      // For now, implement basic answer checking
-      // In the future, you might want to implement more sophisticated checking,
-      // especially for coding questions
-      if (question.type === 'short') {
-        // Case-insensitive exact match for short answers
-        isCorrect = answer.toLowerCase().trim() === question.answer?.toLowerCase().trim();
-        points = isCorrect ? question.points : 0;
-      } else if (question.type === 'coding') {
-        // For coding questions, you might want to implement test case validation
-        // For now, just store the answer
-        isCorrect = null; // Requires manual review
-        points = 0;
-      }
-
-      totalPoints += points;
-
-      return {
-        questionId,
-        answer,
-        isCorrect,
-        points,
-        submittedAt: new Date()
-      };
-    }).filter(Boolean);
-
-    // Update attempt
-    attempt.answers = processedAnswers;
-    attempt.totalPoints = totalPoints;
+    // Update attempt with answers and mark as completed
+    attempt.answers = answers;
     attempt.status = 'completed';
-    attempt.endTime = new Date();
-    await attempt.save();
+    attempt.totalPoints = 0; // Calculate points based on answers
 
-    return NextResponse.json({
-      status: 'completed',
-      totalPoints,
-      message: isAutoSubmit ? 'Time expired - answers auto-submitted' : 'Answers submitted successfully'
-    });
+    // Basic scoring - 1 point per correct answer
+    for (const answer of answers) {
+      const question = quest.questions.find(q => q._id.toString() === answer.questionId);
+      if (question && question.correctAnswer === answer.answer) {
+        attempt.totalPoints += 1;
+      }
+    }
+
+    await attempt.save();
+    return NextResponse.json(attempt);
   } catch (error) {
     console.error('Error submitting attempt:', error);
     return NextResponse.json(
