@@ -5,7 +5,24 @@ import { useState, useEffect } from "react";
 function formatDateForInput(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
-  return date.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
+  const offset = date.getTimezoneOffset() * 60000;
+  const localDate = new Date(date.getTime() - offset);
+  return localDate.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
+}
+
+function calculateEndTime(startTime, timeLimit) {
+  if (!startTime) return "";
+  
+  // Create date object from input
+  const date = new Date(startTime);
+  
+  // Add minutes
+  const endDate = new Date(date.getTime() + parseInt(timeLimit) * 60000);
+  
+  // Format for datetime-local input
+  const offset = endDate.getTimezoneOffset() * 60000;
+  const localEndDate = new Date(endDate.getTime() - offset);
+  return localEndDate.toISOString().slice(0, 16);
 }
 
 export default function QuestForm({ quest, onSave, onCancel }) {
@@ -45,29 +62,44 @@ export default function QuestForm({ quest, onSave, onCancel }) {
     }
   }, [quest]);
 
+  useEffect(() => {
+    if (formData.startTime && formData.timeLimit) {
+      const calculatedEndTime = calculateEndTime(formData.startTime, formData.timeLimit);
+      setFormData(prev => ({
+        ...prev,
+        endTime: calculatedEndTime
+      }));
+    }
+  }, [formData.startTime, formData.timeLimit]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting form data:", formData); // Debug log
+    console.log("Submitting form data:", formData);
     onSave(formData);
   };
 
-  const addQuestion = () => {
-    if (!newQuestion.title || !newQuestion.description) {
-      alert("Please fill in both title and description for the question");
-      return;
-    }
-
-    const questionToAdd = {
-      ...newQuestion,
-      testCases: newQuestion.type === "coding" ? newQuestion.testCases : [],
-    };
-
-    setFormData(prev => ({
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
       ...prev,
-      questions: [...prev.questions, questionToAdd],
+      [name]: type === "checkbox" ? checked : value,
     }));
+  };
 
-    // Reset new question form
+  const handleQuestionChange = (e) => {
+    const { name, value, type } = e.target;
+    setNewQuestion((prev) => ({
+      ...prev,
+      [name]: type === "number" ? parseInt(value) : value,
+    }));
+  };
+
+  const addQuestion = () => {
+    if (!newQuestion.title || !newQuestion.description) return;
+    setFormData((prev) => ({
+      ...prev,
+      questions: [...prev.questions, { ...newQuestion }],
+    }));
     setNewQuestion({
       type: "short",
       title: "",
@@ -75,13 +107,10 @@ export default function QuestForm({ quest, onSave, onCancel }) {
       points: 0,
       testCases: [],
     });
-
-    console.log("Question added:", questionToAdd); // Debug log
-    console.log("Updated questions array:", [...formData.questions, questionToAdd]); // Debug log
   };
 
   const removeQuestion = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       questions: prev.questions.filter((_, i) => i !== index),
     }));
@@ -114,215 +143,251 @@ export default function QuestForm({ quest, onSave, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mb-8 bg-white p-6 rounded shadow">
-      <div>
-        <label className="block mb-2">Quest Name</label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full p-2 border rounded"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block mb-2">Time Limit (minutes)</label>
-        <input
-          type="number"
-          value={formData.timeLimit}
-          onChange={(e) => setFormData({ ...formData, timeLimit: parseInt(e.target.value) })}
-          className="w-full p-2 border rounded"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block mb-2">Level</label>
-        <select
-          value={formData.level}
-          onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block mb-2">Start Time</label>
-        <input
-          type="datetime-local"
-          value={formData.startTime}
-          onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-          className="w-full p-2 border rounded"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block mb-2">End Time</label>
-        <input
-          type="datetime-local"
-          value={formData.endTime}
-          onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-          className="w-full p-2 border rounded"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Quest Name
+          </label>
           <input
-            type="checkbox"
-            checked={formData.isActive}
-            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
           />
-          <span>Active</span>
-        </label>
-      </div>
+        </div>
 
-      <div className="border-t pt-4">
-        <h3 className="text-lg font-semibold mb-4">Questions ({formData.questions.length})</h3>
-        
-        {/* Display existing questions */}
-        {formData.questions.map((q, index) => (
-          <div key={index} className="mb-4 p-4 border rounded bg-gray-50">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-semibold">{q.title}</h4>
-                <p className="text-sm text-gray-600">{q.type} - {q.points} points</p>
-                <p className="mt-2">{q.description}</p>
-                {q.type === "coding" && q.testCases.length > 0 && (
-                  <div className="mt-2">
-                    <p className="font-semibold">Test Cases:</p>
-                    {q.testCases.map((test, i) => (
-                      <div key={i} className="text-sm">
-                        <span>Input: {test.input}</span>
-                        <span className="ml-2">Expected: {test.expectedOutput}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => removeQuestion(index)}
-                className="text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {/* New question form */}
-        <div className="space-y-4 border p-4 rounded mt-4">
-          <h4 className="font-semibold">Add New Question</h4>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block mb-2">Question Type</label>
-            <select
-              value={newQuestion.type}
-              onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value })}
-              className="w-full p-2 border rounded"
-            >
-              <option value="short">Short Question</option>
-              <option value="coding">Coding Assignment</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-2">Title</label>
-            <input
-              type="text"
-              value={newQuestion.title}
-              onChange={(e) => setNewQuestion({ ...newQuestion, title: e.target.value })}
-              className="w-full p-2 border rounded"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">Description</label>
-            <textarea
-              value={newQuestion.description}
-              onChange={(e) => setNewQuestion({ ...newQuestion, description: e.target.value })}
-              className="w-full p-2 border rounded"
-              rows="3"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">Points</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Time Limit (minutes)
+            </label>
             <input
               type="number"
-              value={newQuestion.points}
-              onChange={(e) => setNewQuestion({ ...newQuestion, points: parseInt(e.target.value) })}
-              className="w-full p-2 border rounded"
+              name="timeLimit"
+              value={formData.timeLimit}
+              onChange={handleInputChange}
+              min="1"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
             />
           </div>
 
-          {newQuestion.type === "coding" && (
-            <div>
-              <label className="block mb-2">Test Cases</label>
-              {newQuestion.testCases.map((testCase, index) => (
-                <div key={index} className="flex gap-2 mb-2 items-center">
-                  <input
-                    type="text"
-                    placeholder="Input"
-                    value={testCase.input}
-                    onChange={(e) => updateTestCase(index, "input", e.target.value)}
-                    className="flex-1 p-2 border rounded"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Expected Output"
-                    value={testCase.expectedOutput}
-                    onChange={(e) => updateTestCase(index, "expectedOutput", e.target.value)}
-                    className="flex-1 p-2 border rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeTestCase(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addTestCase}
-                className="text-blue-500 hover:text-blue-700 text-sm"
-              >
-                + Add Test Case
-              </button>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Level
+            </label>
+            <select
+              name="level"
+              value={formData.level}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
 
-          <button
-            type="button"
-            onClick={addQuestion}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Add Question
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Start Time
+          </label>
+          <input
+            type="datetime-local"
+            name="startTime"
+            value={formData.startTime}
+            onChange={handleInputChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            End Time (auto-calculated)
+          </label>
+          <input
+            type="datetime-local"
+            value={formData.endTime}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50"
+            disabled
+          />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="isActive"
+            checked={formData.isActive}
+            onChange={handleInputChange}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label className="ml-2 block text-sm text-gray-700">
+            Active Quest
+          </label>
+        </div>
+
+        {/* Questions Section */}
+        <div className="border-t pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Questions</h3>
+          
+          {/* Existing Questions */}
+          <div className="space-y-4 mb-4">
+            {formData.questions.map((q, index) => (
+              <div key={index} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h4 className="font-medium">{q.title}</h4>
+                  <p className="text-sm text-gray-600">{q.description}</p>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Type: {q.type} | Points: {q.points}
+                  </div>
+                  {q.type === "coding" && q.testCases.length > 0 && (
+                    <div className="mt-2">
+                      <p className="font-medium">Test Cases:</p>
+                      {q.testCases.map((test, i) => (
+                        <div key={i} className="text-sm">
+                          <span>Input: {test.input}</span>
+                          <span className="ml-2">Expected: {test.expectedOutput}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeQuestion(index)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* New Question Form */}
+          <div className="space-y-4 border-t pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Question Type
+                </label>
+                <select
+                  name="type"
+                  value={newQuestion.type}
+                  onChange={handleQuestionChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="short">Short Answer</option>
+                  <option value="coding">Coding</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Points
+                </label>
+                <input
+                  type="number"
+                  name="points"
+                  value={newQuestion.points}
+                  onChange={handleQuestionChange}
+                  min="0"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Question Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={newQuestion.title}
+                onChange={handleQuestionChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Question Description
+              </label>
+              <textarea
+                name="description"
+                value={newQuestion.description}
+                onChange={handleQuestionChange}
+                rows="3"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              ></textarea>
+            </div>
+
+            {newQuestion.type === "coding" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Test Cases
+                </label>
+                {newQuestion.testCases.map((testCase, index) => (
+                  <div key={index} className="flex gap-2 mb-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Input"
+                      value={testCase.input}
+                      onChange={(e) => updateTestCase(index, "input", e.target.value)}
+                      className="flex-1 p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Expected Output"
+                      value={testCase.expectedOutput}
+                      onChange={(e) => updateTestCase(index, "expectedOutput", e.target.value)}
+                      className="flex-1 p-2 border rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTestCase(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addTestCase}
+                  className="text-blue-500 hover:text-blue-700 text-sm"
+                >
+                  + Add Test Case
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={addQuestion}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Add Question
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex justify-end space-x-2 mt-6">
+      <div className="flex justify-end space-x-3">
         <button
           type="button"
           onClick={onCancel}
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Save Quest
         </button>
