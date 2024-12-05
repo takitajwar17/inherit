@@ -58,6 +58,7 @@ export async function POST(request) {
       endTime: endTime,
       status: 'in-progress',
       totalPoints: 0,
+      maxPoints: quest.questions.reduce((total, q) => total + q.points, 0),
       answers: []
     });
 
