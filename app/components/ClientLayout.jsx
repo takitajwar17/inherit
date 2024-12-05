@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react"; // Removed useEffect since it's not needed here
-import Header from "./Header"; // Import Header component
+import { useState } from "react"; 
+import Header from "./Header"; 
 import Sidebar from "./Sidebar";
 
 export default function ClientLayout({ children }) {
@@ -15,11 +15,18 @@ export default function ClientLayout({ children }) {
   // Define paths where Sidebar should not be rendered
   const excludedPaths = ["/sign-in", "/sign-up"];
   const isExcludedPath =
-    excludedPaths.includes(normalizedPath) || pathname === "/not-found";
+    excludedPaths.includes(normalizedPath) || 
+    pathname === "/not-found" || 
+    pathname.startsWith("/admin");
 
   const shouldRenderSidebar = !isHomePage && !isExcludedPath;
 
-  const [isOpen, setIsOpen] = useState(false); // Manage isOpen state
+  const [isOpen, setIsOpen] = useState(false); 
+
+  // Don't render any layout components for admin paths
+  if (pathname.startsWith("/admin")) {
+    return children;
+  }
 
   return (
     <>
