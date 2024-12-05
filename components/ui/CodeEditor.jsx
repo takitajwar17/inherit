@@ -4,11 +4,18 @@ import { Editor } from "@monaco-editor/react";
 import LanguageSelector from "./LanguageSelector";
 import { CODE_SNIPPETS } from "@/app/constants";
 import Output from "./Output";
+import Review from "./Review";
+import { executeCode } from '@/app/api/Piston/api';
+import { FaPlay } from "react-icons/fa";
 
 const CodeEditor = () => {
   const editorRef = useRef();
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("javascript");
+  const [activeTab, setActiveTab] = useState("Editor");
+  const [output, setOutput] = useState([]);
+  const [isError, setIsError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const onMount = (editor) => {
     editorRef.current = editor;
@@ -18,6 +25,24 @@ const CodeEditor = () => {
   const onSelect = (language) => {
     setLanguage(language);
     setValue(CODE_SNIPPETS[language]);
+  };
+
+  const runCode = async () => {
+    const sourceCode = editorRef.current.getValue();
+    if (!sourceCode) return;
+    try {
+      setLoading(true); // Set loading to true when execution starts
+      const { run: result } = await executeCode(language, sourceCode);
+      setOutput(result.output.split("\n"));
+      console.log(result.output);
+      result.stderr ? setIsError(true) : setIsError(false);
+      setActiveTab("Output"); // Ensure we switch to Output tab after execution
+    } catch (error) {
+      console.log(error);
+      alert("An error occurred: " + (error.message || "Unable to run code"));
+    } finally {
+      setLoading(false); // Set loading to false when execution ends
+    }
   };
 
   useEffect(() => {
@@ -33,7 +58,7 @@ const CodeEditor = () => {
     const handleMouseMove = (event) => {
       const newWidth = event.clientX - leftPanel.getBoundingClientRect().left;
       leftPanel.style.width = `${newWidth}px`;
-      rightPanel.style.width = `calc(100% - ${newWidth}px - 0.25rem)`; // Adjust for the width of the resizer (0.25rem = 1px)
+      rightPanel.style.width = `calc(100% - ${newWidth}px - 0.25rem)`;
     };
 
     const handleMouseUp = () => {
@@ -49,16 +74,26 @@ const CodeEditor = () => {
   }, []);
 
   return (
-    <div className="flex flex-col bg-white">
-      <div className="h-3/5 p-4 bg-gray-200 shadow-md">
-        <LanguageSelector language={language} onSelect={onSelect} />
+    <div className="flex flex-col bg-white h-screen">
+      <div className="flex justify-between items-center py-2 px-6 bg-gray-100">
+        <LanguageSelector language={language} onSelect={onSelect}/>
+        <div className="flex">
+          <button onClick={() => setActiveTab("Editor")} className={`px-4 py-2 ${activeTab === "Editor" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-900"} rounded-l-sm`}>Editor</button>
+          <button onClick={() => setActiveTab("Output")} className={`px-4 py-2 ${activeTab === "Output" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-900"}`}>Output</button>
+          <button onClick={() => setActiveTab("Review")} className={`px-4 py-2 ${activeTab === "Review" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-900"} rounded-r-sm`}>Review</button>
+        </div>
+        <button onClick={runCode} className="flex items-center gap-2 bg-blue-500 p-2 rounded-md text-white">
+          {loading ? "Loading..." : "Run"} <FaPlay />
+        </button>
+      </div>
+      {activeTab === "Editor" ? (
         <Editor
           options={{
             minimap: {
               enabled: false,
             },
           }}
-          height="75vh"
+          height="calc(100vh - 10rem)"
           theme="vs-light"
           language={language}
           defaultValue={CODE_SNIPPETS[language]}
@@ -66,8 +101,11 @@ const CodeEditor = () => {
           value={value}
           onChange={(value) => setValue(value)}
         />
-      </div>
-      <Output editorRef={editorRef} language={language} />
+      ) : activeTab === "Output" ? (
+        <Output output={output} isError={isError} />
+      ) : (
+        <Review />
+      )}
     </div>
   );
 };
