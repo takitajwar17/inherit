@@ -1,83 +1,57 @@
-import { NextResponse } from 'next/server';
-import { connect } from '@/lib/mongodb/mongoose';
-import Attempt from '@/lib/models/attemptModel';
-import Quest from '@/lib/models/questModel';
-import { auth } from '@clerk/nextjs';
+import { NextResponse } from "next/server";
+import { connect } from "@/lib/mongodb/mongoose";
+import Attempt from "@/lib/models/attemptModel";
+import { submitQuestAttempt } from "@/lib/actions/quest";
+import { auth } from "@clerk/nextjs";
 
 export async function POST(request, { params }) {
   try {
-    await connect();
-
     const { userId } = auth();
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const { answers, isAutoSubmit } = await request.json();
+    const { answers } = await request.json();
+    await connect();
 
-    // Find the attempt and verify ownership
     const attempt = await Attempt.findById(params.attemptId);
     if (!attempt) {
       return NextResponse.json(
-        { error: 'Attempt not found' },
+        { error: "Attempt not found" },
         { status: 404 }
       );
     }
 
-    if (attempt.userId !== userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Get AI evaluation
+    const evaluation = await submitQuestAttempt(params.attemptId, answers);
 
-    if (attempt.status === 'completed') {
-      return NextResponse.json(
-        { error: 'Attempt already completed' },
-        { status: 400 }
-      );
-    }
-
-    // Get quest to check end time
-    const quest = await Quest.findById(attempt.questId);
-    if (!quest) {
-      return NextResponse.json(
-        { error: 'Quest not found' },
-        { status: 404 }
-      );
-    }
-
-    const now = new Date();
-    const endTime = new Date(quest.endTime);
-    if (now > endTime && !isAutoSubmit) {
-      return NextResponse.json(
-        { error: 'Quest has ended' },
-        { status: 400 }
-      );
-    }
-
-    // Update attempt with answers and mark as completed
-    attempt.answers = answers;
-    attempt.status = 'completed';
-    attempt.totalPoints = 0; // Calculate points based on answers
-
-    // Basic scoring - 1 point per correct answer
-    for (const answer of answers) {
-      const question = quest.questions.find(q => q._id.toString() === answer.questionId);
-      if (question && question.correctAnswer === answer.answer) {
-        attempt.totalPoints += 1;
+    // Update attempt with answers and AI evaluation
+    attempt.answers = answers.map(answer => ({
+      questionId: answer.questionId,
+      answer: answer.answer,
+      submittedAt: new Date(),
+      aiEvaluation: {
+        score: evaluation.evaluation.score,
+        feedback: evaluation.evaluation.feedback,
+        evaluatedAt: evaluation.evaluation.evaluatedAt
       }
-    }
+    }));
 
+    // Calculate total points based on AI evaluation
+    attempt.totalPoints = evaluation.evaluation.score;
+    attempt.status = "completed";
+    attempt.endTime = new Date();
+    
     await attempt.save();
-    return NextResponse.json(attempt);
+    return NextResponse.json({ success: true, attempt });
+
   } catch (error) {
-    console.error('Error submitting attempt:', error);
+    console.error("Error in submit route:", error);
     return NextResponse.json(
-      { error: 'Failed to submit attempt' },
+      { error: error.message },
       { status: 500 }
     );
   }

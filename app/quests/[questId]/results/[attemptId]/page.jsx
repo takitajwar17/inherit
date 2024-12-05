@@ -4,6 +4,35 @@ import { useEffect, useState } from 'react';
 import { useUser } from "@clerk/nextjs";
 import Link from 'next/link';
 
+const AIFeedbackCard = ({ feedback }) => {
+  // Split feedback into sections
+  const [correctness, details, improvements] = feedback.split('\n\n');
+  
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-4">
+      <div className={`text-lg font-semibold mb-3 ${
+        correctness === 'Fully Correct' ? 'text-green-600' :
+        correctness === 'Partially Correct' ? 'text-yellow-600' :
+        'text-red-600'
+      }`}>
+        {correctness}
+      </div>
+      <div className="mb-4 text-gray-700">
+        {details}
+      </div>
+      <div className="space-y-2">
+        <h4 className="font-medium text-gray-900">Improvements:</h4>
+        {improvements.replace('Suggested Improvements:\n', '').split('\n').map((improvement, index) => (
+          <div key={index} className="flex items-start space-x-2 text-gray-600">
+            <span>•</span>
+            <span>{improvement}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function QuestResultsPage({ params }) {
   const { user } = useUser();
   const [attempt, setAttempt] = useState(null);
@@ -49,7 +78,7 @@ export default function QuestResultsPage({ params }) {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-red-600">{error}</div>
+        <div className="text-red-500">Error: {error}</div>
       </div>
     );
   }
@@ -57,7 +86,7 @@ export default function QuestResultsPage({ params }) {
   if (!attempt || !quest) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Results not found</div>
+        <div className="text-xl">No results found</div>
       </div>
     );
   }
@@ -135,6 +164,14 @@ export default function QuestResultsPage({ params }) {
                             {answer.points} / {question.points} points
                           </div>
                         </div>
+                        {answer.aiEvaluation?.feedback ? (
+                          <div>
+                            <h4 className="font-medium text-gray-900">AI Feedback:</h4>
+                            <AIFeedbackCard feedback={answer.aiEvaluation.feedback} />
+                          </div>
+                        ) : (
+                          <div className="text-gray-600">No AI feedback available</div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-sm text-gray-500">No answer provided</div>
