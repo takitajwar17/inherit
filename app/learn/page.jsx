@@ -1,8 +1,24 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const LearnPage = () => {
   const [videos, setVideos] = useState([]);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=coding+tutorials&type=video&maxResults=6&key=YOUR_YOUTUBE_API_KEY`
+        );
+        const data = await response.json();
+        setVideos(data.items || []);
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+      }
+    };
+
+    fetchVideos();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -12,9 +28,20 @@ const LearnPage = () => {
           {videos.length === 0 ? (
             <p className="text-gray-500">No videos available</p>
           ) : (
-            videos.map((video, index) => (
-              <div key={index} className="bg-white p-4 rounded-lg shadow">
-                <p>{video.title}</p>
+            videos.map((video) => (
+              <div
+                key={video.id.videoId}
+                className="bg-white p-4 rounded-lg shadow"
+              >
+                <iframe
+                  width="100%"
+                  height="200"
+                  src={`https://www.youtube.com/embed/${video.id.videoId}`}
+                  title={video.snippet.title}
+                  allowFullScreen
+                  className="rounded"
+                ></iframe>
+                <p className="mt-2 font-semibold">{video.snippet.title}</p>
               </div>
             ))
           )}
