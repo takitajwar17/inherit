@@ -1,10 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { generateReview } from "@/lib/actions/codeReview";
 
-const Review = () => {
+const Review = ({ getCode }) => {
+  const [review, setReview] = useState("");
+
+  const handleGetReview = async () => {
+    const code = getCode();
+    console.log(code);
+    const reviewText = await generateReview(code);
+    console.log(reviewText);
+    setReview(reviewText);
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold">Review</h2>
-      <p>This is the review section.</p>
+      <button onClick={handleGetReview} className="btn">Get Review</button>
+      <p>{review}</p>
     </div>
   );
 };

@@ -40,6 +40,10 @@ const CodeEditor = ({ roomId }) => {
     setCode(CODE_SNIPPETS[language]);
   };
 
+  const getCode = () => code;
+
+  const getEditorCode = () => editorRef.current.getValue();
+
   return (
     <div className="h-full w-full border border-gray-300 rounded">
       <LanguageSelector language={language} onSelect={onSelect} />

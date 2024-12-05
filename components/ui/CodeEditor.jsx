@@ -29,6 +29,7 @@ const CodeEditor = () => {
 
   const runCode = async () => {
     const sourceCode = editorRef.current.getValue();
+    console.log(sourceCode);
     if (!sourceCode) return;
     try {
       setLoading(true); // Set loading to true when execution starts
@@ -43,6 +44,12 @@ const CodeEditor = () => {
     } finally {
       setLoading(false); // Set loading to false when execution ends
     }
+  };
+
+  const getCode = () => {
+    const sourceCode = editorRef.current.getValue();
+    if (!sourceCode) return "no code";
+    return sourceCode;
   };
 
   useEffect(() => {
@@ -104,7 +111,7 @@ const CodeEditor = () => {
       ) : activeTab === "Output" ? (
         <Output output={output} isError={isError} />
       ) : (
-        <Review />
+        <Review getCode={getCode} />
       )}
     </div>
   );
