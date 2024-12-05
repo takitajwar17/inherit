@@ -2,13 +2,23 @@ import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
 import Quest from '@/lib/models/questModel';
 import Attempt from '@/lib/models/attemptModel';
+import { auth } from '@clerk/nextjs';
 
 export async function POST(request) {
   try {
     await connect();
-    const { questId, userId } = await request.json();
+    
+    const { userId } = auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    // Validate quest exists and is active
+    const { questId } = await request.json();
+
+    // Check if quest exists and is still active
     const quest = await Quest.findById(questId);
     if (!quest) {
       return NextResponse.json(
@@ -18,55 +28,40 @@ export async function POST(request) {
     }
 
     const now = new Date();
-    const startTime = new Date(quest.startTime);
     const endTime = new Date(quest.endTime);
-
-    console.log('Time check:', {
-      now: now.toISOString(),
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      isActive: now >= startTime && now <= endTime
-    });
-
-    // Check if quest is currently active
-    if (now < startTime || now > endTime) {
+    if (now >= endTime) {
       return NextResponse.json(
-        { error: 'Quest is not currently active' },
+        { error: 'This quest has ended' },
         { status: 400 }
       );
     }
 
-    // Check if user already has an attempt for this quest
+    // Check for existing attempts
     const existingAttempt = await Attempt.findOne({
       userId,
       questId,
       status: { $in: ['in-progress', 'completed'] }
     });
 
-    console.log('Attempt check:', {
-      userId,
-      questId,
-      existingAttempt: existingAttempt ? {
-        id: existingAttempt._id,
-        status: existingAttempt.status
-      } : null
-    });
-
     if (existingAttempt) {
       return NextResponse.json(
-        { error: 'You already have an attempt for this quest' },
+        { error: 'You have already attempted this quest' },
         { status: 400 }
       );
     }
 
     // Create new attempt
-    const attempt = await Attempt.create({
+    const attempt = new Attempt({
       userId,
       questId,
       startTime: now,
-      endTime: new Date(now.getTime() + quest.timeLimit * 60000), // Add time limit in minutes
+      endTime: endTime,
+      status: 'in-progress',
+      totalPoints: 0,
+      answers: []
     });
 
+    await attempt.save();
     return NextResponse.json(attempt);
   } catch (error) {
     console.error('Error creating attempt:', error);

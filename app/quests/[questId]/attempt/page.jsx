@@ -18,7 +18,7 @@ export default function QuestAttemptPage({ params }) {
     const fetchQuest = async () => {
       try {
         if (!isLoaded || !user) {
-          return; // Wait for user to be loaded
+          return;
         }
         // Fetch quest details
         const response = await fetch(`/api/quests/${params.questId}`);
@@ -29,7 +29,7 @@ export default function QuestAttemptPage({ params }) {
         const questData = await response.json();
         setQuest(questData);
 
-        // Check for existing attempt
+        // Check if user has already attempted this quest
         const existingAttemptResponse = await fetch(`/api/attempts/user/${params.questId}`, {
           headers: {
             'Content-Type': 'application/json',
@@ -40,42 +40,21 @@ export default function QuestAttemptPage({ params }) {
           const existingAttempt = await existingAttemptResponse.json();
           if (existingAttempt) {
             setAttempt(existingAttempt);
-            if (existingAttempt.status === 'in-progress') {
-              // Calculate remaining time
-              const endTime = new Date(existingAttempt.endTime);
-              const now = new Date();
-              const remainingTime = Math.max(0, Math.floor((endTime - now) / 1000));
-              setTimeLeft(remainingTime);
+            if (existingAttempt.status === 'completed') {
+              router.push(`/quests/${params.questId}/results/${existingAttempt._id}`);
+              return;
             }
-            setLoading(false);
-            return;
           }
         }
 
-        // If no existing attempt or error fetching it, create new attempt
-        const attemptResponse = await fetch('/api/attempts', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            questId: params.questId,
-            userId: user?.id,
-          }),
-        });
-
-        if (!attemptResponse.ok) {
-          const error = await attemptResponse.json();
-          console.error('Attempt creation error:', {
-            status: attemptResponse.status,
-            error: error
-          });
-          throw new Error(error.message || 'Failed to start attempt');
+        // Calculate time left based on quest end time
+        const now = new Date();
+        const endTime = new Date(questData.endTime);
+        if (now >= endTime) {
+          setError('This quest has ended');
+          return;
         }
-
-        const attemptData = await attemptResponse.json();
-        setAttempt(attemptData);
-        setTimeLeft(questData.timeLimit * 60); // Convert to seconds
+        setTimeLeft(Math.max(0, Math.floor((endTime - now) / 1000)));
         setLoading(false);
       } catch (error) {
         setError(error.message);
@@ -87,13 +66,13 @@ export default function QuestAttemptPage({ params }) {
   }, [params.questId, user, isLoaded]);
 
   useEffect(() => {
-    if (!timeLeft || timeLeft <= 0) return;
+    if (!timeLeft) return;
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleSubmit(true); // Auto-submit when time expires
+          handleSubmit(true);
           return 0;
         }
         return prev - 1;
@@ -118,9 +97,28 @@ export default function QuestAttemptPage({ params }) {
 
   const handleSubmit = async (isAutoSubmit = false) => {
     try {
-      if (!attempt) return;
+      setError(null);
+      
+      // Create attempt first
+      const attemptResponse = await fetch('/api/attempts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          questId: params.questId,
+        }),
+      });
 
-      const response = await fetch(`/api/attempts/${attempt._id}/submit`, {
+      if (!attemptResponse.ok) {
+        const error = await attemptResponse.json();
+        throw new Error(error.error || 'Failed to create attempt');
+      }
+
+      const newAttempt = await attemptResponse.json();
+
+      // Then submit answers
+      const submitResponse = await fetch(`/api/attempts/${newAttempt._id}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,11 +132,15 @@ export default function QuestAttemptPage({ params }) {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to submit answers');
+      if (!submitResponse.ok) {
+        const error = await submitResponse.json();
+        throw new Error(error.error || 'Failed to submit answers');
+      }
 
       // Redirect to results page
-      router.push(`/quests/${params.questId}/results/${attempt._id}`);
+      router.push(`/quests/${params.questId}/results/${newAttempt._id}`);
     } catch (error) {
+      console.error('Submit error:', error);
       setError(error.message);
     }
   };
