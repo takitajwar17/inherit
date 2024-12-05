@@ -91,12 +91,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             Notifications
           </Link>
           <Link
+            href="/quests"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <MdAddBox className="mr-2" />
+            Quests
+          </Link>
+          <Link
             href="/help"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <FaQuestionCircle className="mr-2" />
             Help
           </Link>
+        
         </nav>
         <div className="absolute right-2 top-2">
           {!isOpen ? (
