@@ -6,8 +6,8 @@ export async function GET() {
   try {
     await connect();
 
-    // Only fetch active quests
-    const quests = await Quest.find({ isActive: true })
+    // Fetch all quests without the isActive filter
+    const quests = await Quest.find()
       .select('name level timeLimit questions startTime endTime')
       .sort({ startTime: 1 });
 
