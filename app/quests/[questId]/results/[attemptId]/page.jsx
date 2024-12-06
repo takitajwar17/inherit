@@ -159,9 +159,9 @@ export default function QuestResultsPage({ params }) {
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <div className={`font-medium ${
-                            answer.isCorrect ? 'text-green-600' : 'text-red-600'
+                            answer.aiEvaluation?.score >= question.points ? 'text-green-600' : 'text-yellow-600'
                           }`}>
-                            {answer.points} / {question.points} points
+                            {answer.aiEvaluation?.score || 0} / {question.points} points
                           </div>
                         </div>
                         {answer.aiEvaluation?.feedback ? (

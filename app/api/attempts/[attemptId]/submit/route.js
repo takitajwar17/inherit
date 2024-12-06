@@ -25,23 +25,22 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Get AI evaluation
-    const evaluation = await submitQuestAttempt(params.attemptId, answers);
+    // Get AI evaluation for each answer
+    const result = await submitQuestAttempt(params.attemptId, answers);
 
-    // Update attempt with answers and AI evaluation
-    attempt.answers = answers.map(answer => ({
-      questionId: answer.questionId,
-      answer: answer.answer,
-      submittedAt: new Date(),
-      aiEvaluation: {
-        score: evaluation.evaluation.score,
-        feedback: evaluation.evaluation.feedback,
-        evaluatedAt: evaluation.evaluation.evaluatedAt
-      }
-    }));
+    // Update attempt with answers and their individual AI evaluations
+    attempt.answers = answers.map(answer => {
+      const evaluation = result.evaluations.find(e => e.questionId === answer.questionId);
+      return {
+        questionId: answer.questionId,
+        answer: answer.answer,
+        submittedAt: new Date(),
+        aiEvaluation: evaluation.evaluation
+      };
+    });
 
-    // Calculate total points based on AI evaluation
-    attempt.totalPoints = evaluation.evaluation.score;
+    // Update total points based on sum of all evaluations
+    attempt.totalPoints = result.totalScore;
     attempt.status = "completed";
     attempt.endTime = new Date();
     
