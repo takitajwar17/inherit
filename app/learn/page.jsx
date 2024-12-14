@@ -5,16 +5,18 @@ const LearnPage = () => {
   const [videos, setVideos] = useState([]);
   const [query, setQuery] = useState("coding tutorials"); // Default search query
   const [loading, setLoading] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState(null); // Track the token for the next page
 
   // Fetch videos based on the query
-  const fetchVideos = async () => {
+  const fetchVideos = async (pageToken = "") => {
     setLoading(true);
     try {
       const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=6&key=YOUR_YOUTUBE_API_KEY`
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&maxResults=6&pageToken=${pageToken}&key=YOUR_YOUTUBE_API_KEY`
       );
       const data = await response.json();
       setVideos(data.items || []);
+      setNextPageToken(data.nextPageToken || null); // Set next page token if available
     } catch (error) {
       console.error("Error fetching videos:", error);
     } finally {
@@ -23,8 +25,15 @@ const LearnPage = () => {
   };
 
   useEffect(() => {
-    fetchVideos();
+    fetchVideos(); // Fetch videos on first load
   }, [query]); // Re-fetch when the query changes
+
+  // Handle next page click
+  const handleNextPage = () => {
+    if (nextPageToken) {
+      fetchVideos(nextPageToken); // Fetch videos for the next page
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +50,7 @@ const LearnPage = () => {
             onChange={(e) => setQuery(e.target.value)}
           />
           <button
-            onClick={fetchVideos}
+            onClick={() => fetchVideos()}
             className="bg-blue-600 text-white px-4 py-2 rounded-md"
           >
             Search
@@ -74,6 +83,18 @@ const LearnPage = () => {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {nextPageToken && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleNextPage}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md"
+            >
+              Load More Videos
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
