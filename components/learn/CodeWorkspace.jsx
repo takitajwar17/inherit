@@ -19,6 +19,7 @@ const SUPPORTED_LANGUAGES = [
   { id: 'java', name: 'Java' },
   { id: 'cpp', name: 'C++' },
   { id: 'csharp', name: 'C#' },
+  { id: 'php', name: 'PHP' },
 ];
 
 const CodeWorkspace = () => {
@@ -61,7 +62,8 @@ const CodeWorkspace = () => {
       python: 'py',
       java: 'java',
       cpp: 'cpp',
-      csharp: 'cs'
+      csharp: 'cs',
+      php: 'php'
     };
     return extensions[lang] || 'txt';
   };
@@ -371,7 +373,7 @@ const CodeWorkspace = () => {
   const handleImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.js,.py,.java,.cpp,.cs';
+    input.accept = '.js,.py,.java,.cpp,.cs,.php';
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
