@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect } from "react";
 import CodeEditor from "@/components/ui/CodeEditor";
+import React, { useEffect } from "react";
 
 const VideoPage = ({ params }) => {
   const { videoId } = params;
@@ -35,7 +35,7 @@ const VideoPage = ({ params }) => {
 
   return (
     <div className="flex bg-gray-100">
-      <div className="resizable w-1/2 h-[calc(80vh-64px)] rounded-lg overflow-hidden bg-gray-100">
+      <div className="resizeable w-1/2 h-[calc(80vh-64px)] overflow-hidden bg-gray-100">
         {/* Embed YouTube Video */}
         <iframe
           width="100%"
@@ -45,14 +45,14 @@ const VideoPage = ({ params }) => {
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          className="rounded-lg p-4"
+          className="rounded-sm p-4"
         ></iframe>
       </div>
-      <div className="w-1 px-2 cursor-ew-resize bg-gray-300 rounded-lg" />
-      <div className="w-1/2 rounded-lg shadow-lg overflow-hidden bg-white">
+      <div className="w-0.5 px-2 cursor-ew-resize bg-gray-300" />
+      <div className="w-1/2 shadow-lg overflow-hidden bg-white">
         {/* Code Editor Section - to be implemented later */}
         <div className="h-full">
-          <CodeEditor />
+          <CodeEditor/>
         </div>
       </div>
     </div>

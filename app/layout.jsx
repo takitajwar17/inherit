@@ -19,11 +19,11 @@ export const metadata = {
   description: "Inherit: A Unified Learning & Coding Platform",
   openGraph: {
     type: "website",
-    url: "https://inherit-xtradrill.vercel.app",
+    url: "https://Inherit.vercel.app",
     title: "Inherit",
     description: "Inherit: A Unified Learning & Coding Platform",
     image:
-      "https://raw.githubusercontent.com/takitajwar17/inherit/refs/heads/main/public/inherit.png",
+      "https://raw.githubusercontent.com/takitajwar17/Inherit/refs/heads/main/public/inherit.png",
   },
 };
 

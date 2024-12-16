@@ -15,6 +15,7 @@ import {
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarLeftExpandFilled,
 } from "react-icons/tb";
+import { FiMap } from "react-icons/fi";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
@@ -56,11 +57,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       >
         <nav className="flex flex-col w-56 p-4 pr-12 space-y-4">
           <Link
-            href="/dashboard"
+            href="/roadmaps"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
-            <TbLayoutDashboardFilled className="mr-2" />
-            Dashboard
+            <FiMap className="mr-2" />
+            Roadmaps
           </Link>
           <Link
             href="/learn"
@@ -84,27 +85,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             DevDiscuss
           </Link>
           <Link
-            href="/notifications"
-            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
-          >
-            <MdNotifications className="mr-2" />
-            Notifications
-          </Link>
-          <Link
             href="/quests"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <MdAddBox className="mr-2" />
             Quests
           </Link>
-          <Link
-            href="/help"
-            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
-          >
-            <FaQuestionCircle className="mr-2" />
-            Help
-          </Link>
-        
         </nav>
         <div className="absolute right-2 top-2">
           {!isOpen ? (

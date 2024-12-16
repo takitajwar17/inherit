@@ -19,7 +19,6 @@ const RoomPage = () => {
     // Connect to Socket.IO server
     // Use this in your client components where you initialize Socket.IO
     socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
-      path: "/api/socket",
       query: { roomId, userId },
     });
 

@@ -7,6 +7,7 @@ import Output from "./Output";
 import Review from "./Review";
 import { executeCode } from '@/app/api/Piston/api';
 import { FaPlay } from "react-icons/fa";
+import { generateReview } from '@/lib/actions/codeReview'; 
 
 const CodeEditor = () => {
   const editorRef = useRef();
@@ -16,7 +17,8 @@ const CodeEditor = () => {
   const [output, setOutput] = useState([]);
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [review, setReview] = useState(""); 
+  
   const onMount = (editor) => {
     editorRef.current = editor;
     editor.focus();
@@ -52,6 +54,15 @@ const CodeEditor = () => {
     return sourceCode;
   };
 
+  const handleGetReview = async () => {
+    const code = getCode();
+    console.log("Fetched Code:", code);
+    const reviewText = await generateReview(code);
+    console.log("Review Text:", reviewText);
+    setReview(reviewText);
+    setActiveTab("Review");
+  };
+
   useEffect(() => {
     const resizer = document.querySelector(".cursor-ew-resize");
     const leftPanel = resizer.previousElementSibling;
@@ -81,7 +92,7 @@ const CodeEditor = () => {
   }, []);
 
   return (
-    <div className="flex flex-col bg-white h-screen">
+    <div className="flex flex-col bg-white h-auto">
       <div className="flex justify-between items-center py-2 px-6 bg-gray-100">
         <LanguageSelector language={language} onSelect={onSelect}/>
         <div className="flex">
@@ -89,9 +100,14 @@ const CodeEditor = () => {
           <button onClick={() => setActiveTab("Output")} className={`px-4 py-2 ${activeTab === "Output" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-900"}`}>Output</button>
           <button onClick={() => setActiveTab("Review")} className={`px-4 py-2 ${activeTab === "Review" ? "bg-blue-500 text-white" : "bg-gray-50 text-gray-900"} rounded-r-sm`}>Review</button>
         </div>
-        <button onClick={runCode} className="flex items-center gap-2 bg-blue-500 p-2 rounded-md text-white">
-          {loading ? "Loading..." : "Run"} <FaPlay />
-        </button>
+        <div className="flex items-center space-x-2">
+          <button onClick={runCode} disabled={loading} className="flex items-center gap-2 bg-blue-500 p-1 rounded text-white text-sm">
+            {loading ? "Running..." : <><FaPlay /><>Run Code</></>}
+          </button>
+          <button onClick={handleGetReview} className="flex items-center gap-2 bg-green-500 p-1 rounded text-white text-sm">
+            Get Review
+          </button>
+        </div>
       </div>
       {activeTab === "Editor" ? (
         <Editor
@@ -111,7 +127,7 @@ const CodeEditor = () => {
       ) : activeTab === "Output" ? (
         <Output output={output} isError={isError} />
       ) : (
-        <Review getCode={getCode} />
+        <Review getCode={getCode} review={review} />
       )}
     </div>
   );
