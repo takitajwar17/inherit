@@ -182,7 +182,7 @@ const LearnPage = () => {
               </div>
             </div>
             <button
-              onClick={() => router.push('/roadmap')}
+              onClick={() => router.push('/roadmaps')}
               className="group relative overflow-hidden inline-flex items-center gap-2 px-8 py-4 border-2 border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-700 hover:via-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-shimmer"></div>
