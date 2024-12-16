@@ -3,13 +3,11 @@
 import { useState } from 'react';
 import { FiChevronDown, FiChevronRight, FiAlertTriangle, FiInfo, FiZap } from 'react-icons/fi';
 
-const ReviewSection = ({ title, items, icon: Icon }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-
+const ReviewSection = ({ title, items, icon: Icon, isExpanded, onToggle }) => {
   return (
     <div className="mb-4">
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={onToggle}
         className="flex items-center w-full px-4 py-2 text-sm font-medium text-left bg-gray-800 rounded-lg hover:bg-gray-700"
       >
         <Icon className="w-4 h-4 mr-2" />
@@ -68,7 +66,7 @@ const ReviewSection = ({ title, items, icon: Icon }) => {
 };
 
 const AIReviewPanel = ({ review }) => {
-  console.log('AIReviewPanel: Received review', review);
+  const [expandedSection, setExpandedSection] = useState('issues'); // Default to issues being open
 
   if (!review || typeof review !== 'object') {
     return (
@@ -81,6 +79,10 @@ const AIReviewPanel = ({ review }) => {
   }
 
   const { issues = [], suggestions = [], improvements = [] } = review;
+
+  const handleSectionToggle = (sectionName) => {
+    setExpandedSection(expandedSection === sectionName ? null : sectionName);
+  };
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
@@ -96,16 +98,22 @@ const AIReviewPanel = ({ review }) => {
             title="Issues"
             items={issues}
             icon={FiAlertTriangle}
+            isExpanded={expandedSection === 'issues'}
+            onToggle={() => handleSectionToggle('issues')}
           />
           <ReviewSection
             title="Suggestions"
             items={suggestions}
             icon={FiInfo}
+            isExpanded={expandedSection === 'suggestions'}
+            onToggle={() => handleSectionToggle('suggestions')}
           />
           <ReviewSection
             title="Improvements"
             items={improvements}
             icon={FiZap}
+            isExpanded={expandedSection === 'improvements'}
+            onToggle={() => handleSectionToggle('improvements')}
           />
         </div>
       </div>
