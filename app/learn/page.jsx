@@ -212,38 +212,72 @@ const LearnPage = () => {
       </div>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video) => (
-            <div
-              key={video.id.videoId}
-              className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
-              onClick={() => router.push(`/learn/${video.id.videoId}`)}
-            >
-              <div className="relative" style={{ paddingBottom: '56.25%' }}>
-                <img
-                  src={video.snippet.thumbnails.medium.url}
-                  alt={video.snippet.title}
-                  className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                {video.contentDetails && (
-                  <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded">
-                    {formatDuration(video.contentDetails.duration)}
+          {videos.length === 0 ? (
+            // Loading Skeleton
+            <>
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div
+                  key={item}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full"
+                >
+                  {/* Thumbnail Skeleton */}
+                  <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                    <div className="absolute inset-0 bg-gray-200 animate-pulse">
+                      <div className="absolute bottom-2 right-2 w-12 h-5 bg-gray-300 rounded animate-pulse"></div>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="flex flex-col flex-grow p-5">
-                <h3 className="text-lg font-semibold line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
-                  {video.snippet.title}
-                </h3>
-                <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
-                  <p className="text-sm text-gray-600">{video.snippet.channelTitle}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatDistanceToNow(new Date(video.snippet.publishedAt), { addSuffix: true })}
-                  </p>
+                  
+                  {/* Content Skeleton */}
+                  <div className="flex flex-col flex-grow p-5">
+                    {/* Title Skeleton */}
+                    <div className="space-y-2 mb-2">
+                      <div className="h-5 bg-gray-200 rounded w-full animate-pulse"></div>
+                      <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                    </div>
+                    
+                    {/* Footer Skeleton */}
+                    <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
+                      <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-20 h-3 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            videos.map((video) => (
+              <div
+                key={video.id.videoId}
+                className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
+                onClick={() => router.push(`/learn/${video.id.videoId}`)}
+              >
+                <div className="relative" style={{ paddingBottom: '56.25%' }}>
+                  <img
+                    src={video.snippet.thumbnails.medium.url}
+                    alt={video.snippet.title}
+                    className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  {video.contentDetails && (
+                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded">
+                      {formatDuration(video.contentDetails.duration)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col flex-grow p-5">
+                  <h3 className="text-lg font-semibold line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+                    {video.snippet.title}
+                  </h3>
+                  <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
+                    <p className="text-sm text-gray-600">{video.snippet.channelTitle}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDistanceToNow(new Date(video.snippet.publishedAt), { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </main>
     </div>
