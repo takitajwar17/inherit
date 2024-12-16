@@ -57,6 +57,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       >
         <nav className="flex flex-col w-56 p-4 pr-12 space-y-4">
           <Link
+            href="/dashboard"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <TbLayoutDashboardFilled className="mr-2" />
+            Dashboard
+          </Link>
+          <Link
             href="/roadmaps"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
