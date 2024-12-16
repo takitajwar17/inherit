@@ -125,10 +125,40 @@ export default function RoadmapsPage() {
           </div>
 
           {isLoadingRoadmaps ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#101826]"></div>
-                <p className="text-gray-600">Loading your roadmaps...</p>
+            <div className="max-w-7xl mx-auto">
+              {/* Header Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="bg-white rounded-xl shadow-md overflow-hidden">
+                    {/* Roadmap Header Skeleton */}
+                    <div className="bg-gradient-to-r from-[#101826] to-[#1c2c47] px-6 py-4">
+                      <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    
+                    <div className="p-6">
+                      {/* Description Skeleton */}
+                      <div className="space-y-2 mb-4">
+                        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                      
+                      {/* Steps Skeleton */}
+                      <div className="space-y-3">
+                        {[1, 2, 3].map((step) => (
+                          <div key={step} className="flex items-start space-x-2">
+                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 animate-pulse"></div>
+                            <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* View Button Skeleton */}
+                      <div className="mt-4 flex justify-end">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
