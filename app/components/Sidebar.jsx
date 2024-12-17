@@ -7,6 +7,7 @@ import {
   FaCodepen,
   FaComments,
   FaQuestionCircle,
+  FaTrophy,
 } from "react-icons/fa";
 import { MdAddBox, MdNotifications } from "react-icons/md";
 import { SiGoogleclassroom } from "react-icons/si";
@@ -95,7 +96,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             href="/quests"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
-            <MdAddBox className="mr-2" />
+            <FaTrophy className="mr-2" />
             Quests
           </Link>
         </nav>
