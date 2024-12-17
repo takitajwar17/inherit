@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-import { FiCheck, FiLoader } from "react-icons/fi";
+import { FiCheck, FiLoader, FiAlertCircle } from "react-icons/fi";
 
 export default function ContactPage() {
   const { user } = useUser();
@@ -25,6 +25,7 @@ export default function ContactPage() {
     description: "",
     email: user?.emailAddresses?.[0]?.emailAddress || "",
   });
+  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -38,8 +39,42 @@ export default function ContactPage() {
     "Other"
   ];
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.category) {
+      newErrors.category = "Please select a category";
+    }
+    
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required";
+    } else if (formData.subject.length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
+    
+    if (!formData.description.trim()) {
+      newErrors.description = "Message is required";
+    } else if (formData.description.length < 20) {
+      newErrors.description = "Message must be at least 20 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     // Simulate API call with timeout
@@ -85,13 +120,18 @@ export default function ContactPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-2">Category</label>
+          <label className="block text-sm font-medium mb-2">
+            Category <span className="text-red-500">*</span>
+          </label>
           <Select
             value={formData.category}
-            onValueChange={(value) => setFormData({ ...formData, category: value })}
+            onValueChange={(value) => {
+              setFormData({ ...formData, category: value });
+              setErrors({ ...errors, category: "" });
+            }}
             disabled={isSubmitting}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.category ? "border-red-500" : ""}>
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
@@ -102,42 +142,81 @@ export default function ContactPage() {
               ))}
             </SelectContent>
           </Select>
+          {errors.category && (
+            <p className="mt-1 text-sm text-red-500 flex items-center">
+              <FiAlertCircle className="w-4 h-4 mr-1" />
+              {errors.category}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Subject</label>
+          <label className="block text-sm font-medium mb-2">
+            Subject <span className="text-red-500">*</span>
+          </label>
           <Input
             type="text"
             value={formData.subject}
-            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, subject: e.target.value });
+              setErrors({ ...errors, subject: "" });
+            }}
             placeholder="Brief description of your question"
-            required
+            className={errors.subject ? "border-red-500" : ""}
             disabled={isSubmitting}
           />
+          {errors.subject && (
+            <p className="mt-1 text-sm text-red-500 flex items-center">
+              <FiAlertCircle className="w-4 h-4 mr-1" />
+              {errors.subject}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Email</label>
+          <label className="block text-sm font-medium mb-2">
+            Email <span className="text-red-500">*</span>
+          </label>
           <Input
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, email: e.target.value });
+              setErrors({ ...errors, email: "" });
+            }}
             placeholder="Your email address"
-            required
+            className={errors.email ? "border-red-500" : ""}
             disabled={isSubmitting}
           />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-500 flex items-center">
+              <FiAlertCircle className="w-4 h-4 mr-1" />
+              {errors.email}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Message</label>
+          <label className="block text-sm font-medium mb-2">
+            Message <span className="text-red-500">*</span>
+          </label>
           <Textarea
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, description: e.target.value });
+              setErrors({ ...errors, description: "" });
+            }}
             placeholder="Type your message here..."
             rows={6}
-            required
+            className={errors.description ? "border-red-500" : ""}
             disabled={isSubmitting}
           />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-500 flex items-center">
+              <FiAlertCircle className="w-4 h-4 mr-1" />
+              {errors.description}
+            </p>
+          )}
         </div>
 
         <Button
@@ -158,7 +237,7 @@ export default function ContactPage() {
 
       <div className="mt-8 text-center text-sm text-gray-600">
         <p>We typically respond within 24-48 hours</p>
-        <p>For urgent inquiries, please include "URGENT" in the subject line</p>
+        <p className="mt-1">For urgent inquiries, please include "URGENT" in the subject line</p>
       </div>
     </div>
   );
