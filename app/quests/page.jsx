@@ -50,10 +50,43 @@ export default function QuestsPage() {
     fetchQuests();
   }, []);
 
+  const QuestSkeleton = () => (
+    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 animate-pulse">
+      <div className="flex justify-between items-start">
+        <div className="space-y-3">
+          <div className="h-6 w-48 bg-gray-200 rounded"></div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+        <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
+      </div>
+      
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <div className="h-4 w-20 bg-gray-200 rounded"></div>
+          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 w-20 bg-gray-200 rounded"></div>
+          <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex space-x-4">
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading quests...</div>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Quests</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, index) => (
+            <QuestSkeleton key={index} />
+          ))}
+        </div>
       </div>
     );
   }
