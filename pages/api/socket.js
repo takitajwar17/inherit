@@ -1,61 +1,46 @@
 // pages/api/socket.js
-import { Server } from "socket.io";
+import { pusher } from '../../lib/pusher';
 
-let io;
-
-export default function SocketHandler(req, res) {
-  if (!io) {
-    io = new Server(res.socket.server, {
-      cors: {
-        origin: process.env.NEXT_PUBLIC_FRONTEND_URL,
-        methods: ["GET", "POST"],
-      },
-    });
-
-    const roomCollaborators = {};
-    const roomCode = {};
-
-    io.on("connection", (socket) => {
-      const { roomId, userId } = socket.handshake.query;
-
-      if (!roomCollaborators[roomId]) {
-        roomCollaborators[roomId] = [];
-      }
-
-      roomCollaborators[roomId].push({ userId, socketId: socket.id });
-
-      socket.emit("codeUpdate", roomCode[roomId] || "");
-
-      io.in(roomId).emit("collaboratorsUpdate", roomCollaborators[roomId]);
-
-      socket.join(roomId);
-
-      socket.on("requestInitialCode", () => {
-        socket.emit("codeUpdate", roomCode[roomId] || "");
-      });
-
-      socket.on("codeUpdate", (newCode) => {
-        roomCode[roomId] = newCode;
-        socket.to(roomId).emit("codeUpdate", newCode);
-      });
-
-      socket.on("disconnect", () => {
-        roomCollaborators[roomId] = roomCollaborators[roomId].filter(
-          (collaborator) => collaborator.socketId !== socket.id
-        );
-        if (roomCollaborators[roomId].length === 0) {
-          delete roomCollaborators[roomId];
-          delete roomCode[roomId];
-        } else {
-          io.in(roomId).emit("collaboratorsUpdate", roomCollaborators[roomId]);
-        }
-      });
-    });
-
-    console.log("Socket.IO server initialized");
-  } else {
-    console.log("Socket.IO server already initialized");
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  res.end();
+  const { roomId, userId, event, data } = req.body;
+
+  if (!roomId || !userId || !event) {
+    return res.status(400).json({ 
+      message: 'Missing required fields',
+      required: { roomId, userId, event },
+    });
+  }
+
+  try {
+    console.log('Triggering Pusher event:', {
+      channel: `room-${roomId}`,
+      event,
+      data: { userId, data },
+    });
+
+    await pusher.trigger(
+      `room-${roomId}`,
+      event,
+      { userId, data },
+      { 
+        socket_id: req.body.socket_id 
+      }
+    );
+
+    res.status(200).json({ 
+      message: 'Event sent',
+      channel: `room-${roomId}`,
+      event,
+    });
+  } catch (error) {
+    console.error('Pusher error:', error);
+    res.status(500).json({ 
+      message: 'Error sending event',
+      error: error.message,
+    });
+  }
 }
