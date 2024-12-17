@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Editor } from "@monaco-editor/react";
@@ -36,6 +36,7 @@ const getFileExtension = (lang) => {
 const RoomPage = () => {
   const { roomId } = useParams();
   const { userId } = useAuth();
+  const { user } = useUser();
   const [collaborators, setCollaborators] = useState([]);
   const [code, setCode] = useState(CODE_SNIPPETS['javascript']);
   const [lastUpdateFromServer, setLastUpdateFromServer] = useState(null);
@@ -55,21 +56,61 @@ const RoomPage = () => {
   const [showOutput, setShowOutput] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState({ code: false, link: false });
 
+  const getDisplayName = (user) => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.username) {
+      return user.username;
+    }
+    if (user?.emailAddresses?.[0]?.emailAddress) {
+      return user.emailAddresses[0].emailAddress;
+    }
+    return 'Anonymous';
+  };
+
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !userId) return;
 
     console.log('Subscribing to channel:', `room-${roomId}`);
     const channel = pusherClient.subscribe(`room-${roomId}`);
     
+    // Join room
+    const joinRoom = async () => {
+      try {
+        const response = await fetch('/api/socket', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            roomId,
+            userId,
+            username: getDisplayName(user),
+            event: 'join-room',
+          }),
+        });
+        if (!response.ok) {
+          console.error('Failed to join room:', await response.text());
+        }
+      } catch (error) {
+        console.error('Error joining room:', error);
+      }
+    };
+    
+    joinRoom();
+
     channel.bind('collaboratorsUpdate', (data) => {
       console.log('Received collaborators update:', data);
       if (Array.isArray(data)) {
-        setCollaborators(data);
+        // Sort collaborators by timestamp to ensure consistent order
+        const sortedCollaborators = [...data].sort((a, b) => b.timestamp - a.timestamp);
+        setCollaborators(sortedCollaborators);
       }
     });
 
     channel.bind('codeUpdate', (data) => {
-      console.log('Received code update:', data);
+      console.log('Received code update from:', data.username || data.userId);
       if (data && data.userId !== userId) {
         setLastUpdateFromServer(data.data);
         setCode(data.data);
@@ -90,11 +131,25 @@ const RoomPage = () => {
     });
 
     return () => {
+      // Leave room
+      fetch('/api/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId,
+          userId,
+          username: getDisplayName(user),
+          event: 'leave-room',
+        }),
+      }).catch(error => console.error('Error leaving room:', error));
+
       console.log('Unsubscribing from channel:', `room-${roomId}`);
       channel.unbind_all();
       pusherClient.unsubscribe(`room-${roomId}`);
     };
-  }, [roomId, userId]);
+  }, [roomId, userId, user]);
 
   useEffect(() => {
     if (output.length > 0) {
@@ -133,32 +188,22 @@ const RoomPage = () => {
     });
   };
 
-  const handleEditorChange = async (value) => {
-    if (!roomId || !userId || value === lastUpdateFromServer) return;
-
-    setCode(value);
-    setHasChanges(true);
+  const handleEditorChange = (value) => {
+    if (value === lastUpdateFromServer) return;
     
-    try {
-      const response = await fetch('/api/socket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          roomId,
-          userId,
-          event: 'codeUpdate',
-          data: value,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to send code update:', await response.text());
-      }
-    } catch (error) {
-      console.error('Error sending code update:', error);
-    }
+    fetch('/api/socket', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        roomId,
+        userId,
+        username: getDisplayName(user),
+        event: 'codeUpdate',
+        data: value,
+      }),
+    });
   };
 
   const handleLanguageChange = (newLanguage) => {
@@ -222,6 +267,7 @@ const RoomPage = () => {
       body: JSON.stringify({
         roomId,
         userId,
+        username: getDisplayName(user),
         event: 'codeUpdate',
         data: newCode,
       }),
@@ -258,133 +304,132 @@ const RoomPage = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-gray-100 overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header with room info and collaborators */}
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white border-b border-gray-700">
-          <div className="flex justify-between items-center px-6 py-3">
-            <div className="flex items-center space-x-3">
-              <span className="text-gray-400 text-sm font-medium">Room</span>
-              <span className="font-mono text-lg font-semibold tracking-wide">{roomId}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleCopyRoomCode}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2
-                  ${showCopySuccess.code 
-                    ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' 
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
-              >
-                {showCopySuccess.code ? (
-                  <>
-                    <span>Copied!</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </>
-                ) : (
-                  <>
-                    <span>Copy Code</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleCopyShareLink}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2
-                  ${showCopySuccess.link 
-                    ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' 
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
-              >
-                {showCopySuccess.link ? (
-                  <>
-                    <span>Copied!</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </>
-                ) : (
-                  <>
-                    <span>Share Link</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex items-center justify-between p-4 border-b bg-white">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-semibold">Room: {roomId}</h1>
+          <div className="flex items-center space-x-2">
             <CollaboratorAvatars collaborators={collaborators} />
+            <span className="text-sm text-gray-500">
+              {collaborators.length} {collaborators.length === 1 ? 'user' : 'users'} active
+            </span>
           </div>
         </div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={handleCopyRoomCode}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2
+              ${showCopySuccess.code 
+                ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+          >
+            {showCopySuccess.code ? (
+              <>
+                <span>Copied!</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </>
+            ) : (
+              <>
+                <span>Copy Code</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+              </>
+            )}
+          </button>
+          <button
+            onClick={handleCopyShareLink}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-2
+              ${showCopySuccess.link 
+                ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+          >
+            {showCopySuccess.link ? (
+              <>
+                <span>Copied!</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </>
+            ) : (
+              <>
+                <span>Share Link</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
 
-        {/* Main editor area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <EditorHeader
-            fileName={fileName}
-            language={language}
-            languages={SUPPORTED_LANGUAGES}
-            onLanguageChange={handleLanguageChange}
-            onFileNameChange={setFileName}
-            onCopy={handleCopy}
-            onClear={handleClear}
-            onRun={handleRunCode}
-            isRunning={isRunning}
-            code={code}
-            onCodeChange={handleEditorChange}
-          />
-          
-          <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-hidden">
-              <Editor
-                height="100%"
-                language={language}
-                value={code}
-                theme="vs-dark"
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: "on",
-                  automaticLayout: true,
-                  scrollBeyondLastLine: false,
-                  scrollbar: {
-                    vertical: 'visible',
-                    verticalScrollbarSize: 10,
-                  },
-                  overviewRulerBorder: false,
-                  hideCursorInOverviewRuler: true,
-                  overviewRulerLanes: 0,
-                  padding: { top: 10, bottom: 10 },
-                }}
-                onMount={handleEditorDidMount}
+      {/* Main editor area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <EditorHeader
+          fileName={fileName}
+          language={language}
+          languages={SUPPORTED_LANGUAGES}
+          onLanguageChange={handleLanguageChange}
+          onFileNameChange={setFileName}
+          onCopy={handleCopy}
+          onClear={handleClear}
+          onRun={handleRunCode}
+          isRunning={isRunning}
+          code={code}
+          onCodeChange={handleEditorChange}
+        />
+        
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 overflow-hidden">
+            <Editor
+              height="100%"
+              language={language}
+              value={code}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: "on",
+                automaticLayout: true,
+                scrollBeyondLastLine: false,
+                scrollbar: {
+                  vertical: 'visible',
+                  verticalScrollbarSize: 10,
+                },
+                overviewRulerBorder: false,
+                hideCursorInOverviewRuler: true,
+                overviewRulerLanes: 0,
+                padding: { top: 10, bottom: 10 },
+              }}
+              onMount={handleEditorDidMount}
+            />
+          </div>
+          {showOutput && (
+            <div className="w-1/3 overflow-hidden bg-gray-900 border-l border-gray-700">
+              <OutputPanel
+                output={output}
+                isError={isError}
+                executionTime={executionTime}
+                executionTimestamp={executionTimestamp}
+                onClose={handleCloseOutput}
+                onClear={handleClearOutput}
               />
             </div>
-            {showOutput && (
-              <div className="w-1/3 overflow-hidden bg-gray-900 border-l border-gray-700">
-                <OutputPanel
-                  output={output}
-                  isError={isError}
-                  executionTime={executionTime}
-                  executionTimestamp={executionTimestamp}
-                  onClose={handleCloseOutput}
-                  onClear={handleClearOutput}
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
-        <EditorFooter
-          language={language}
-          position={cursorPosition}
-          wordCount={wordCount}
-          onRun={handleRunCode}
-          loading={loading}
-          hasChanges={hasChanges}
-        />
       </div>
+      <EditorFooter
+        language={language}
+        position={cursorPosition}
+        wordCount={wordCount}
+        onRun={handleRunCode}
+        loading={loading}
+        hasChanges={hasChanges}
+      />
     </div>
   );
 };
