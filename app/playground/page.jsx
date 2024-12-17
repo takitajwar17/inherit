@@ -1,14 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Card } from "@/components/ui/card";
 import { FaCode, FaUsers } from "react-icons/fa";
+import { pusherClient } from '../../lib/pusher-client';
 
 const Playground = () => {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
+  const [code, setCode] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(uuidv4());
+  const [roomId, setRoomId] = useState("");
 
   const generateRoomCode = () => {
     return uuidv4().slice(0, 7).toUpperCase();
@@ -17,14 +21,48 @@ const Playground = () => {
   const handleCreateRoom = () => {
     const newRoomCode = generateRoomCode();
     router.push(`/playground/${newRoomCode}`);
+    setRoomId(newRoomCode);
   };
 
   const handleJoinRoom = () => {
     if (roomCode.trim().length === 7) {
       router.push(`/playground/${roomCode}`);
+      setRoomId(roomCode);
     } else {
       alert("Please enter a valid 7-character room code.");
     }
+  };
+
+  useEffect(() => {
+    if (roomId) {
+      const channel = pusherClient.subscribe(`room-${roomId}`);
+      
+      channel.bind('codeUpdate', ({ userId, data }) => {
+        if (userId !== currentUserId) {
+          setCode(data);
+        }
+      });
+
+      return () => {
+        channel.unbind_all();
+        channel.unsubscribe();
+      };
+    }
+  }, [roomId]);
+
+  const sendCodeUpdate = async (newCode) => {
+    await fetch('/api/socket', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        roomId,
+        userId: currentUserId,
+        event: 'codeUpdate',
+        data: newCode,
+      }),
+    });
   };
 
   return (

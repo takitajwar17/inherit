@@ -3,7 +3,6 @@
 import { useAuth } from "@clerk/nextjs";
 import { useParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import { Editor } from "@monaco-editor/react";
 import { executeCode } from "@/app/api/Piston/api";
 import { CODE_SNIPPETS } from "@/app/constants";
@@ -11,6 +10,7 @@ import EditorHeader from "@/components/playground/editor/EditorHeader";
 import EditorFooter from "@/components/learn/editor/EditorFooter";
 import OutputPanel from "@/components/learn/editor/OutputPanel";
 import CollaboratorAvatars from "../../../components/playground/CollaboratorAvatars";
+import { pusherClient } from '../../../lib/pusher-client';
 
 const SUPPORTED_LANGUAGES = [
   { id: 'javascript', name: 'JavaScript' },
@@ -38,7 +38,7 @@ const RoomPage = () => {
   const { userId } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [code, setCode] = useState(CODE_SNIPPETS['javascript']);
-  const socket = useRef(null);
+  const [lastUpdateFromServer, setLastUpdateFromServer] = useState(null);
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const [language, setLanguage] = useState("javascript");
@@ -56,23 +56,43 @@ const RoomPage = () => {
   const [showCopySuccess, setShowCopySuccess] = useState({ code: false, link: false });
 
   useEffect(() => {
-    // Connect to Socket.IO server
-    socket.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL, {
-      query: { roomId, userId },
+    if (!roomId) return;
+
+    console.log('Subscribing to channel:', `room-${roomId}`);
+    const channel = pusherClient.subscribe(`room-${roomId}`);
+    
+    channel.bind('collaboratorsUpdate', (data) => {
+      console.log('Received collaborators update:', data);
+      if (Array.isArray(data)) {
+        setCollaborators(data);
+      }
     });
 
-    // Listen for collaborators
-    socket.current.on("collaboratorsUpdate", (updatedCollaborators) => {
-      setCollaborators(updatedCollaborators);
+    channel.bind('codeUpdate', (data) => {
+      console.log('Received code update:', data);
+      if (data && data.userId !== userId) {
+        setLastUpdateFromServer(data.data);
+        setCode(data.data);
+      }
     });
 
-    // Receive initial code state or updates
-    socket.current.on("codeUpdate", (newCode) => {
-      setCode(newCode);
+    // Debug Pusher connection
+    pusherClient.connection.bind('state_change', (states) => {
+      console.log('Pusher state changed:', states);
+    });
+
+    pusherClient.connection.bind('connected', () => {
+      console.log('Pusher client connected successfully');
+    });
+
+    pusherClient.connection.bind('error', (err) => {
+      console.error('Pusher connection error:', err);
     });
 
     return () => {
-      socket.current.disconnect();
+      console.log('Unsubscribing from channel:', `room-${roomId}`);
+      channel.unbind_all();
+      pusherClient.unsubscribe(`room-${roomId}`);
     };
   }, [roomId, userId]);
 
@@ -95,11 +115,17 @@ const RoomPage = () => {
       });
     });
 
+    let timeout;
     editor.onDidChangeModelContent(() => {
       const content = editor.getValue();
       setWordCount(content.trim().split(/\s+/).length);
       setHasChanges(true);
-      handleCodeChange(content);
+      
+      // Debounce the update
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        handleEditorChange(content);
+      }, 500);
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -107,9 +133,32 @@ const RoomPage = () => {
     });
   };
 
-  const handleCodeChange = (newCode) => {
-    setCode(newCode);
-    socket.current.emit("codeUpdate", newCode);
+  const handleEditorChange = async (value) => {
+    if (!roomId || !userId || value === lastUpdateFromServer) return;
+
+    setCode(value);
+    setHasChanges(true);
+    
+    try {
+      const response = await fetch('/api/socket', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId,
+          userId,
+          event: 'codeUpdate',
+          data: value,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to send code update:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error sending code update:', error);
+    }
   };
 
   const handleLanguageChange = (newLanguage) => {
@@ -122,7 +171,6 @@ const RoomPage = () => {
     setLanguage(newLanguage);
     const newCode = CODE_SNIPPETS[newLanguage] || "";
     setCode(newCode);
-    socket.current.emit("codeUpdate", newCode);
     setFileName(`main.${getFileExtension(newLanguage)}`);
   };
 
@@ -166,7 +214,18 @@ const RoomPage = () => {
   const handleClear = () => {
     const newCode = "";
     setCode(newCode);
-    socket.current.emit("codeUpdate", newCode);
+    fetch('/api/socket', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        roomId,
+        userId,
+        event: 'codeUpdate',
+        data: newCode,
+      }),
+    });
   };
 
   const handleCopyRoomCode = async () => {
@@ -275,7 +334,7 @@ const RoomPage = () => {
             onRun={handleRunCode}
             isRunning={isRunning}
             code={code}
-            onCodeChange={handleCodeChange}
+            onCodeChange={handleEditorChange}
           />
           
           <div className="flex-1 flex overflow-hidden">
