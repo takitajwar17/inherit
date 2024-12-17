@@ -32,10 +32,10 @@ const EditorFooter = ({ language, position, wordCount, lastSaved }) => {
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-1 bg-gray-900 text-gray-400 text-sm border-t border-gray-700">
+    <div className="flex items-center justify-between px-4 h-6 bg-gray-900 text-gray-400 text-xs border-t border-gray-700">
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
-          <FiGitBranch className="text-gray-500" />
+          <FiGitBranch className="w-3 h-3 text-gray-500" />
           <span>main</span>
         </div>
         <div>
@@ -46,7 +46,7 @@ const EditorFooter = ({ language, position, wordCount, lastSaved }) => {
       </div>
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
-          <FiClock className="text-gray-500" />
+          <FiClock className="w-3 h-3 text-gray-500" />
           <span>Last saved: {formatLastSaved(lastSaved)}</span>
         </div>
         <div>{formatTime(time)}</div>
