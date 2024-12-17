@@ -16,7 +16,7 @@ import {
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarLeftExpandFilled,
 } from "react-icons/tb";
-import { FiMap } from "react-icons/fi";
+import { FiMap, FiHelpCircle } from "react-icons/fi";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
@@ -98,6 +98,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           >
             <FaTrophy className="mr-2" />
             Quests
+          </Link>
+          <div className="border-t border-gray-200 my-2"></div>
+          <Link
+            href="/faq"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <FiHelpCircle className="mr-2" />
+            Help & FAQ
           </Link>
         </nav>
         <div className="absolute right-2 top-2">
