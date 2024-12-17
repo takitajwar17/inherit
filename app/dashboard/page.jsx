@@ -48,22 +48,24 @@ export default function Dashboard() {
         learningStreak: calculateStreak(questsData?.history),
       });
 
-      // Format roadmap activities
-      const roadmapActivities = userRoadmaps?.slice(0, 3).map(roadmap => ({
+      // Format roadmap activities - limit to 2 roadmaps
+      const roadmapActivities = userRoadmaps?.slice(0, 2).map(roadmap => ({
         title: roadmap.title,
         type: 'Roadmap',
         date: roadmap.createdAt || roadmap.updatedAt || null
       })) || [];
 
-      // Combine and sort activities
+      // Combine and sort activities, then limit to 3 most recent
       const allActivities = [
         ...(questsData?.recent || []),
         ...roadmapActivities
-      ].sort((a, b) => {
+      ]
+      .sort((a, b) => {
         if (!a.date) return 1;
         if (!b.date) return -1;
         return new Date(b.date) - new Date(a.date);
-      });
+      })
+      .slice(0, 3);
 
       setRecentActivity(allActivities);
     } catch (error) {
@@ -75,8 +77,22 @@ export default function Dashboard() {
 
   const calculateRoadmapProgress = (roadmaps) => {
     if (!roadmaps?.length) return 0;
-    const completed = roadmaps.filter(r => r.status === 'completed').length;
-    return Math.round((completed / roadmaps.length) * 100);
+    
+    let totalProgress = 0;
+    let validRoadmaps = 0;
+    
+    roadmaps.forEach(roadmap => {
+      // Get progress from localStorage using _id
+      const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
+      if (saved && roadmap.content?.steps?.length) {
+        const completedSteps = new Set(JSON.parse(saved));
+        const progress = Math.round((completedSteps.size / roadmap.content.steps.length) * 100);
+        totalProgress += progress;
+        validRoadmaps++;
+      }
+    });
+    
+    return validRoadmaps > 0 ? Math.round(totalProgress / validRoadmaps) : 0;
   };
 
   const calculateStreak = (history) => {
@@ -259,26 +275,47 @@ export default function Dashboard() {
               <FaRoad className="text-gray-400" />
             </div>
             <div className="space-y-4">
-              {roadmaps.slice(0, 5).map((roadmap, index) => (
-                <div
-                  key={index}
-                  className="p-4 hover:bg-gray-50 rounded-lg transition-colors duration-200 cursor-pointer border border-gray-100"
-                  onClick={() => router.push(`/roadmaps/${roadmap._id}`)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{roadmap.title}</h4>
-                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
-                      {roadmap.progress || 0}%
-                    </span>
+              {roadmaps.slice(0, 2).map((roadmap, index) => {
+                // Get progress from localStorage using _id
+                const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
+                const completedSteps = saved ? new Set(JSON.parse(saved)) : new Set();
+                const progress = roadmap.content?.steps ? 
+                  Math.round((completedSteps.size / roadmap.content.steps.length) * 100) : 0;
+
+                return (
+                  <div
+                    key={roadmap._id}
+                    className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/roadmaps/${roadmap._id}`)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{roadmap.title}</h3>
+                        <p className="text-sm text-gray-500">{roadmap.description}</p>
+                      </div>
+                      <div className="w-16 h-16">
+                        <CircularProgressbar
+                          value={progress}
+                          text={`${progress}%`}
+                          styles={{
+                            path: {
+                              stroke: `rgba(62, 152, 199, ${progress / 100})`,
+                            },
+                            text: {
+                              fill: '#3e98c7',
+                              fontSize: '24px',
+                            },
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex justify-between text-sm text-gray-500">
+                      <span>{completedSteps.size} / {roadmap.content.steps?.length || 0} steps completed</span>
+                      <span>{progress}% complete</span>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${roadmap.progress || 0}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
