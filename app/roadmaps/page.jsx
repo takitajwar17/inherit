@@ -37,6 +37,15 @@ export default function RoadmapsPage() {
     }
   }, [user]);
 
+  const getProgress = (roadmap) => {
+    const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
+    if (saved && roadmap.content?.steps?.length) {
+      const completedSteps = new Set(JSON.parse(saved));
+      return Math.round((completedSteps.size / roadmap.content.steps.length) * 100);
+    }
+    return 0;
+  };
+
   const fetchUserRoadmaps = async () => {
     setIsLoadingRoadmaps(true);
     try {
@@ -176,47 +185,102 @@ export default function RoadmapsPage() {
             </>
           ) : (
             <>
-              {roadmaps.map((roadmap) => (
-                <div
-                  key={roadmap._id}
-                  onClick={() => router.push(`/roadmaps/${roadmap._id}`)}
-                  className="group bg-white rounded-xl shadow-sm hover:shadow-lg overflow-hidden cursor-pointer transform hover:scale-[1.02] transition-all duration-200"
-                >
-                  <div className="bg-gradient-to-r from-[#101826] to-[#1c2c47] p-6">
-                    <h2 className="text-xl font-bold text-white">{roadmap.title}</h2>
-                  </div>
-                  
-                  <div className="p-6">
-                    <p className="text-gray-600 mb-6 line-clamp-2">{roadmap.prompt}</p>
-                    
-                    <div className="space-y-3">
-                      {roadmap.content.steps.slice(0, 3).map((step) => (
-                        <div key={step.step} className="flex items-start space-x-3">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
-                            {step.step}
-                          </span>
-                          <p className="text-gray-700 line-clamp-1 group-hover:text-blue-600 transition-colors">{step.topic}</p>
-                        </div>
-                      ))}
-                      {roadmap.content.steps.length > 3 && (
-                        <p className="text-sm text-gray-500 pl-9">
-                          +{roadmap.content.steps.length - 3} more steps
-                        </p>
-                      )}
+              {roadmaps.map((roadmap) => {
+                const progress = getProgress(roadmap);
+                return (
+                  <div
+                    key={roadmap._id}
+                    onClick={() => router.push(`/roadmaps/${roadmap._id}`)}
+                    className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
+                  >
+                    <div className="bg-gradient-to-r from-[#101826] to-[#1c2c47] p-6">
+                      <h2 className="text-xl font-bold text-white">{roadmap.title}</h2>
                     </div>
-                    
-                    <div className="mt-6 flex justify-end">
-                      <div className="inline-flex items-center text-blue-600 font-medium group-hover:translate-x-1 transition-transform duration-200">
-                        View Roadmap
-                        <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                    <div className="p-6">
+                      <p className="text-gray-600 mb-6 line-clamp-2">{roadmap.prompt}</p>
+                      <div className="space-y-3">
+                        {roadmap.content.steps.slice(0, 3).map((step) => (
+                          <div key={step.step} className="flex items-start space-x-3">
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+                              {step.step}
+                            </span>
+                            <p className="text-gray-700 line-clamp-1 group-hover:text-blue-600 transition-colors">{step.topic}</p>
+                          </div>
+                        ))}
+                        {roadmap.content.steps.length > 3 && (
+                          <p className="text-sm text-gray-500 pl-9">
+                            +{roadmap.content.steps.length - 3} more steps
+                          </p>
+                        )}
                       </div>
+                      <div className="mt-6 flex justify-end">
+                        <div className="inline-flex items-center text-blue-600 font-medium group-hover:translate-x-1 transition-transform duration-200">
+                          View Roadmap
+                          <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-medium text-gray-500">Progress</span>
+                          <span className="text-xs font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">{progress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden relative">
+                          {/* Animated background */}
+                          <div 
+                            className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 animate-gradient"
+                            style={{
+                              width: '200%',
+                              transform: 'translateX(-50%)',
+                            }}
+                          />
+                          {/* Actual progress bar */}
+                          <div 
+                            className="relative h-full transition-all duration-300 ease-out"
+                            style={{ 
+                              width: `${progress}%`,
+                              background: 'rgba(255, 255, 255, 0.2)',
+                              boxShadow: 'inset 0 0 10px rgba(255, 255, 255, 0.5)',
+                            }}
+                          >
+                            {/* Shine effect */}
+                            <div 
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                              style={{
+                                transform: 'skewX(-45deg) translateX(-100%)',
+                                animation: 'shine 2s infinite',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <style jsx>{`
+                        @keyframes shine {
+                          0% {
+                            transform: skewX(-45deg) translateX(-200%);
+                          }
+                          100% {
+                            transform: skewX(-45deg) translateX(300%);
+                          }
+                        }
+                        @keyframes gradient {
+                          0% {
+                            transform: translateX(-50%);
+                          }
+                          100% {
+                            transform: translateX(0%);
+                          }
+                        }
+                        .animate-gradient {
+                          animation: gradient 3s linear infinite;
+                          background-size: 200% 100%;
+                        }
+                      `}</style>
                     </div>
                   </div>
-                </div>
-              ))}
-              
+                );
+              })}
               {roadmaps.length === 0 && !isLoadingRoadmaps && (
                 <div className="col-span-full">
                   <div className="text-center py-12 bg-white rounded-xl shadow-sm">
