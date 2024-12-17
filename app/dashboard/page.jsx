@@ -96,7 +96,54 @@ export default function Dashboard() {
   };
 
   const calculateStreak = (history) => {
-    return history?.length || 0;
+    // If user is logged in, they should have at least 1 day streak
+    if (!history?.length) return 1;
+    
+    // Sort history by date in descending order (most recent first)
+    const sortedDates = history
+      .map(entry => new Date(entry.date))
+      .sort((a, b) => b - a);
+
+    // Get today's date at midnight for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // If this is the first login today, count it as 1
+    const lastActivity = sortedDates[0] ? new Date(sortedDates[0]) : today;
+    lastActivity.setHours(0, 0, 0, 0);
+    
+    // Always count today's login
+    if (lastActivity.getTime() === today.getTime()) {
+      return Math.max(1, sortedDates.length);
+    }
+    
+    const timeDiff = today - lastActivity;
+    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    
+    // If last activity was more than a day ago, but user is logged in today
+    if (daysDiff > 1) return 1;
+    
+    let streak = 1; // Start with 1 for today
+    let currentDate = lastActivity;
+    
+    // Count consecutive days
+    for (let i = 1; i < sortedDates.length; i++) {
+      const nextDate = new Date(sortedDates[i]);
+      nextDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = currentDate - nextDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        streak++;
+        currentDate = nextDate;
+      } else {
+        break;
+      }
+    }
+    
+    // If logged in today, ensure minimum streak is 1
+    return Math.max(1, streak);
   };
 
   if (isLoading) {
@@ -226,7 +273,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Learning Streak</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.learningStreak} days</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                  {stats.learningStreak} {stats.learningStreak === 1 ? 'day' : 'days'}
+                </h3>
                 <p className="text-xs text-gray-400 mt-1">Keep it up!</p>
               </div>
               <div className="bg-purple-500/10 p-3 rounded-full">
