@@ -1,7 +1,4 @@
 const nextConfig = {
-  experimental: {
-    serverActions: true,
-  },
   async rewrites() {
     return [
       {
