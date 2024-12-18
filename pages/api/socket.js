@@ -1,61 +1,96 @@
 // pages/api/socket.js
-import { Server } from "socket.io";
+import { pusher } from '../../lib/pusher';
 
-let io;
+// Store collaborators for each room
+const roomCollaborators = new Map();
 
-export default function SocketHandler(req, res) {
-  if (!io) {
-    io = new Server(res.socket.server, {
-      cors: {
-        origin: process.env.NEXT_PUBLIC_FRONTEND_URL,
-        methods: ["GET", "POST"],
-      },
-    });
-
-    const roomCollaborators = {};
-    const roomCode = {};
-
-    io.on("connection", (socket) => {
-      const { roomId, userId } = socket.handshake.query;
-
-      if (!roomCollaborators[roomId]) {
-        roomCollaborators[roomId] = [];
-      }
-
-      roomCollaborators[roomId].push({ userId, socketId: socket.id });
-
-      socket.emit("codeUpdate", roomCode[roomId] || "");
-
-      io.in(roomId).emit("collaboratorsUpdate", roomCollaborators[roomId]);
-
-      socket.join(roomId);
-
-      socket.on("requestInitialCode", () => {
-        socket.emit("codeUpdate", roomCode[roomId] || "");
-      });
-
-      socket.on("codeUpdate", (newCode) => {
-        roomCode[roomId] = newCode;
-        socket.to(roomId).emit("codeUpdate", newCode);
-      });
-
-      socket.on("disconnect", () => {
-        roomCollaborators[roomId] = roomCollaborators[roomId].filter(
-          (collaborator) => collaborator.socketId !== socket.id
-        );
-        if (roomCollaborators[roomId].length === 0) {
-          delete roomCollaborators[roomId];
-          delete roomCode[roomId];
-        } else {
-          io.in(roomId).emit("collaboratorsUpdate", roomCollaborators[roomId]);
-        }
-      });
-    });
-
-    console.log("Socket.IO server initialized");
-  } else {
-    console.log("Socket.IO server already initialized");
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  res.end();
+  const { roomId, userId, username, event, data } = req.body;
+
+  if (!roomId || !userId || !event) {
+    return res.status(400).json({ 
+      message: 'Missing required fields',
+      required: { roomId, userId, event },
+    });
+  }
+
+  try {
+    // Handle collaborator joining/leaving
+    if (event === 'join-room') {
+      if (!roomCollaborators.has(roomId)) {
+        roomCollaborators.set(roomId, new Map());
+      }
+      roomCollaborators.get(roomId).set(userId, {
+        username: username || 'Anonymous',
+        timestamp: Date.now()
+      });
+      
+      const collaborators = Array.from(roomCollaborators.get(roomId).entries()).map(([id, data]) => ({ 
+        userId: id,
+        username: data.username,
+        timestamp: data.timestamp
+      }));
+      
+      console.log(`User ${username || userId} joined room ${roomId}. Current collaborators:`, collaborators);
+      
+      await pusher.trigger(
+        `room-${roomId}`,
+        'collaboratorsUpdate',
+        collaborators
+      );
+    } 
+    else if (event === 'leave-room') {
+      if (roomCollaborators.has(roomId)) {
+        roomCollaborators.get(roomId).delete(userId);
+        
+        const collaborators = Array.from(roomCollaborators.get(roomId).entries()).map(([id, data]) => ({ 
+          userId: id,
+          username: data.username,
+          timestamp: data.timestamp
+        }));
+        
+        console.log(`User ${username || userId} left room ${roomId}. Current collaborators:`, collaborators);
+        
+        if (roomCollaborators.get(roomId).size === 0) {
+          roomCollaborators.delete(roomId);
+        } else {
+          await pusher.trigger(
+            `room-${roomId}`,
+            'collaboratorsUpdate',
+            collaborators
+          );
+        }
+      }
+    }
+    // Handle code updates
+    else if (event === 'codeUpdate') {
+      console.log('Triggering code update:', {
+        channel: `room-${roomId}`,
+        user: username || userId,
+        contentLength: data?.length || 0
+      });
+
+      await pusher.trigger(
+        `room-${roomId}`,
+        event,
+        { userId, username, data }
+      );
+    }
+
+    res.status(200).json({ 
+      message: 'Event sent',
+      channel: `room-${roomId}`,
+      event,
+    });
+  } catch (error) {
+    console.error('Pusher error:', error);
+    res.status(500).json({ 
+      message: 'Error sending event',
+      error: error.message,
+    });
+  }
 }

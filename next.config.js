@@ -2,8 +2,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/webhooks/socket",
-        destination: "/api/webhooks/socket",
+        source: "/socket.io/:path*",
+        destination: "/api/socket",
       },
       // Add other rewrite rules as needed
     ];

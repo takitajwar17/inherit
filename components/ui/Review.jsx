@@ -1,22 +1,12 @@
-import React, { useState } from 'react';
-import { generateReview } from "@/lib/actions/codeReview";
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-const Review = ({ getCode }) => {
-  const [review, setReview] = useState("");
-
-  const handleGetReview = async () => {
-    const code = getCode();
-    console.log(code);
-    const reviewText = await generateReview(code);
-    console.log(reviewText);
-    setReview(reviewText);
-  };
-
+const Review = ({ review }) => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold">Review</h2>
-      <button onClick={handleGetReview} className="btn">Get Review</button>
-      <p>{review}</p>
+      <ReactMarkdown children={review || "No review available."} remarkPlugins={[remarkGfm]} />
     </div>
   );
 };

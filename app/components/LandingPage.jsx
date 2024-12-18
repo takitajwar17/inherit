@@ -7,9 +7,11 @@ import {
   Code2,
   Globe2,
   GraduationCap,
+  Map,
   MessageSquare,
   Scale,
   Terminal,
+  Trophy,
   Users,
   Youtube,
 } from "lucide-react";
@@ -251,14 +253,9 @@ const LandingPage = () => {
                 description="Curated video tutorials and interactive coding exercises to help you master programming concepts."
               />
               <FeatureCard
-                icon={<Code2 />}
-                title="Playground"
-                description="Real-time collaborative IDE for pair programming and mentoring sessions."
-              />
-              <FeatureCard
-                icon={<MessageSquare />}
-                title="DevDiscuss"
-                description="Community-driven Q&A platform for peer learning and knowledge sharing."
+                icon={<Map />}
+                title="Learning Roadmaps"
+                description="Structured learning paths to guide your journey from beginner to professional developer."
               />
               <FeatureCard
                 icon={<Bot />}
@@ -267,13 +264,18 @@ const LandingPage = () => {
               />
               <FeatureCard
                 icon={<Users />}
-                title="Collaborative Learning"
-                description="Learn together with peers and mentors in a supportive environment."
+                title="Guided Learning"
+                description="Learn with expert guidance and mentorship in a supportive environment."
               />
               <FeatureCard
                 icon={<Globe2 />}
                 title="Accessible Education"
                 description="Breaking barriers to provide quality education for all, anywhere."
+              />
+              <FeatureCard
+                icon={<Trophy />}
+                title="Quests"
+                description="Engage in interactive coding challenges and earn rewards while building real-world projects."
               />
             </div>
           </div>
@@ -355,14 +357,6 @@ const LandingPage = () => {
                 </h3>
                 <ul className="space-y-3">
                   <li>
-                    <Link
-                      href="/devdiscuss"
-                      className="hover:text-white text-lg"
-                    >
-                      DevDiscuss
-                    </Link>
-                  </li>
-                  <li>
                     <Link href="/blog" className="hover:text-white text-lg">
                       Blog
                     </Link>
@@ -422,7 +416,7 @@ const LandingPage = () => {
             </div>
             <div className="border-t border-gray-800 mt-16 pt-8 text-center">
               <p className="text-lg">
-                © {new Date().getFullYear()} Inherit. All rights reserved.
+                &copy; {new Date().getFullYear()} Inherit. All rights reserved.
               </p>
             </div>
           </div>
