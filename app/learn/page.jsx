@@ -17,7 +17,11 @@ const LearnPage = () => {
   const router = useRouter();
 
   const formatDuration = (duration) => {
+    console.log('Duration input:', duration); // Debug log
+    if (!duration) return '0:00'; // Handle null or undefined duration
+    
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    if (!match) return '0:00'; // Handle invalid format
     
     const hours = (match[1] || '').replace('H', '');
     const minutes = (match[2] || '').replace('M', '');
