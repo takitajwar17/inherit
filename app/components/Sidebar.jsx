@@ -65,19 +65,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             Dashboard
           </Link>
           <Link
-            href="/roadmaps"
-            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
-          >
-            <FiMap className="mr-2" />
-            Roadmaps
-          </Link>
-          <Link
             href="/learn"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
           >
             <SiGoogleclassroom className="mr-2" />
             Learn
           </Link>
+          <Link
+            href="/roadmaps"
+            className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
+          >
+            <FiMap className="mr-2" />
+            Roadmaps
+          </Link>
+
           <Link
             href="/playground"
             className="flex items-center text-gray-900 hover:text-indigo-600 text-lg p-2"
