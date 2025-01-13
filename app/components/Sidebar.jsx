@@ -53,20 +53,20 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     <div className="flex flex-row">
       <div
         className={`fixed top-20 left-0 h-full bg-sky-50 z-50 shadow-2xl transition-all duration-300 ${
-          isOpen ? "w-56" : "w-16"
+          isOpen ? "w-56" : "w-14"
         }`}
       >
-        <nav className={`flex flex-col p-4 ${isOpen ? "pr-12" : "pr-4"} space-y-2 ${!isOpen && "pt-14"}`}>
+        <nav className={`flex flex-col ${isOpen ? "p-4 pr-12" : "px-2 pt-14"} space-y-2`}>
           {/* Main Navigation */}
           <div className={`space-y-2 ${isOpen ? "pb-4 border-b border-gray-200" : ""}`}>
             <Link
               href="/dashboard"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Dashboard"
             >
-              <TbLayoutDashboardFilled className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <TbLayoutDashboardFilled className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -84,12 +84,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
             <Link
               href="/learn"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Learn"
             >
-              <SiGoogleclassroom className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <SiGoogleclassroom className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -103,12 +103,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             </Link>
             <Link
               href="/roadmaps"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Roadmaps"
             >
-              <FiMap className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <FiMap className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -126,12 +126,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
             <Link
               href="/playground"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Playground"
             >
-              <FaCodepen className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <FaCodepen className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -145,12 +145,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             </Link>
             <Link
               href="/dev-discuss"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="DevDiscuss"
             >
-              <FaComments className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <FaComments className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -168,12 +168,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
             <Link
               href="/quests"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Quests"
             >
-              <FaTrophy className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <FaTrophy className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -191,12 +191,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           <div className={`space-y-2 ${isOpen ? "pt-4" : ""}`}>
             <Link
               href="/faq"
-              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg text-lg p-2 relative group ${
-                !isOpen && "justify-center"
-              } transition-all duration-300`}
+              className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
+                !isOpen ? "p-1.5 justify-center" : "p-2"
+              } transition-all duration-300 relative group`}
               title="Help & FAQ"
             >
-              <FiHelpCircle className={`transition-all duration-300 ${isOpen ? "mr-2 text-2xl" : "text-[32px]"}`} />
+              <FiHelpCircle className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium whitespace-nowrap">
@@ -215,16 +215,16 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           {!isOpen ? (
             <button
               onClick={toggleSidebar}
-              className="text-indigo-600 hover:text-indigo-700 rounded-lg"
+              className="text-indigo-600 hover:text-indigo-700 rounded-lg p-0.5"
             >
-              <TbLayoutSidebarLeftExpandFilled className="text-[32px]" />
+              <TbLayoutSidebarLeftExpandFilled className="text-2xl min-w-[24px] min-h-[24px]" />
             </button>
           ) : (
             <button
               onClick={toggleSidebar}
-              className="text-indigo-600 hover:text-indigo-700 rounded-lg"
+              className="text-indigo-600 hover:text-indigo-700 rounded-lg p-0.5"
             >
-              <TbLayoutSidebarLeftCollapseFilled className="text-[32px]" />
+              <TbLayoutSidebarLeftCollapseFilled className="text-2xl min-w-[24px] min-h-[24px]" />
             </button>
           )}
         </div>
