@@ -56,9 +56,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           isOpen ? "w-56" : "w-14"
         }`}
       >
-        <nav className={`flex flex-col ${isOpen ? "p-4 pr-12" : "px-2 pt-14"} space-y-2`}>
+        <nav className={`flex flex-col ${isOpen ? "p-4 pr-12 space-y-2" : "px-2 pt-14 space-y-6"}`}>
           {/* Main Navigation */}
-          <div className={`space-y-2 ${isOpen ? "pb-4 border-b border-gray-200" : ""}`}>
+          <div className={`${isOpen ? "space-y-2 pb-4 border-b border-gray-200" : "space-y-6"}`}>
             <Link
               href="/dashboard"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -81,7 +81,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </div>
 
           {/* Learning Section */}
-          <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
+          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
             <Link
               href="/learn"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -123,7 +123,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </div>
 
           {/* Interactive Section */}
-          <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
+          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
             <Link
               href="/playground"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -165,7 +165,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </div>
 
           {/* Achievement Section */}
-          <div className={`space-y-2 ${isOpen ? "py-4 border-b border-gray-200" : ""}`}>
+          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
             <Link
               href="/quests"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -188,7 +188,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </div>
 
           {/* Help Section */}
-          <div className={`space-y-2 ${isOpen ? "pt-4" : ""}`}>
+          <div className={`${isOpen ? "space-y-2 pt-4" : "space-y-6"}`}>
             <Link
               href="/faq"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
