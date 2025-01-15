@@ -56,9 +56,17 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           isOpen ? "w-56" : "w-14"
         }`}
       >
-        <nav className={`flex flex-col ${isOpen ? "p-4 pr-12 space-y-2" : "px-2 pt-14 space-y-6"}`}>
+        <nav
+          className={`flex flex-col ${
+            isOpen ? "p-4 pr-12 space-y-2" : "px-2 pt-14 space-y-6"
+          }`}
+        >
           {/* Main Navigation */}
-          <div className={`${isOpen ? "space-y-2 pb-4 border-b border-gray-200" : "space-y-6"}`}>
+          <div
+            className={`${
+              isOpen ? "space-y-2 pb-4 border-b border-gray-200" : "space-y-6"
+            }`}
+          >
             <Link
               href="/dashboard"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -66,7 +74,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Dashboard"
             >
-              <TbLayoutDashboardFilled className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <TbLayoutDashboardFilled
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -74,14 +86,22 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Dashboard"}
               </span>
             </Link>
           </div>
 
           {/* Learning Section */}
-          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
+          <div
+            className={`${
+              isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"
+            }`}
+          >
             <Link
               href="/learn"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -89,7 +109,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Learn"
             >
-              <SiGoogleclassroom className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <SiGoogleclassroom
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -97,7 +121,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Learn"}
               </span>
             </Link>
@@ -108,7 +136,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Roadmaps"
             >
-              <FiMap className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <FiMap
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -116,14 +148,22 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Roadmaps"}
               </span>
             </Link>
           </div>
 
           {/* Interactive Section */}
-          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
+          <div
+            className={`${
+              isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"
+            }`}
+          >
             <Link
               href="/playground"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -131,7 +171,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Playground"
             >
-              <FaCodepen className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <FaCodepen
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -139,7 +183,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Playground"}
               </span>
             </Link>
@@ -150,7 +198,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="DevDiscuss"
             >
-              <FaComments className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <FaComments
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -158,14 +210,22 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "DevDiscuss"}
               </span>
             </Link>
           </div>
 
-          {/* Achievement Section */}
-          <div className={`${isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"}`}>
+          {/* Achievements Section */}
+          <div
+            className={`${
+              isOpen ? "space-y-2 py-4 border-b border-gray-200" : "space-y-6"
+            }`}
+          >
             <Link
               href="/quests"
               className={`flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg ${
@@ -173,7 +233,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Quests"
             >
-              <FaTrophy className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <FaTrophy
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium">
@@ -181,7 +245,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Quests"}
               </span>
             </Link>
@@ -196,7 +264,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               } transition-all duration-300 relative group`}
               title="Help & FAQ"
             >
-              <FiHelpCircle className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${isOpen ? "mr-2 text-xl" : "text-2xl"}`} />
+              <FiHelpCircle
+                className={`transition-all duration-300 min-w-[24px] min-h-[24px] ${
+                  isOpen ? "mr-2 text-xl" : "text-2xl"
+                }`}
+              />
               {!isOpen && (
                 <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
                   <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium whitespace-nowrap">
@@ -204,7 +276,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   </div>
                 </div>
               )}
-              <span className={`transition-all duration-300 ${isOpen ? "opacity-100" : "opacity-0 w-0"}`}>
+              <span
+                className={`transition-all duration-300 ${
+                  isOpen ? "opacity-100" : "opacity-0 w-0"
+                }`}
+              >
                 {isOpen && "Help & FAQ"}
               </span>
             </Link>
