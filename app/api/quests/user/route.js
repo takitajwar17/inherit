@@ -40,7 +40,7 @@ export async function GET() {
         const lastAttempt = questAttempts[questAttempts.length - 1];
         if (lastAttempt && (now - new Date(lastAttempt.updatedAt)) <= 7 * 24 * 60 * 60 * 1000) {
           recent.push({
-            title: quest.title,
+            name: quest.name,
             type: 'Quest Completed',
             date: lastAttempt.updatedAt
           });
