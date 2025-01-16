@@ -61,10 +61,11 @@ export async function GET() {
         status: attempt.status
       }));
 
+    recent.sort((a, b) => new Date(b.date) - new Date(a.date));
     return NextResponse.json({
       active,
       completed,
-      recent: recent.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5),
+      recent: recent.slice(0, 5),
       history
     });
   } catch (error) {
