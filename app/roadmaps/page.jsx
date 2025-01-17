@@ -70,7 +70,8 @@ export default function RoadmapsPage() {
       fetchUserRoadmaps();
     } catch (error) {
       console.error("Error creating roadmap:", error);
-      if (error.message?.includes("INVALID_TOPIC")) {
+      const errorMessage = error.message || (error.response && error.response.data && error.response.data.message);
+      if (errorMessage && (errorMessage === "INVALID_TOPIC" || errorMessage.includes("INVALID_TOPIC"))) {
         setError("Please enter a topic related to computer science or IT only.");
       } else {
         setError("An error occurred while creating the roadmap. Please try again.");
