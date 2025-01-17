@@ -6,6 +6,12 @@ import { FaYoutube, FaCheckCircle, FaLock } from "react-icons/fa";
 import { FiExternalLink, FiArrowLeft, FiClock, FiBookOpen } from "react-icons/fi";
 import { getRoadmapById } from "@/lib/actions/roadmap";
 import Progress from "@/components/Progress";
+import dynamic from 'next/dynamic';
+import useSound from 'use-sound';
+
+const Confetti = dynamic(() => import('react-confetti'), {
+  ssr: false
+});
 
 // Function to format duration from ISO 8601
 const formatDuration = (duration) => {
@@ -32,6 +38,36 @@ export default function RoadmapDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0
+  });
+
+  // Add sound effects
+  const [playComplete] = useSound('/sounds/complete.mp3', { volume: 0.5 });
+  const [playSuccess] = useSound('/sounds/success.mp3', { volume: 0.75 });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
 
   useEffect(() => {
     const fetchRoadmap = async () => {
@@ -55,12 +91,74 @@ export default function RoadmapDetailPage() {
     }
   }, [params.id]);
 
+  useEffect(() => {
+    const scrollToContent = () => {
+      const activeContent = document.getElementById(`step-${activeStep}`);
+      if (activeContent) {
+        const windowHeight = window.innerHeight;
+        const elementTop = activeContent.getBoundingClientRect().top;
+        const offset = elementTop - (windowHeight / 2);
+        
+        window.scrollBy({
+          top: offset,
+          behavior: 'smooth'
+        });
+      }
+    };
+    scrollToContent();
+  }, [activeStep]);
+
+  useEffect(() => {
+    const activeStepElement = document.querySelector(`#nav-step-${activeStep}`);
+    if (activeStepElement) {
+      const container = document.querySelector('.steps-container');
+      const containerHeight = container.offsetHeight;
+      const stepHeight = activeStepElement.offsetHeight;
+      const stepTop = activeStepElement.offsetTop;
+      
+      // Calculate the center position
+      const targetScroll = stepTop - (containerHeight / 2) + (stepHeight / 2);
+      
+      container.scrollTo({
+        top: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  }, [activeStep]);
+
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .steps-container {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;     /* Firefox */
+        overflow-y: scroll;
+      }
+      .steps-container::-webkit-scrollbar {
+        display: none;            /* Chrome, Safari and Opera */
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
   const toggleStepCompletion = (stepIndex) => {
     const newCompleted = new Set(completedSteps);
     if (completedSteps.has(stepIndex)) {
       newCompleted.delete(stepIndex);
     } else {
       newCompleted.add(stepIndex);
+      
+      // If this is the last step and it's being completed
+      if (stepIndex === roadmap.content.steps.length - 1) {
+        setShowConfetti(true);
+        playSuccess();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // Move to next step and play completion sound
+        playComplete();
+        setActiveStep(stepIndex + 1);
+      }
     }
     setCompletedSteps(newCompleted);
     localStorage.setItem(`roadmap-${params.id}-progress`, JSON.stringify([...newCompleted]));
@@ -126,6 +224,14 @@ export default function RoadmapDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showConfetti && (
+        <Confetti
+          width={windowSize.width}
+          height={windowSize.height}
+          recycle={true}
+          numberOfPieces={400}
+        />
+      )}
       {/* Sticky Header */}
       <div className="sticky top-20 z-40 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -156,32 +262,35 @@ export default function RoadmapDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-44">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Steps Overview</h2>
-              <div className="space-y-2">
-                {roadmap.content.steps.map((step, index) => (
-                  <button
-                    key={step.step}
-                    onClick={() => setActiveStep(index)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
-                      activeStep === index
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${
-                        completedSteps.has(index) ? 'text-green-600' : ''
-                      }`}>
-                        Step {step.step}
-                      </span>
-                      {completedSteps.has(index) && (
-                        <FaCheckCircle className="text-green-600" />
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-1">
-                      {step.topic}
-                    </p>
-                  </button>
-                ))}
+              <div className="steps-container overflow-hidden" style={{ height: '400px', position: 'relative' }}>
+                <div className="space-y-2">
+                  {roadmap.content.steps.map((step, index) => (
+                    <button
+                      key={step.step}
+                      id={`nav-step-${index}`}
+                      onClick={() => setActiveStep(index)}
+                      className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
+                        activeStep === index
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${
+                          completedSteps.has(index) ? 'text-green-600' : ''
+                        }`}>
+                          Step {step.step}
+                        </span>
+                        {completedSteps.has(index) && (
+                          <FaCheckCircle className="text-green-600" />
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-1">
+                        {step.topic}
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -213,8 +322,10 @@ export default function RoadmapDetailPage() {
               {roadmap.content.steps.map((step, index) => (
                 <div
                   key={step.step}
+                  id={`step-${index}`}
+                  onClick={() => setActiveStep(index)}
                   className={`bg-white rounded-2xl shadow-sm overflow-hidden transition-all duration-300 ${
-                    activeStep === index ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
+                    activeStep === index ? 'ring-2 ring-blue-500 ring-opacity-50' : 'cursor-pointer'
                   }`}
                   style={{ opacity: activeStep === index ? 1 : 0.5 }}
                 >
@@ -224,12 +335,17 @@ export default function RoadmapDetailPage() {
                         Step {step.step}: {step.topic}
                       </h2>
                       <button
-                        onClick={() => toggleStepCompletion(index)}
+                        onClick={(e) => {
+                          if (activeStep === index) {
+                            e.stopPropagation();
+                            toggleStepCompletion(index);
+                          }
+                        }}
                         className={`p-2 rounded-full transition-colors ${
                           completedSteps.has(index)
-                            ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                        }`}
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-gray-100 text-gray-400'
+                        } ${activeStep === index ? 'hover:bg-green-200' : 'pointer-events-none'}`}
                       >
                         <FaCheckCircle className="w-5 h-5" />
                       </button>
@@ -242,10 +358,19 @@ export default function RoadmapDetailPage() {
                     <div className="flex flex-wrap gap-4">
                       {step.documentation && (
                         <a
-                          href={sanitizeUrl(step.documentation)}
+                          href={activeStep === index ? sanitizeUrl(step.documentation) : undefined}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                          onClick={(e) => {
+                            if (activeStep !== index) {
+                              e.preventDefault();
+                            } else {
+                              e.stopPropagation();
+                            }
+                          }}
+                          className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-50 text-blue-700 ${
+                            activeStep === index ? 'hover:bg-blue-100' : 'pointer-events-none'
+                          } transition-colors`}
                         >
                           <FiExternalLink className="text-lg" />
                           <span>Read Documentation</span>
@@ -254,8 +379,17 @@ export default function RoadmapDetailPage() {
                       
                       {step.videoId && (
                         <a
-                          href={`/learn/${step.videoId}`}
-                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                          href={activeStep === index ? `/learn/${step.videoId}` : undefined}
+                          onClick={(e) => {
+                            if (activeStep !== index) {
+                              e.preventDefault();
+                            } else {
+                              e.stopPropagation();
+                            }
+                          }}
+                          className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-red-50 text-red-700 ${
+                            activeStep === index ? 'hover:bg-red-100' : 'pointer-events-none'
+                          } transition-colors`}
                         >
                           <FaYoutube className="text-lg" />
                           <span>Watch Tutorial</span>
