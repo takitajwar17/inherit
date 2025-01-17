@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
+import { QuestAttemptLoader, SubmissionLoader } from '@/app/components/fun-loaders';
 
 export default function QuestAttemptPage({ params }) {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function QuestAttemptPage({ params }) {
   const [timeLeft, setTimeLeft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchQuest = async () => {
@@ -98,6 +100,7 @@ export default function QuestAttemptPage({ params }) {
   const handleSubmit = async (isAutoSubmit = false) => {
     try {
       setError(null);
+      setIsSubmitting(true);
       
       // Create attempt first
       const attemptResponse = await fetch('/api/attempts', {
@@ -142,6 +145,8 @@ export default function QuestAttemptPage({ params }) {
     } catch (error) {
       console.error('Submit error:', error);
       setError(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -168,9 +173,7 @@ export default function QuestAttemptPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading quest...</div>
-      </div>
+      <QuestAttemptLoader />
     );
   }
 
@@ -258,6 +261,8 @@ export default function QuestAttemptPage({ params }) {
           </button>
         </div>
       </div>
+
+      {isSubmitting && <SubmissionLoader />}
     </div>
   );
 }

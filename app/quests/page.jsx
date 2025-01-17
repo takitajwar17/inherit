@@ -15,6 +15,8 @@ import {
   FiCheck,
   FiAward as FiTrophy // Using FiAward as trophy icon since FiTrophy doesn't exist
 } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { QuestPageLoader } from '@/app/components/fun-loaders';
 
 const LeaderboardCard = ({ leaderboard }) => {
   return (
@@ -68,17 +70,40 @@ const LeaderboardCard = ({ leaderboard }) => {
   );
 };
 
-const QuestSkeleton = () => (
-  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 animate-pulse">
-    <div className="flex justify-between items-start">
-      <div className="space-y-3 w-full">
-        <div className="h-6 w-3/4 bg-gray-200 rounded"></div>
-        <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
-        <div className="h-20 w-full bg-gray-200 rounded"></div>
+const QuestSkeleton = () => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden"
+    >
+      <motion.div
+        className="absolute inset-0 -translate-x-full"
+        animate={{
+          translateX: ["100%", "-100%"]
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "linear"
+        }}
+        style={{
+          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)"
+        }}
+      />
+      <div className="h-4 w-24 bg-gray-200 rounded mb-4" />
+      <div className="h-8 w-3/4 bg-gray-200 rounded mb-4" />
+      <div className="space-y-2">
+        <div className="h-4 w-full bg-gray-200 rounded" />
+        <div className="h-4 w-5/6 bg-gray-200 rounded" />
       </div>
-    </div>
-  </div>
-);
+      <div className="mt-4 flex gap-2">
+        <div className="h-8 w-20 bg-gray-200 rounded" />
+        <div className="h-8 w-20 bg-gray-200 rounded" />
+      </div>
+    </motion.div>
+  );
+};
 
 const FilterSection = ({ filters, setFilters, showFilters }) => (
   <div className={`transition-all duration-200 ease-in-out ${showFilters ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
@@ -287,6 +312,13 @@ export default function QuestsPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <motion.div 
+            className="h-10 w-48 bg-gray-200 rounded"
+            animate={{ opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
             <QuestSkeleton key={index} />

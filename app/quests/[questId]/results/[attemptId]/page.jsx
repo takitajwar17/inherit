@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from "@clerk/nextjs";
 import Link from 'next/link';
+import { QuestResultsLoader } from '@/app/components/fun-loaders';
 
 const AIFeedbackCard = ({ feedback }) => {
   // Split feedback into sections
@@ -69,9 +70,7 @@ export default function QuestResultsPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading results...</div>
-      </div>
+      <QuestResultsLoader />
     );
   }
 
