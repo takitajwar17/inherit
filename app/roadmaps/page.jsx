@@ -30,6 +30,7 @@ export default function RoadmapsPage() {
     title: "",
     prompt: "",
   });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -61,6 +62,7 @@ export default function RoadmapsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     try {
       await createRoadmap(formData.title, formData.prompt, user.id);
       setOpen(false);
@@ -68,6 +70,11 @@ export default function RoadmapsPage() {
       fetchUserRoadmaps();
     } catch (error) {
       console.error("Error creating roadmap:", error);
+      if (error.message === "INVALID_TOPIC") {
+        setError("Please enter a topic related to computer science or IT only.");
+      } else {
+        setError("An error occurred while creating the roadmap. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -99,10 +106,14 @@ export default function RoadmapsPage() {
                   <DialogHeader>
                     <DialogTitle className="text-2xl font-bold">Create a New Learning Roadmap</DialogTitle>
                     <DialogDescription className="text-gray-600">
-                      Enter a title and describe what you want to learn. Our AI will create a
-                      personalized learning path for you.
+                      Enter a computer science or IT-related topic to generate a personalized learning roadmap.
                     </DialogDescription>
                   </DialogHeader>
+                  {error && (
+                    <div className="p-3 rounded-md bg-red-50 border border-red-200">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-1 block">
