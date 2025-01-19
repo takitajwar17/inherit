@@ -5,11 +5,17 @@ import { useRouter } from "next/navigation";
 import { IoSearch } from "react-icons/io5";
 import { formatDistanceToNow } from "date-fns";
 
-const API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 const CHANNEL_IDS = [
   "UC8butISFwT-Wl7EV0hUK0BQ", // freeCodeCamp
   "UC59K-uG2A5ogwIrHw4bmlEg", // Telusko
 ];
+
+// Function to get a random API key
+const getRandomApiKey = () => {
+  const apiKeys = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.split(',');
+  const randomIndex = Math.floor(Math.random() * apiKeys.length);
+  return apiKeys[randomIndex];
+};
 
 const LearnPage = () => {
   const [videos, setVideos] = useState([]);
@@ -49,7 +55,7 @@ const LearnPage = () => {
         params: {
           part: 'contentDetails',
           id: videoIds.join(','),
-          key: API_KEY,
+          key: getRandomApiKey(),
         },
       });
       return response.data.items;
@@ -68,7 +74,7 @@ const LearnPage = () => {
             channelId: channelId,
             maxResults: 6,
             order: "date",
-            key: API_KEY,
+            key: getRandomApiKey(),
           },
         })
       );
@@ -104,7 +110,7 @@ const LearnPage = () => {
             maxResults: 12,
             order: "relevance",
             q: searchTerm,
-            key: API_KEY,
+            key: getRandomApiKey(),
           },
         })
       );
