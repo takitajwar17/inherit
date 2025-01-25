@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 export async function POST(request, { params }) {
   try {
     await connect();
+
     const { userId } = auth();
 
     if (!userId) {
@@ -15,8 +16,6 @@ export async function POST(request, { params }) {
     }
 
     const questionId = params.id;
-
-    // Find the question by ID
     const question = await Question.findById(questionId);
 
     if (!question) {
