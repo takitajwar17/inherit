@@ -14,12 +14,12 @@ import AIReviewPanel from "./editor/AIReviewPanel";
 import KeyboardShortcuts from "./editor/KeyboardShortcuts";
 
 const SUPPORTED_LANGUAGES = [
-  { id: 'javascript', name: 'JavaScript' },
-  { id: 'python', name: 'Python' },
-  { id: 'java', name: 'Java' },
-  { id: 'cpp', name: 'C++' },
-  { id: 'csharp', name: 'C#' },
-  { id: 'php', name: 'PHP' },
+  { id: "javascript", name: "JavaScript" },
+  { id: "python", name: "Python" },
+  { id: "java", name: "Java" },
+  { id: "cpp", name: "C++" },
+  { id: "csharp", name: "C#" },
+  { id: "php", name: "PHP" },
 ];
 
 const CodeWorkspace = () => {
@@ -44,12 +44,18 @@ const CodeWorkspace = () => {
   useEffect(() => {
     // Load saved code and metadata from localStorage
     const savedCode = localStorage.getItem(`code-${language}`);
-    const savedMetadata = JSON.parse(localStorage.getItem(`metadata-${language}`) || '{}');
-    
+    const savedMetadata = JSON.parse(
+      localStorage.getItem(`metadata-${language}`) || "{}"
+    );
+
     if (savedCode) {
       setValue(savedCode);
-      setFileName(savedMetadata.fileName || `main.${getFileExtension(language)}`);
-      setLastSaved(savedMetadata.lastSaved ? new Date(savedMetadata.lastSaved) : null);
+      setFileName(
+        savedMetadata.fileName || `main.${getFileExtension(language)}`
+      );
+      setLastSaved(
+        savedMetadata.lastSaved ? new Date(savedMetadata.lastSaved) : null
+      );
     } else {
       setValue(CODE_SNIPPETS[language]);
       setFileName(`main.${getFileExtension(language)}`);
@@ -58,14 +64,14 @@ const CodeWorkspace = () => {
 
   const getFileExtension = (lang) => {
     const extensions = {
-      javascript: 'js',
-      python: 'py',
-      java: 'java',
-      cpp: 'cpp',
-      csharp: 'cs',
-      php: 'php'
+      javascript: "js",
+      python: "py",
+      java: "java",
+      cpp: "cpp",
+      csharp: "cs",
+      php: "php",
     };
-    return extensions[lang] || 'txt';
+    return extensions[lang] || "txt";
   };
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -99,10 +105,10 @@ const CodeWorkspace = () => {
       lastSaved: new Date().toISOString(),
       language,
     };
-    
+
     localStorage.setItem(`code-${language}`, code);
     localStorage.setItem(`metadata-${language}`, JSON.stringify(metadata));
-    
+
     setLastSaved(new Date());
     setHasChanges(false);
   };
@@ -117,25 +123,25 @@ const CodeWorkspace = () => {
 
     // Reset code to default snippet
     setValue(CODE_SNIPPETS[language]);
-    
+
     // Reset editor states
     setHasChanges(false);
     setLastSaved(null);
     setCursorPosition({ line: 1, column: 1 });
     setWordCount(0);
-    
+
     // Reset output panel
     setOutput([]);
     setIsError(false);
     setExecutionTime(null);
     setExecutionTimestamp(null);
-    
+
     // Reset AI review
     setReview("");
-    
+
     // Reset loading state
     setLoading(false);
-    
+
     // Switch back to editor tab
     setActiveTab("editor");
 
@@ -158,7 +164,7 @@ const CodeWorkspace = () => {
 
   const runCode = async () => {
     if (!editorRef.current) {
-      console.error('Editor not initialized');
+      console.error("Editor not initialized");
       return;
     }
 
@@ -166,7 +172,7 @@ const CodeWorkspace = () => {
     if (activeTab !== "editor") {
       setActiveTab("editor");
       // Wait for tab switch and editor to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     const sourceCode = editorRef.current.getValue();
@@ -175,13 +181,13 @@ const CodeWorkspace = () => {
     try {
       setLoading(true);
       const startTime = performance.now();
-      
+
       const { run: result } = await executeCode(language, sourceCode);
-      
+
       const endTime = performance.now();
       setExecutionTime(Math.round(endTime - startTime));
       setExecutionTimestamp(new Date());
-      
+
       setOutput(result.output.split("\n"));
       setIsError(result.stderr ? true : false);
       setActiveTab("output");
@@ -197,15 +203,15 @@ const CodeWorkspace = () => {
 
   const handleReview = async () => {
     if (!editorRef.current) {
-      console.error('Editor not initialized');
+      console.error("Editor not initialized");
       return;
     }
 
-    // Switch to editor tab first if not already there
+    // Switch to editor tab first if not already there.
     if (activeTab !== "editor") {
       setActiveTab("editor");
-      // Wait for tab switch and editor to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for tab switch and editor to be ready.
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     const code = editorRef.current.getValue();
@@ -226,11 +232,11 @@ const CodeWorkspace = () => {
   };
 
   const applyCodeFix = (newCode, lineNumber) => {
-    console.log('Applying fix:', { newCode, lineNumber });
-    
+    console.log("Applying fix:", { newCode, lineNumber });
+
     // First check if we're in editor tab
     if (activeTab !== "editor") {
-      console.log('Switching to editor tab first');
+      console.log("Switching to editor tab first");
       setActiveTab("editor");
       // Wait for tab switch and try again
       setTimeout(() => applyCodeFix(newCode, lineNumber), 100);
@@ -238,27 +244,29 @@ const CodeWorkspace = () => {
     }
 
     if (!editorRef.current || !newCode) {
-      console.error('Editor or code missing:', { 
-        hasEditor: !!editorRef.current, 
-        hasCode: !!newCode 
+      console.error("Editor or code missing:", {
+        hasEditor: !!editorRef.current,
+        hasCode: !!newCode,
       });
       return;
     }
 
     const editor = editorRef.current;
-    
+
     // Add max retry count to prevent infinite loop
     const maxRetries = 10;
     let retryCount = 0;
 
     const tryApplyFix = () => {
       if (retryCount >= maxRetries) {
-        console.error('Max retries reached, editor model not ready');
+        console.error("Max retries reached, editor model not ready");
         return;
       }
 
       if (!editor.getModel()) {
-        console.log(`Editor model not ready, retry ${retryCount + 1}/${maxRetries}`);
+        console.log(
+          `Editor model not ready, retry ${retryCount + 1}/${maxRetries}`
+        );
         retryCount++;
         setTimeout(tryApplyFix, 100);
         return;
@@ -267,15 +275,15 @@ const CodeWorkspace = () => {
       try {
         const model = editor.getModel();
         const currentValue = model.getValue();
-        const lines = currentValue.split('\n');
-        
+        const lines = currentValue.split("\n");
+
         let range;
         if (lineNumber && lineNumber > 0 && lineNumber <= lines.length) {
           range = {
             startLineNumber: lineNumber,
             startColumn: 1,
             endLineNumber: lineNumber,
-            endColumn: lines[lineNumber - 1].length + 1
+            endColumn: lines[lineNumber - 1].length + 1,
           };
         } else {
           // Find best matching line if no line number provided
@@ -285,7 +293,7 @@ const CodeWorkspace = () => {
               startLineNumber: bestMatch.index + 1,
               startColumn: 1,
               endLineNumber: bestMatch.index + 1,
-              endColumn: lines[bestMatch.index].length + 1
+              endColumn: lines[bestMatch.index].length + 1,
             };
           } else {
             // If no match found, insert at cursor position
@@ -294,38 +302,42 @@ const CodeWorkspace = () => {
               startLineNumber: position.lineNumber,
               startColumn: position.column,
               endLineNumber: position.lineNumber,
-              endColumn: position.column
+              endColumn: position.column,
             };
           }
         }
 
-        const success = editor.executeEdits('ai-fix', [{
-          range,
-          text: newCode,
-          forceMoveMarkers: true
-        }]);
+        const success = editor.executeEdits("ai-fix", [
+          {
+            range,
+            text: newCode,
+            forceMoveMarkers: true,
+          },
+        ]);
 
         if (success) {
-          console.log('Edit applied successfully');
+          console.log("Edit applied successfully");
           setValue(editor.getValue());
           editor.focus();
-          
+
           // Format document after successful edit
           setTimeout(() => {
             try {
-              const formatAction = editor.getAction('editor.action.formatDocument');
+              const formatAction = editor.getAction(
+                "editor.action.formatDocument"
+              );
               if (formatAction) {
                 formatAction.run();
               }
             } catch (formatError) {
-              console.warn('Format error:', formatError);
+              console.warn("Format error:", formatError);
             }
           }, 100);
         } else {
-          console.error('Edit operation failed');
+          console.error("Edit operation failed");
         }
       } catch (error) {
-        console.error('Error applying fix:', error);
+        console.error("Error applying fix:", error);
       }
     };
 
@@ -343,8 +355,8 @@ const CodeWorkspace = () => {
       const lineTrimmed = line.trim();
       let score = 0;
       const words = newCodeTrimmed.split(/\W+/);
-      
-      words.forEach(word => {
+
+      words.forEach((word) => {
         if (lineTrimmed.includes(word)) score++;
       });
 
@@ -359,9 +371,9 @@ const CodeWorkspace = () => {
 
   const handleExport = () => {
     const code = editorRef.current.getValue();
-    const blob = new Blob([code], { type: 'text/plain' });
+    const blob = new Blob([code], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
     document.body.appendChild(a);
@@ -371,9 +383,9 @@ const CodeWorkspace = () => {
   };
 
   const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.js,.py,.java,.cpp,.cs,.php';
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".js,.py,.java,.cpp,.cs,.php";
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -396,7 +408,9 @@ const CodeWorkspace = () => {
         onFileNameChange={setFileName}
         onExport={handleExport}
         onImport={handleImport}
-        onCopy={() => navigator.clipboard.writeText(editorRef.current?.getValue())}
+        onCopy={() =>
+          navigator.clipboard.writeText(editorRef.current?.getValue())
+        }
         onClear={handleReset}
         showKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
         onRun={runCode}
@@ -460,18 +474,16 @@ const CodeWorkspace = () => {
           />
         )}
 
-        {activeTab === "review" && review && (
-          <AIReviewPanel
-            review={review}
-          />
-        )}
+        {activeTab === "review" && review && <AIReviewPanel review={review} />}
 
         {loading && (
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-gray-800 rounded-lg shadow-xl p-4 flex items-center space-x-3">
               <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
               <span className="text-sm font-medium">
-                {activeTab === "review" ? "Analyzing code..." : "Running code..."}
+                {activeTab === "review"
+                  ? "Analyzing code..."
+                  : "Running code..."}
               </span>
             </div>
           </div>
