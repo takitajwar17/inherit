@@ -13,7 +13,7 @@ import {
   FiSearch,
   FiTarget,
   FiCheck,
-  FiAward as FiTrophy, // Using FiAward as trophy icon since FiTrophy doesn't exist
+  FiAward as FiTrophy,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { QuestPageLoader } from "@/app/components/fun-loaders";
