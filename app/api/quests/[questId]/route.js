@@ -13,6 +13,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Quest not found" }, { status: 404 });
     }
 
+    // fetching quest with relevant details
     console.log("Quest details:", {
       id: quest._id,
       startTime: quest.startTime,
