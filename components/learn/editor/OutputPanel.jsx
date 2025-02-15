@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { FiX, FiCopy, FiDownload, FiTrash2 } from 'react-icons/fi';
+import React from "react";
+import { FiX, FiCopy, FiDownload, FiTrash2 } from "react-icons/fi";
 
 const OutputPanel = ({
   output,
@@ -12,13 +12,13 @@ const OutputPanel = ({
   executionTime,
 }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(output.join('\n'));
+    navigator.clipboard.writeText(output.join("\n"));
   };
 
   const handleDownload = () => {
-    const blob = new Blob([output.join('\n')], { type: 'text/plain' });
+    const blob = new Blob([output.join("\n")], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `output-${new Date().toISOString()}.txt`;
     document.body.appendChild(a);
@@ -32,8 +32,12 @@ const OutputPanel = ({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
         <div className="flex items-center space-x-4">
-          <span className={`font-medium ${isError ? 'text-red-400' : 'text-green-400'}`}>
-            {isError ? 'Error Output' : 'Output'}
+          <span
+            className={`font-medium ${
+              isError ? "text-red-400" : "text-green-400"
+            }`}
+          >
+            {isError ? "Error Output" : "Output"}
           </span>
           {executionTime && (
             <span className="text-gray-400 text-sm">
@@ -78,7 +82,7 @@ const OutputPanel = ({
           <div
             key={index}
             className={`${
-              isError ? 'text-red-400' : 'text-gray-300'
+              isError ? "text-red-400" : "text-gray-300"
             } whitespace-pre-wrap mb-1`}
           >
             {line}
