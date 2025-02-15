@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from 'react';
-import { FiChevronDown, FiChevronRight, FiAlertTriangle, FiInfo, FiZap } from 'react-icons/fi';
+import { useState } from "react";
+import {
+  FiChevronDown,
+  FiChevronRight,
+  FiAlertTriangle,
+  FiInfo,
+  FiZap,
+} from "react-icons/fi";
 
 const ReviewSection = ({ title, items, icon: Icon, isExpanded, onToggle }) => {
   return (
@@ -36,11 +42,11 @@ const ReviewSection = ({ title, items, icon: Icon, isExpanded, onToggle }) => {
                 {item.severity && (
                   <span
                     className={`px-2 py-0.5 text-xs rounded-full ${
-                      item.severity === 'high'
-                        ? 'bg-red-900/50 text-red-300'
-                        : item.severity === 'medium'
-                        ? 'bg-yellow-900/50 text-yellow-300'
-                        : 'bg-blue-900/50 text-blue-300'
+                      item.severity === "high"
+                        ? "bg-red-900/50 text-red-300"
+                        : item.severity === "medium"
+                        ? "bg-yellow-900/50 text-yellow-300"
+                        : "bg-blue-900/50 text-blue-300"
                     }`}
                   >
                     {item.severity}
@@ -66,9 +72,9 @@ const ReviewSection = ({ title, items, icon: Icon, isExpanded, onToggle }) => {
 };
 
 const AIReviewPanel = ({ review }) => {
-  const [expandedSection, setExpandedSection] = useState('issues'); // Default to issues being open
+  const [expandedSection, setExpandedSection] = useState("issues"); // Default to issues being open
 
-  if (!review || typeof review !== 'object') {
+  if (!review || typeof review !== "object") {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -98,22 +104,22 @@ const AIReviewPanel = ({ review }) => {
             title="Issues"
             items={issues}
             icon={FiAlertTriangle}
-            isExpanded={expandedSection === 'issues'}
-            onToggle={() => handleSectionToggle('issues')}
+            isExpanded={expandedSection === "issues"}
+            onToggle={() => handleSectionToggle("issues")}
           />
           <ReviewSection
             title="Suggestions"
             items={suggestions}
             icon={FiInfo}
-            isExpanded={expandedSection === 'suggestions'}
-            onToggle={() => handleSectionToggle('suggestions')}
+            isExpanded={expandedSection === "suggestions"}
+            onToggle={() => handleSectionToggle("suggestions")}
           />
           <ReviewSection
             title="Improvements"
             items={improvements}
             icon={FiZap}
-            isExpanded={expandedSection === 'improvements'}
-            onToggle={() => handleSectionToggle('improvements')}
+            isExpanded={expandedSection === "improvements"}
+            onToggle={() => handleSectionToggle("improvements")}
           />
         </div>
       </div>
