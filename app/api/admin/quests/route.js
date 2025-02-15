@@ -7,7 +7,7 @@ export const GET = adminAuth(async () => {
   try {
     await connect();
     const quests = await Quest.find({}).sort({ createdAt: -1 });
-    return NextResponse.json(quests.map(quest => quest.toObject()));
+    return NextResponse.json(quests.map((quest) => quest.toObject()));
   } catch (error) {
     console.error("Error fetching quests:", error);
     return NextResponse.json(
@@ -21,23 +21,24 @@ export const POST = adminAuth(async (req) => {
   try {
     await connect();
     const questData = await req.json();
-    
+
     // Validate questions array
     if (!questData.questions) {
       questData.questions = [];
     }
 
     // Validate each question's structure
-    questData.questions = questData.questions.map(question => {
-      if (question.type === 'coding' && question.testCases) {
-        // Ensure each test case has required fields
-        question.testCases = question.testCases.map(testCase => {
+    questData.questions = questData.questions.map((question) => {
+      if (question.type === "coding" && question.testCases) {
+        question.testCases = question.testCases.map((testCase) => {
           if (!testCase.input || !testCase.expectedOutput) {
-            throw new Error('Test cases must have both input and expectedOutput fields');
+            throw new Error(
+              "Test cases must have both input and expectedOutput fields"
+            );
           }
           return {
             input: testCase.input,
-            expectedOutput: testCase.expectedOutput
+            expectedOutput: testCase.expectedOutput,
           };
         });
       }
@@ -46,7 +47,7 @@ export const POST = adminAuth(async (req) => {
 
     // Log the incoming data
     console.log("Received quest data:", JSON.stringify(questData, null, 2));
-    
+
     const quest = await Quest.create({
       ...questData,
       createdBy: "admin",
