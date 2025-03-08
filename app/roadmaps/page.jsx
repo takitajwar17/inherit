@@ -307,7 +307,7 @@ export default function RoadmapsPage() {
                             className="relative h-full transition-all duration-300 ease-out"
                             style={{
                               width: `${progress}%`,
-                              background: "rgba(255, 255, 255, 0.2)",
+                              background: "rgba(255, 255, 255, 0.25)",
                               boxShadow:
                                 "inset 0 0 10px rgba(255, 255, 255, 0.5)",
                             }}
