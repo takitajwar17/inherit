@@ -22,6 +22,10 @@ export default function AskQuestionPage() {
       setTags(tags.slice(0, -1));
     }
   };
+
+    const handleRemoveTag = (index) => {
+    setTags(tags.filter((_, i) => i !== index));
+  };
   return (
     <main className="min-h-screen bg-background">
       
