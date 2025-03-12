@@ -9,42 +9,33 @@ const AccessibilityFloatingIcon = () => {
   const router = useRouter();
 
   const voiceCommandRouting = () => {
-    // if ('webkitSpeechRecognition' in window) {
-    //   const recognition = new webkitSpeechRecognition();
-    //   recognition.continuous = false;
-    //   recognition.interimResults = false;
-    //   recognition.lang = 'en-US';
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
 
-    //   recognition.onstart = () => {
-    //     setIsListening(true);
-    //     console.log('Voice recognition started');
-    //   };
+      recognition.onstart = () => {
+        setIsListening(true);
+        console.log('Voice recognition started');
+      };
 
-    //   recognition.onresult = (event) => {
-    //     const transcript = event.results[0][0].transcript.toLowerCase().trim();
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        console.log('Recognized speech:', transcript);
         
-    //     const routes = {
-    //       'home': '/',
-    //       'dashboard': '/dashboard',
-    //       'learn': '/learn',
-    //       'roadmaps': '/roadmaps',
-    //       'settings': '/settings'
-    //     };
+      
+      };
 
-    //     if (routes[transcript]) {
-    //       router.push(routes[transcript]);
-    //     }
-    //   };
+      recognition.onend = () => {
+        setIsListening(false);
+        console.log('Voice recognition ended');
+      };
 
-    //   recognition.onend = () => {
-    //     setIsListening(false);
-    //     console.log('Voice recognition ended');
-    //   };
-
-    //   recognition.start();
-    // } else {
-    //   console.warn('Web Speech API is not supported in this browser');
-    // }
+      recognition.start();
+    } else {
+      console.warn('Web Speech API is not supported in this browser');
+    }
   };
 
   return (
