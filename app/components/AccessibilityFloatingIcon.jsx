@@ -22,13 +22,25 @@ const AccessibilityFloatingIcon = () => {
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        
+        console.log('Recognized speech:', transcript);
+
         const routes = {
           'home': '/',
           'dashboard': '/dashboard',
           'learn': '/learn',
+          'roadmaps': '/roadmaps',
+          'road maps': '/roadmaps',
+          'discuss':'/dev-discuss',
+          'dev discuss': '/dev-discuss',
+          'quest':'/quests',
+          'quests':'/quests',
+          'playground': '/playground',
+          'play ground':'/playground',
+          'help':'/faq',
+          'ask-questions':'dev-discuss/ask-questions',
+          'ask':'dev-discuss/ask-questions',
           
-
+          
         };
 
         if (routes[transcript]) {
