@@ -67,6 +67,20 @@ export default function QuestionCard({ question }) {
   };
 
   return (
-     <div><h1>{userId}</h1></div>
+    <div className="border rounded-lg p-6 bg-card hover:border-primary/50 transition-colors">
+      <div className="flex gap-6">
+        {/* Stats */}
+        <div className="flex flex-col items-center gap-2 min-w-[100px]">
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-semibold">{votes}</span>
+            <span className="text-sm text-muted-foreground">votes</span>
+          </div>
+          <div className="flex flex-col items-center text-green-600">
+            <span className="text-lg font-semibold">{question.answers}</span>
+            <span className="text-sm">answers</span>
+          </div>
+        </div>
+        </div>
+      </div>
   );
 }
