@@ -80,6 +80,36 @@ export default function QuestionCard({ question }) {
             <span className="text-sm">answers</span>
           </div>
         </div>
+         {/* Content */}
+         <div className="flex-1">
+          <h2 className="text-xl font-semibold mb-2 hover:text-blue-600">
+            <Link href={`/dev-discuss/${question._id}`}>{question.title}</Link>
+          </h2>
+          <p className="text-muted-foreground mb-4 line-clamp-2">
+            {question.description}
+          </p>
+
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              {question.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200 cursor-pointer"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>asked {new Date(question.createdAt).toLocaleString()}</span>
+              <span>by</span>
+              <a href="#" className="text-blue-600 hover:text-blue-800">
+                {question.author}
+              </a>
+            </div>
+          </div>
+        </div>
+
         </div>
       </div>
   );
