@@ -9,6 +9,17 @@ export default function QuestionCard({ question }) {
   const [votes, setVotes] = useState(question.votes);
   const [userVote, setUserVote] = useState(0); // 1 for upvoted, -1 for downvoted, 0 for none
  
+   // app/components/dev-discuss/QuestionCard.jsx
+
+   useEffect(() => {
+    // Check if the user has already voted
+    const existingVote = question.voters?.find(
+      (voter) => voter.userId === userId
+    );
+    if (existingVote) {
+      setUserVote(existingVote.vote);
+    }
+  }, [question.voters, userId]);
 
 
   return (
