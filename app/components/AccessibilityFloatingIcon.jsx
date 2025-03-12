@@ -22,9 +22,18 @@ const AccessibilityFloatingIcon = () => {
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        console.log('Recognized speech:', transcript);
         
-      
+        const routes = {
+          'home': '/',
+          'dashboard': '/dashboard',
+          'learn': '/learn',
+          
+
+        };
+
+        if (routes[transcript]) {
+          router.push(routes[transcript]);
+        }
       };
 
       recognition.onend = () => {
