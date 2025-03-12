@@ -41,6 +41,29 @@ export default function QuestionCard({ question }) {
       console.error("Error upvoting:", error);
       toast.error("Error upvoting. Please try again.");
     }
+
+    const handleDownvote = async () => {
+      if (!userId) {
+        toast.error("You must be logged in to vote");
+        return;
+      }
+      try {
+        const response = await fetch(`/api/questions/${question._id}/downvote`, {
+          method: "POST",
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setVotes((prevVotes) => prevVotes - 1);
+          setUserVote(-1);
+        } else {
+          toast.error(data.error || "Failed to downvote");
+        }
+      } catch (error) {
+        console.error("Error downvoting:", error);
+        toast.error("Error downvoting. Please try again.");
+      }
+    };
+  
   };
 
   return (
