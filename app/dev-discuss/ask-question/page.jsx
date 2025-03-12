@@ -2,13 +2,10 @@
 
 // "use client";
 
-
 export default function AskQuestionPage() {
-  
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
- 
- 
+
   const handleTagInputKeyDown = (e) => {
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
@@ -23,12 +20,34 @@ export default function AskQuestionPage() {
     }
   };
 
-    const handleRemoveTag = (index) => {
+  const handleRemoveTag = (index) => {
     setTags(tags.filter((_, i) => i !== index));
   };
-  return (
-    <main className="min-h-screen bg-background">
-      
-    </main>
-  );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!title || !description || tags.length === 0) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const question = await createQuestion(
+        title,
+        description,
+        tags,
+        userId,
+        aiResponseRequested
+      ); // Pass aiResponseRequested
+      console.log("Question created:", question);
+      toast.success("Question posted successfully!");
+      router.push("/dev-discuss"); // Redirect to the discussion page
+    } catch (error) {
+      console.error("Error creating question:", error);
+      toast.error("Error posting question. Please try again.");
+    }
+  };
+
+  return <main className="min-h-screen bg-background"></main>;
 }
