@@ -153,6 +153,16 @@ export default function QuestionDetailPage({ params }) {
             </p>
           </div>
         </div>
+
+        {/* AI Answer Section (if exists) */}
+        {questionData.aiAnswerRequested && questionData.aiAnswer.content && (
+          <section className="bg-gray-100 p-6 mb-8 rounded-lg">
+            <h2 className="text-2xl font-semibold mb-4">AI Generated Answer</h2>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {questionData.aiAnswer.content}
+            </ReactMarkdown>
+          </section>
+        )}
       </div>
     </main>
   );
