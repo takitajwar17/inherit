@@ -163,6 +163,30 @@ export default function QuestionDetailPage({ params }) {
             </ReactMarkdown>
           </section>
         )}
+
+        {/* Replies Section */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Replies</h2>
+          <div className="space-y-6">
+            {questionData.replies && questionData.replies.length ? (
+              questionData.replies.map((reply, index) => (
+                <div key={index} className="border rounded-lg p-4 bg-card">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold text-blue-600">
+                      {reply.author}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(reply.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground">{reply.content}</p>
+                </div>
+              ))
+            ) : (
+              <div>No replies yet. Be the first to reply!</div>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );
