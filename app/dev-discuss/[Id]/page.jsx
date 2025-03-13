@@ -1,5 +1,14 @@
 "use client";
 
+import QuestionDetailLoading from "@/app/components/dev-discuss/QuestionDetailLoading";
+import { Button } from "@/components/ui/button";
+import { getQuestionById } from "@/lib/actions/question";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown"; // Import react-markdown
+import { toast } from "react-toastify";
+import remarkGfm from "remark-gfm"; // Import GitHub-flavored markdown (optional)
+
 export default function QuestionDetailPage({ params }) {
   const { Id } = params;
 
@@ -154,6 +163,7 @@ export default function QuestionDetailPage({ params }) {
           </div>
         </div>
 
+
         {/* AI Answer Section (if exists) */}
         {questionData.aiAnswerRequested && questionData.aiAnswer.content && (
           <section className="bg-gray-100 p-6 mb-8 rounded-lg">
@@ -187,6 +197,25 @@ export default function QuestionDetailPage({ params }) {
             )}
           </div>
         </section>
+
+        {/* Add a Reply */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Your Reply</h2>
+          <textarea
+            rows="4"
+            className="w-full p-3 border rounded-md focus:border-blue-500 focus:ring focus:ring-blue-200"
+            placeholder="Write your answer here..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+          />
+          <Button
+            className="mt-4"
+            onClick={handlePostReply}
+            disabled={isPosting}
+          >
+            {isPosting ? "Posting..." : "Post Reply"}
+          </Button>
+        </div>
       </div>
     </main>
   );
