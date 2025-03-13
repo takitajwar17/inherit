@@ -4,8 +4,19 @@ import { useState, useEffect } from "react";
 
 function formatDateForInput(dateString) {
   if (!dateString) return "";
+  
+  // Create a Date object from the input
   const date = new Date(dateString);
-  return date.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
+  
+  // Extract UTC components explicitly
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  
+  // Return in datetime-local format using UTC components
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 function calculateEndTime(startTime, timeLimit) {
@@ -16,20 +27,20 @@ function calculateEndTime(startTime, timeLimit) {
   const [year, month, day] = datePart.split('-').map(Number);
   const [hours, minutes] = timePart.split(':').map(Number);
   
-  // Create a date object with parsed components
-  const startDate = new Date(year, month - 1, day, hours, minutes);
+  // Create a date object with parsed UTC components
+  const startDate = Date.UTC(year, month - 1, day, hours, minutes);
   
-  // Add minutes
-  const endDate = new Date(startDate);
-  endDate.setMinutes(startDate.getMinutes() + parseInt(timeLimit));
+  // Add minutes in milliseconds
+  const endDate = new Date(startDate + parseInt(timeLimit) * 60000);
   
-  // Format back to ISO string for datetime-local input
-  const endYear = endDate.getFullYear();
-  const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-  const endDay = String(endDate.getDate()).padStart(2, '0');
-  const endHours = String(endDate.getHours()).padStart(2, '0');
-  const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+  // Extract UTC components
+  const endYear = endDate.getUTCFullYear();
+  const endMonth = String(endDate.getUTCMonth() + 1).padStart(2, '0');
+  const endDay = String(endDate.getUTCDate()).padStart(2, '0');
+  const endHours = String(endDate.getUTCHours()).padStart(2, '0');
+  const endMinutes = String(endDate.getUTCMinutes()).padStart(2, '0');
   
+  // Return in datetime-local format
   return `${endYear}-${endMonth}-${endDay}T${endHours}:${endMinutes}`;
 }
 
