@@ -1,9 +1,6 @@
 "use client";
 
-
-
 export default function QuestionDetailPage({ params }) {
-  
   const { Id } = params;
 
   const [questionData, setQuestionData] = useState(null);
@@ -62,7 +59,7 @@ export default function QuestionDetailPage({ params }) {
       toast.error("Error downvoting. Please try again.");
     }
   };
-  
+
   const handlePostReply = async () => {
     if (!replyContent.trim()) return;
     setIsPosting(true);
@@ -98,22 +95,28 @@ export default function QuestionDetailPage({ params }) {
     return <QuestionDetailLoading />;
   }
 
-
-
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-6">
-        
-         <h1>Dev dicuss question page id</h1>
-        
-         
-
-        
-
-        
-       
-       
-        
+        <header className="mb-6 border-b pb-4">
+          <h1 className="text-3xl font-bold mb-2">{questionData.title}</h1>
+          <div className="flex justify-between items-center text-sm text-muted-foreground">
+            <div>
+              <span className="text-blue-600">by {questionData.author}</span> |{" "}
+              <span>{new Date(questionData.createdAt).toLocaleString()}</span>
+            </div>
+            <div className="flex gap-2">
+              {questionData.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </header>
       </div>
     </main>
   );
