@@ -62,6 +62,41 @@ export default function QuestionDetailPage({ params }) {
       toast.error("Error downvoting. Please try again.");
     }
   };
+  
+  const handlePostReply = async () => {
+    if (!replyContent.trim()) return;
+    setIsPosting(true);
+
+    try {
+      const response = await fetch(`/api/questions/${Id}/reply`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: replyContent }),
+      });
+
+      if (response.ok) {
+        const { reply, answers } = await response.json();
+        setQuestionData((prevData) => ({
+          ...prevData,
+          replies: [...prevData.replies, reply],
+          answers,
+        }));
+        setReplyContent("");
+      } else {
+        toast.error("Failed to post reply");
+      }
+    } catch (error) {
+      console.error("Error posting reply:", error);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  if (!questionData) {
+    return <QuestionDetailLoading />;
+  }
 
 
 
