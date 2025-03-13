@@ -44,6 +44,27 @@ export default function QuestionDetailPage({ params }) {
     }
   };
 
+  const handleDownvote = async () => {
+    if (userVote === -1) return;
+
+    try {
+      const response = await fetch(`/api/questions/${Id}/downvote`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        setVotes((prev) => prev - 1);
+        setUserVote(-1);
+      } else {
+        toast.error("Failed to downvote");
+      }
+    } catch (error) {
+      console.error("Error downvoting:", error);
+      toast.error("Error downvoting. Please try again.");
+    }
+  };
+
+
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-6">
