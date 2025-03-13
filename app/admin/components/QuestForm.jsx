@@ -5,24 +5,32 @@ import { useState, useEffect } from "react";
 function formatDateForInput(dateString) {
   if (!dateString) return "";
   const date = new Date(dateString);
-  const offset = date.getTimezoneOffset() * 60000;
-  const localDate = new Date(date.getTime() - offset);
-  return localDate.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
+  return date.toISOString().slice(0, 16); // Format: "YYYY-MM-DDThh:mm"
 }
 
 function calculateEndTime(startTime, timeLimit) {
   if (!startTime) return "";
   
-  // Create date object from input
-  const date = new Date(startTime);
+  // Parse the input time string manually
+  const [datePart, timePart] = startTime.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+  
+  // Create a date object with parsed components
+  const startDate = new Date(year, month - 1, day, hours, minutes);
   
   // Add minutes
-  const endDate = new Date(date.getTime() + parseInt(timeLimit) * 60000);
+  const endDate = new Date(startDate);
+  endDate.setMinutes(startDate.getMinutes() + parseInt(timeLimit));
   
-  // Format for datetime-local input
-  const offset = endDate.getTimezoneOffset() * 60000;
-  const localEndDate = new Date(endDate.getTime() - offset);
-  return localEndDate.toISOString().slice(0, 16);
+  // Format back to ISO string for datetime-local input
+  const endYear = endDate.getFullYear();
+  const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+  const endDay = String(endDate.getDate()).padStart(2, '0');
+  const endHours = String(endDate.getHours()).padStart(2, '0');
+  const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+  
+  return `${endYear}-${endMonth}-${endDay}T${endHours}:${endMinutes}`;
 }
 
 export default function QuestForm({ quest, onSave, onCancel }) {
