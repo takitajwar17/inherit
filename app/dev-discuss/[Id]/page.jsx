@@ -163,6 +163,7 @@ export default function QuestionDetailPage({ params }) {
           </div>
         </div>
 
+
         {/* AI Answer Section (if exists) */}
         {questionData.aiAnswerRequested && questionData.aiAnswer.content && (
           <section className="bg-gray-100 p-6 mb-8 rounded-lg">
