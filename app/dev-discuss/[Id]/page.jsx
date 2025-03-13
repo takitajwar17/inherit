@@ -117,6 +117,42 @@ export default function QuestionDetailPage({ params }) {
             </div>
           </div>
         </header>
+
+        <div className="flex gap-6 items-start mb-8">
+          <div className="flex flex-col items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleUpvote}
+              disabled={userVote === 1}
+            >
+              <ArrowUp
+                className={`h-6 w-6 ${userVote === 1 ? "text-blue-600" : ""}`}
+              />
+            </Button>
+            <span className="text-xl font-semibold">{votes}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDownvote}
+              disabled={userVote === -1}
+            >
+              <ArrowDown
+                className={`h-6 w-6 ${userVote === -1 ? "text-red-600" : ""}`}
+              />
+            </Button>
+          </div>
+          <div className="flex-1">
+            {/* Render question description as markdown */}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-lg mb-6">
+              {questionData.description}
+            </ReactMarkdown>
+            <p className="text-muted-foreground">
+              <span className="font-semibold">{questionData.answers}</span>{" "}
+              answers
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );
