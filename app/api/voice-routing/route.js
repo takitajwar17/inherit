@@ -36,6 +36,7 @@ export async function POST(request) {
     - "/playground" for playground
     - "/faq" for help
     - "/dev-discuss/ask-question" for asking questions
+    - "/faq/contact" for contacting support
     
     For learning commands (e.g., "teach me about React", "show tutorial on JavaScript", "I want to learn Python"):
     - Set action to "learn"
