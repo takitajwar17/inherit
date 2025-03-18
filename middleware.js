@@ -54,7 +54,7 @@ export default async function middleware(request) {
 
   // For non-admin routes, use Clerk authentication
   const clerkMiddleware = authMiddleware({
-    publicRoutes: ["/", "sign-in", "sign-up", "/api/video-search"],
+    publicRoutes: ["/", "sign-in", "sign-up", "/api/video-search", "/api/voice-routing"],
     ignoredRoutes: ["/api/webhooks(.*)"],
   });
 
