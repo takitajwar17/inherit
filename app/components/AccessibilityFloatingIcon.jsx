@@ -30,6 +30,10 @@ const AccessibilityFloatingIcon = () => {
       const data = await response.json();
       
       if (data.route) {
+        // If we have video data, we can display a toast or notification
+        if (data.videoData) {
+          console.log('Found video:', data.videoData.title);
+        }
         router.push(data.route);
       } else {
         console.log('No matching route found for command:', transcript);
