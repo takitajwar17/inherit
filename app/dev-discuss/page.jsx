@@ -25,7 +25,9 @@ export default function Home() {
       try {
         const response = await fetch("/api/questions/all-questions");
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
+          // Extract data from the standardized API response format
+          const data = result.data || result;
           setQuestions({
             owned: data.owned,
             others: data.others,
