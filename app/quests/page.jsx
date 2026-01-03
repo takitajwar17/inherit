@@ -313,10 +313,17 @@ export default function QuestsPage() {
         ]);
 
         const questsResponseFromUser = await fetch("/api/quests/user");
-        const questsDataFromUser = await questsResponseFromUser.json();
+        const questsDataFromUserResult = await questsResponseFromUser.json();
+        // Extract data from the standardized API response format
+        const questsDataFromUser = questsDataFromUserResult.data || questsDataFromUserResult;
 
-        const questsData = await questsResponse.json();
-        const leaderboardData = await leaderboardResponse.json();
+        const questsResult = await questsResponse.json();
+        // Extract data from the standardized API response format
+        const questsData = questsResult.data || questsResult;
+        
+        const leaderboardResult = await leaderboardResponse.json();
+        // Extract data from the standardized API response format
+        const leaderboardData = leaderboardResult.data || leaderboardResult;
 
         const now = new Date();
         const categorizedQuests = {
