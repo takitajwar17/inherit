@@ -1,11 +1,3 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
-import logger, { logExternalApi } from '@/lib/logger';
-import { validateRequest, voiceCommandSchema } from '@/lib/validation';
-import { withRateLimit } from '@/lib/ratelimit/middleware';
-import { aiLimiter } from '@/lib/ratelimit/limiters';
-const Groq = require('groq-sdk');
-
 /**
  * Voice Routing API
  * 
@@ -15,37 +7,44 @@ const Groq = require('groq-sdk');
  * Uses Groq AI to interpret the voice transcript.
  */
 
+import logger, { logExternalApi } from '@/lib/logger';
+import { validateRequest, voiceCommandSchema } from '@/lib/validation';
+import { withRateLimit } from '@/lib/ratelimit/middleware';
+import { aiLimiter } from '@/lib/ratelimit/limiters';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId,
+  parseJsonBody
+} from '@/lib/errors/apiResponse';
+import { ValidationError, ExternalServiceError } from '@/lib/errors';
+
+const Groq = require('groq-sdk');
+
 // Initialize the Groq client
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
+/**
+ * POST /api/voice-routing - Process voice command
+ * Rate limited: 20 requests per minute per IP
+ */
 async function handlePost(request) {
+  const requestId = generateRequestId();
+  
   try {
     // Parse JSON body with error handling
-    let body;
-    try {
-      body = await request.json();
-    } catch (parseError) {
-      logger.warn("Voice routing: Invalid JSON body");
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
+    const body = await parseJsonBody(request);
 
     // Validate request body with Zod schema
     const validation = validateRequest(voiceCommandSchema, body);
     if (!validation.success) {
-      logger.warn("Voice command validation failed", { error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { transcript } = validation.data;
-    logger.debug("Processing voice command", { transcript });
+    logger.debug("Processing voice command", { transcript, requestId });
 
     // Define the system prompt for Groq
     const systemPrompt = `You are a voice command routing assistant. 
@@ -102,21 +101,19 @@ async function handlePost(request) {
     
     try {
       routeData = JSON.parse(responseContent);
-    } catch (error) {
+    } catch (parseError) {
       logger.error("Error parsing Groq voice routing response", { 
-        error: error.message, 
-        responseContent 
+        error: parseError.message, 
+        responseContent,
+        requestId
       });
-      return NextResponse.json(
-        { error: 'Failed to parse Groq response' },
-        { status: 500 }
-      );
+      throw new ExternalServiceError("Groq AI", "Failed to parse response");
     }
 
     // Handle learning action by searching for a video on the topic
     if (routeData.action === 'learn' && routeData.topic) {
       try {
-        logger.info("Voice command triggered learn action", { topic: routeData.topic });
+        logger.info("Voice command triggered learn action", { topic: routeData.topic, requestId });
         
         // Call the video-search API
         const videoSearchResponse = await fetch(new URL('/api/video-search', request.url), {
@@ -134,30 +131,25 @@ async function handlePost(request) {
         const videoData = await videoSearchResponse.json();
         
         // Return route to the video page with the video ID
-        return NextResponse.json({
-          route: `/learn/${videoData.videoId}`,
-          videoData: videoData
+        return successResponse({
+          route: `/learn/${videoData.data?.videoId || videoData.videoId}`,
+          videoData: videoData.data || videoData
         });
-      } catch (error) {
+      } catch (videoError) {
         logger.error("Error searching for video from voice command", { 
           topic: routeData.topic, 
-          error: error.message 
+          error: videoError.message,
+          requestId
         });
-        return NextResponse.json(
-          { error: 'Failed to find a video for this topic' },
-          { status: 500 }
-        );
+        throw new ExternalServiceError("Video Search", "Failed to find a video for this topic");
       }
     }
 
-    logger.debug("Voice routing result", { routeData });
-    return NextResponse.json(routeData);
+    logger.debug("Voice routing result", { routeData, requestId });
+    return successResponse(routeData);
+    
   } catch (error) {
-    logger.error("Error processing voice command", { error: error.message });
-    return NextResponse.json(
-      { error: 'Failed to process voice command' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

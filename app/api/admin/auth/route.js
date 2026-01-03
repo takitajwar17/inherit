@@ -1,11 +1,3 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { SignJWT } from "jose";
-import logger, { logAuth } from "@/lib/logger";
-import { validateRequest, adminLoginSchema } from "@/lib/validation";
-import { withRateLimit } from "@/lib/ratelimit/middleware";
-import { adminAuthLimiter } from "@/lib/ratelimit/limiters";
-
 /**
  * Admin Authentication API Route
  * 
@@ -19,15 +11,33 @@ import { adminAuthLimiter } from "@/lib/ratelimit/limiters";
  * @requires ADMIN_JWT_SECRET - Secret key for signing JWT tokens
  */
 
+import bcrypt from "bcryptjs";
+import { SignJWT } from "jose";
+import logger, { logAuth } from "@/lib/logger";
+import { validateRequest, adminLoginSchema } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { adminAuthLimiter } from "@/lib/ratelimit/limiters";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId,
+  parseJsonBody 
+} from "@/lib/errors/apiResponse";
+import { 
+  ValidationError, 
+  AuthenticationError,
+  InternalServerError 
+} from "@/lib/errors";
+
 /**
  * Retrieves the JWT secret as a Uint8Array for jose library
  * @returns {Uint8Array} The encoded JWT secret
- * @throws {Error} If ADMIN_JWT_SECRET is not defined
+ * @throws {InternalServerError} If ADMIN_JWT_SECRET is not defined
  */
 function getJwtSecret() {
   const secret = process.env.ADMIN_JWT_SECRET;
   if (!secret) {
-    throw new Error("ADMIN_JWT_SECRET environment variable is not defined");
+    throw new InternalServerError("ADMIN_JWT_SECRET environment variable is not defined");
   }
   return new TextEncoder().encode(secret);
 }
@@ -45,7 +55,7 @@ async function generateAdminToken(username) {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("24h") // Token expires in 24 hours
+    .setExpirationTime("24h")
     .sign(getJwtSecret());
   
   return token;
@@ -58,27 +68,16 @@ async function generateAdminToken(username) {
  * @returns {NextResponse} JSON response with success status and token, or error
  */
 async function handlePost(req) {
+  const requestId = generateRequestId();
+  
   try {
     // Parse JSON body with error handling
-    let body;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      logger.warn("Admin auth: Invalid JSON body");
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
+    const body = await parseJsonBody(req);
 
     // Validate request body with Zod schema
     const validation = validateRequest(adminLoginSchema, body);
     if (!validation.success) {
-      logger.warn("Admin auth validation failed", { error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { username, password } = validation.data;
@@ -90,10 +89,7 @@ async function handlePost(req) {
     // Ensure environment variables are configured
     if (!adminUsername || !adminPasswordHash) {
       logger.error("Admin credentials not configured in environment variables");
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
+      throw new InternalServerError("Server configuration error");
     }
 
     // Verify username matches
@@ -102,10 +98,7 @@ async function handlePost(req) {
       // This prevents timing attacks that could reveal valid usernames
       await bcrypt.compare(password, adminPasswordHash);
       logAuth("admin_login", false, { username, reason: "invalid_username" });
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Invalid credentials", "INVALID_CREDENTIALS");
     }
 
     // Verify password using bcrypt
@@ -113,10 +106,7 @@ async function handlePost(req) {
     
     if (!isPasswordValid) {
       logAuth("admin_login", false, { username, reason: "invalid_password" });
-      return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Invalid credentials", "INVALID_CREDENTIALS");
     }
 
     // Generate JWT token for authenticated admin
@@ -124,18 +114,13 @@ async function handlePost(req) {
     logAuth("admin_login", true, { username });
 
     // Return success with token
-    return NextResponse.json({ 
-      success: true,
+    return successResponse({ 
       token,
       expiresIn: "24h"
     });
 
   } catch (error) {
-    logger.error("Admin auth error", { error: error.message, stack: error.stack });
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

@@ -6,13 +6,29 @@
  * Retrieves details for a specific attempt.
  */
 
-import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
 import Attempt from '@/lib/models/attemptModel';
 import logger, { logDatabase } from '@/lib/logger';
+import { isValidMongoId } from '@/lib/validation';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from '@/lib/errors/apiResponse';
+import { ValidationError, NotFoundError } from '@/lib/errors';
 
+/**
+ * GET /api/attempts/[attemptId] - Get attempt details
+ */
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
+    // Validate MongoDB ObjectId
+    if (!isValidMongoId(params.attemptId)) {
+      throw new ValidationError("Invalid attempt ID format");
+    }
+
     await connect();
     
     logDatabase("findById", "Attempt", { attemptId: params.attemptId });
@@ -20,27 +36,18 @@ export async function GET(request, { params }) {
       .populate('questId', 'name level timeLimit');
 
     if (!attempt) {
-      logger.warn("Attempt not found", { attemptId: params.attemptId });
-      return NextResponse.json(
-        { error: 'Attempt not found' },
-        { status: 404 }
-      );
+      throw new NotFoundError("Attempt", params.attemptId);
     }
 
     logger.debug("Attempt details retrieved", { 
       attemptId: params.attemptId, 
-      status: attempt.status 
+      status: attempt.status,
+      requestId
     });
 
-    return NextResponse.json(attempt);
+    return successResponse(attempt.toObject());
+    
   } catch (error) {
-    logger.error("Error fetching attempt", { 
-      attemptId: params.attemptId, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: 'Failed to fetch attempt' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }

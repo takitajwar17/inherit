@@ -6,7 +6,6 @@
  * Submits answers for a quest attempt and triggers AI evaluation.
  */
 
-import { NextResponse } from "next/server";
 import { connect } from "@/lib/mongodb/mongoose";
 import Attempt from "@/lib/models/attemptModel";
 import { submitQuestAttempt } from "@/lib/actions/quest";
@@ -16,23 +15,33 @@ import { validateRequest, submitAttemptSchema, isValidMongoId } from "@/lib/vali
 import { withRateLimit } from "@/lib/ratelimit/middleware";
 import { submitLimiter } from "@/lib/ratelimit/limiters";
 import { getUserIdentifier } from "@/lib/ratelimit";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { 
+  ValidationError, 
+  AuthenticationError, 
+  NotFoundError 
+} from "@/lib/errors";
 
+/**
+ * POST /api/attempts/[attemptId]/submit - Submit quest answers
+ * Rate limited: 5 submissions per minute per user
+ */
 async function handlePost(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     const { userId } = auth();
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Authentication required");
     }
 
     // Validate attemptId parameter
     if (!isValidMongoId(params.attemptId)) {
-      return NextResponse.json(
-        { error: "Invalid attempt ID format" },
-        { status: 400 }
-      );
+      throw new ValidationError("Invalid attempt ID format");
     }
 
     const body = await request.json();
@@ -40,14 +49,7 @@ async function handlePost(request, { params }) {
     // Validate request body with Zod schema
     const validation = validateRequest(submitAttemptSchema, body);
     if (!validation.success) {
-      logger.warn("Attempt submission validation failed", { 
-        attemptId: params.attemptId, 
-        error: validation.error 
-      });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { answers } = validation.data;
@@ -56,16 +58,13 @@ async function handlePost(request, { params }) {
     logDatabase("findById", "Attempt", { attemptId: params.attemptId, operation: "submit" });
     const attempt = await Attempt.findById(params.attemptId);
     if (!attempt) {
-      logger.warn("Attempt not found for submission", { attemptId: params.attemptId });
-      return NextResponse.json(
-        { error: "Attempt not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError("Attempt", params.attemptId);
     }
 
     logger.info("Quest submission started", { 
       attemptId: params.attemptId, 
-      answerCount: answers.length 
+      answerCount: answers.length,
+      requestId
     });
     events.aiEvaluationStarted(params.attemptId);
 
@@ -99,21 +98,15 @@ async function handlePost(request, { params }) {
       attemptId: params.attemptId, 
       totalScore: result.totalScore,
       maxPoints: attempt.maxPoints,
-      evaluationDuration: duration
+      evaluationDuration: duration,
+      requestId
     });
     events.questCompleted(userId, attempt.questId, result.totalScore);
 
-    return NextResponse.json({ success: true, attempt });
+    return successResponse({ attempt });
 
   } catch (error) {
-    logger.error("Error in submit route", { 
-      attemptId: params.attemptId, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

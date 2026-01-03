@@ -1,8 +1,3 @@
-import { NextResponse } from 'next/server';
-import { connect } from '@/lib/mongodb/mongoose';
-import Quest from '@/lib/models/questModel';
-import logger, { logDatabase } from '@/lib/logger';
-
 /**
  * Public Quests API
  * 
@@ -10,7 +5,22 @@ import logger, { logDatabase } from '@/lib/logger';
  * 
  * Retrieves all active quests for public access.
  */
+
+import { connect } from '@/lib/mongodb/mongoose';
+import Quest from '@/lib/models/questModel';
+import logger, { logDatabase } from '@/lib/logger';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from '@/lib/errors/apiResponse';
+
+/**
+ * GET /api/quests - Get all active quests (public)
+ */
 export async function GET() {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
     logDatabase("find", "Quest", { filter: "isActive" });
@@ -20,13 +30,11 @@ export async function GET() {
       .select('name level timeLimit questions startTime endTime')
       .sort({ startTime: 1 });
 
-    logger.debug("Public quests fetched", { count: quests.length });
-    return NextResponse.json(quests);
+    logger.debug("Public quests fetched", { count: quests.length, requestId });
+    
+    return successResponse(quests.map(q => q.toObject()));
+    
   } catch (error) {
-    logger.error("Error fetching quests", { error: error.message });
-    return NextResponse.json(
-      { error: 'Failed to fetch quests' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }

@@ -13,9 +13,16 @@ import { jwtVerify } from "jose";
  * @returns {NextResponse} The middleware response
  */
 export default async function middleware(request) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Allow public quests routes (but not /api/quests/user which requires auth)
+  if (pathname.startsWith('/api/quests') && pathname !== '/api/quests/user') {
+    return NextResponse.next();
+  }
+  
   // Check if the request is for admin routes
-  if (request.nextUrl.pathname.startsWith('/admin') || 
-      request.nextUrl.pathname.startsWith('/api/admin')) {
+  if (pathname.startsWith('/admin') || 
+      pathname.startsWith('/api/admin')) {
     
     const loginPath = "/admin/login";
     const authPath = "/api/admin/auth";
@@ -118,7 +125,14 @@ export default async function middleware(request) {
 
   // For non-admin routes, use Clerk authentication
   const clerkMiddleware = authMiddleware({
-    publicRoutes: ["/", "sign-in", "sign-up", "/api/video-search", "/api/voice-routing"],
+    publicRoutes: [
+      "/", 
+      "sign-in", 
+      "sign-up", 
+      "/api/video-search", 
+      "/api/voice-routing"
+      // Note: /api/quests routes are handled above, before Clerk middleware
+    ],
     ignoredRoutes: ["/api/webhooks(.*)"],
   });
 

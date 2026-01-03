@@ -1,10 +1,3 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
-import logger, { logExternalApi } from '@/lib/logger';
-import { validateRequest, videoSearchSchema } from '@/lib/validation';
-import { withRateLimit } from '@/lib/ratelimit/middleware';
-import { youtubeLimiter } from '@/lib/ratelimit/limiters';
-
 /**
  * Video Search API
  * 
@@ -12,6 +5,19 @@ import { youtubeLimiter } from '@/lib/ratelimit/limiters';
  * 
  * Searches YouTube for educational videos on a given topic.
  */
+
+import axios from 'axios';
+import logger, { logExternalApi } from '@/lib/logger';
+import { validateRequest, videoSearchSchema } from '@/lib/validation';
+import { withRateLimit } from '@/lib/ratelimit/middleware';
+import { youtubeLimiter } from '@/lib/ratelimit/limiters';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId,
+  parseJsonBody
+} from '@/lib/errors/apiResponse';
+import { ValidationError, NotFoundError, ExternalServiceError } from '@/lib/errors';
 
 // Function to get a random API key
 const getRandomApiKey = () => {
@@ -50,32 +56,25 @@ const getVideoDetails = async (videoId) => {
   }
 };
 
+/**
+ * POST /api/video-search - Search for educational videos
+ * Rate limited: 30 requests per minute per IP
+ */
 async function handlePost(request) {
+  const requestId = generateRequestId();
+  
   try {
     // Parse JSON body with error handling
-    let body;
-    try {
-      body = await request.json();
-    } catch (parseError) {
-      logger.warn("Video search: Invalid JSON body");
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
+    const body = await parseJsonBody(request);
 
     // Validate request body with Zod schema
     const validation = validateRequest(videoSearchSchema, body);
     if (!validation.success) {
-      logger.warn("Video search validation failed", { error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { topic } = validation.data;
-    logger.info("Searching for educational video", { topic });
+    logger.info("Searching for educational video", { topic, requestId });
 
     // Search for videos across specified channels
     const promises = CHANNEL_IDS.map((channelId) =>
@@ -93,16 +92,20 @@ async function handlePost(request) {
     );
 
     logExternalApi("youtube", "search_videos", { topic, channelCount: CHANNEL_IDS.length });
-    const results = await Promise.all(promises);
+    
+    let results;
+    try {
+      results = await Promise.all(promises);
+    } catch (ytError) {
+      logger.error("YouTube API error", { error: ytError.message, requestId });
+      throw new ExternalServiceError("YouTube", "Failed to search videos");
+    }
+    
     const allVideos = results.flatMap((result) => result.data.items);
 
     // If no videos found
     if (allVideos.length === 0) {
-      logger.warn("No videos found for topic", { topic });
-      return NextResponse.json(
-        { error: 'No videos found for this topic' },
-        { status: 404 }
-      );
+      throw new NotFoundError("Videos for topic");
     }
 
     // Get the most relevant video (first one)
@@ -115,11 +118,12 @@ async function handlePost(request) {
     logger.info("Video search successful", { 
       topic, 
       videoId, 
-      title: bestMatch.snippet.title 
+      title: bestMatch.snippet.title,
+      requestId
     });
     
     // Return the video information
-    return NextResponse.json({
+    return successResponse({
       videoId,
       title: bestMatch.snippet.title,
       channelTitle: bestMatch.snippet.channelTitle,
@@ -127,12 +131,9 @@ async function handlePost(request) {
       publishedAt: bestMatch.snippet.publishedAt,
       contentDetails: videoDetails?.contentDetails || null
     });
+    
   } catch (error) {
-    logger.error("Error searching for video", { error: error.message });
-    return NextResponse.json(
-      { error: 'Failed to search for video' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

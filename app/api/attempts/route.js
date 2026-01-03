@@ -6,7 +6,6 @@
  * Creates a new attempt for a quest.
  */
 
-import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
 import Quest from '@/lib/models/questModel';
 import Attempt from '@/lib/models/attemptModel';
@@ -16,17 +15,33 @@ import { validateRequest, createAttemptSchema } from '@/lib/validation';
 import { withRateLimit } from '@/lib/ratelimit/middleware';
 import { attemptLimiter } from '@/lib/ratelimit/limiters';
 import { getUserIdentifier } from '@/lib/ratelimit';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from '@/lib/errors/apiResponse';
+import { 
+  ValidationError, 
+  AuthenticationError,
+  NotFoundError,
+  ConflictError 
+} from '@/lib/errors';
 
+/**
+ * Handles POST requests for creating quest attempts
+ * @param {Request} request - The incoming request
+ * @returns {NextResponse} JSON response with attempt data or error
+ */
 async function handlePost(request) {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
     
+    // Verify user authentication
     const { userId } = auth();
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      throw new AuthenticationError('Authentication required');
     }
 
     const body = await request.json();
@@ -34,34 +49,24 @@ async function handlePost(request) {
     // Validate request body with Zod schema
     const validation = validateRequest(createAttemptSchema, body);
     if (!validation.success) {
-      logger.warn("Attempt creation validation failed", { error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { questId } = validation.data;
     logDatabase("findById", "Quest", { questId, operation: "create_attempt" });
 
-    // Check if quest exists and is still active
+    // Check if quest exists
     const quest = await Quest.findById(questId);
     if (!quest) {
-      logger.warn("Quest not found for attempt creation", { questId });
-      return NextResponse.json(
-        { error: 'Quest not found' },
-        { status: 404 }
-      );
+      throw new NotFoundError('Quest', questId);
     }
 
+    // Check if quest is still active
     const now = new Date();
     const endTime = new Date(quest.endTime);
     if (now >= endTime) {
       logger.warn("Attempt on ended quest", { questId, endTime });
-      return NextResponse.json(
-        { error: 'This quest has ended' },
-        { status: 400 }
-      );
+      throw new ValidationError('This quest has ended');
     }
 
     // Check for existing attempts
@@ -72,11 +77,7 @@ async function handlePost(request) {
     });
 
     if (existingAttempt) {
-      logger.warn("Duplicate quest attempt", { userId, questId });
-      return NextResponse.json(
-        { error: 'You have already attempted this quest' },
-        { status: 400 }
-      );
+      throw new ConflictError('You have already attempted this quest');
     }
 
     // Create new attempt
@@ -96,17 +97,15 @@ async function handlePost(request) {
     logger.info("Quest attempt created", { 
       userId, 
       questId, 
-      attemptId: attempt._id 
+      attemptId: attempt._id,
+      requestId 
     });
     events.questAttempted(userId, questId);
 
-    return NextResponse.json(attempt);
+    return successResponse(attempt);
+    
   } catch (error) {
-    logger.error("Error creating attempt", { error: error.message });
-    return NextResponse.json(
-      { error: 'Failed to create attempt' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 
@@ -117,3 +116,4 @@ export const POST = withRateLimit(attemptLimiter, handlePost, {
     return getUserIdentifier(req, userId);
   }
 });
+

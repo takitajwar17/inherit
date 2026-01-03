@@ -9,42 +9,50 @@
 import Question from "@/lib/models/questionModel";
 import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
 import logger, { logDatabase } from "@/lib/logger";
 import { isValidMongoId } from "@/lib/validation";
 import { withRateLimit } from "@/lib/ratelimit/middleware";
 import { voteLimiter } from "@/lib/ratelimit/limiters";
 import { getUserIdentifier } from "@/lib/ratelimit";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { 
+  ValidationError, 
+  AuthenticationError, 
+  NotFoundError,
+  ConflictError 
+} from "@/lib/errors";
 
+/**
+ * POST /api/questions/[id]/upvote - Upvote a question
+ * Rate limited: 30 votes per minute per user
+ */
 async function handlePost(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
 
     const { userId } = auth();
-
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new AuthenticationError("Authentication required");
     }
 
     const questionId = params.id;
 
     // Validate question ID parameter
     if (!isValidMongoId(questionId)) {
-      return NextResponse.json(
-        { error: "Invalid question ID format" },
-        { status: 400 }
-      );
+      throw new ValidationError("Invalid question ID format");
     }
 
     logDatabase("findById", "Question", { questionId, action: "upvote" });
     const question = await Question.findById(questionId);
 
     if (!question) {
-      logger.warn("Question not found for upvote", { questionId });
-      return NextResponse.json(
-        { error: "Question not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError("Question", questionId);
     }
 
     // Initialize voters if undefined
@@ -60,10 +68,7 @@ async function handlePost(request, { params }) {
     if (existingVote) {
       if (existingVote.vote === 1) {
         // User has already upvoted
-        return NextResponse.json(
-          { error: "You have already upvoted this question" },
-          { status: 400 }
-        );
+        throw new ConflictError("You have already upvoted this question");
       } else {
         // User had downvoted before, change to upvote
         question.votes += 2; // Remove downvote (-1) and add upvote (+1)
@@ -80,19 +85,14 @@ async function handlePost(request, { params }) {
     logger.debug("Question upvoted", { 
       questionId, 
       userId, 
-      newVoteCount: question.votes 
+      newVoteCount: question.votes,
+      requestId
     });
 
-    return NextResponse.json({ success: true, votes: question.votes });
+    return successResponse({ votes: question.votes });
+    
   } catch (error) {
-    logger.error("Error upvoting question", { 
-      questionId: params.id, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

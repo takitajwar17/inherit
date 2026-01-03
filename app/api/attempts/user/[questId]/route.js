@@ -6,22 +6,38 @@
  * Retrieves the most recent attempt for a user on a specific quest.
  */
 
-import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
 import Attempt from '@/lib/models/attemptModel';
 import { auth } from '@clerk/nextjs';
 import logger, { logDatabase } from '@/lib/logger';
+import { isValidMongoId } from '@/lib/validation';
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from '@/lib/errors/apiResponse';
+import { 
+  ValidationError, 
+  AuthenticationError 
+} from '@/lib/errors';
 
+/**
+ * GET /api/attempts/user/[questId] - Get user's attempt for a quest
+ */
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
     
     const { userId } = auth();
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Authentication required");
+    }
+
+    // Validate quest ID parameter
+    if (!isValidMongoId(params.questId)) {
+      throw new ValidationError("Invalid quest ID format");
     }
 
     logDatabase("findOne", "Attempt", { userId, questId: params.questId });
@@ -34,25 +50,25 @@ export async function GET(request, { params }) {
     }).sort({ createdAt: -1 });
 
     if (!attempt) {
-      logger.debug("No attempt found for user quest", { userId, questId: params.questId });
-      return NextResponse.json(null);
+      logger.debug("No attempt found for user quest", { 
+        userId, 
+        questId: params.questId,
+        requestId 
+      });
+      // Return null instead of error for "no attempt found" case
+      return successResponse(null);
     }
 
     logger.debug("User attempt retrieved", { 
       userId, 
       questId: params.questId, 
-      attemptStatus: attempt.status 
+      attemptStatus: attempt.status,
+      requestId
     });
 
-    return NextResponse.json(attempt);
+    return successResponse(attempt.toObject());
+    
   } catch (error) {
-    logger.error("Error fetching user attempt", { 
-      questId: params.questId, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: 'Failed to fetch attempt' },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }

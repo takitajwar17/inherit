@@ -10,23 +10,35 @@ import Question from "@/lib/models/questionModel";
 import User from "@/lib/models/userModel";
 import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
 import logger, { logDatabase } from "@/lib/logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { 
+  AuthenticationError, 
+  NotFoundError 
+} from "@/lib/errors";
 
+/**
+ * GET /api/questions/all-questions - Get all questions categorized
+ */
 export async function GET() {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
     const { userId } = auth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new AuthenticationError("Authentication required");
     }
 
     // Fetch the user to get the userName
     const user = await User.findOne({ clerkId: userId });
     if (!user) {
-      logger.warn("User not found for questions request", { clerkId: userId });
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw new NotFoundError("User");
     }
 
     const userName = user.userName;
@@ -51,15 +63,13 @@ export async function GET() {
     logger.debug("Questions fetched", { 
       userId, 
       ownedCount: ownedQuestions.length, 
-      othersCount: otherQuestions.length 
+      othersCount: otherQuestions.length,
+      requestId
     });
 
-    return NextResponse.json(questions);
+    return successResponse(questions);
+    
   } catch (error) {
-    logger.error("Error fetching questions", { error: error.message });
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }

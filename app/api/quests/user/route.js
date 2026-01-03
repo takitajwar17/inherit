@@ -1,10 +1,3 @@
-import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs";
-import { connect } from "@/lib/mongodb/mongoose";
-import Quest from "@/lib/models/questModel";
-import Attempt from "@/lib/models/attemptModel";
-import logger, { logDatabase } from "@/lib/logger";
-
 /**
  * User Quests API
  * 
@@ -12,11 +5,29 @@ import logger, { logDatabase } from "@/lib/logger";
  * 
  * Retrieves quest data categorized by status for the authenticated user.
  */
+
+import { auth } from "@clerk/nextjs";
+import { connect } from "@/lib/mongodb/mongoose";
+import Quest from "@/lib/models/questModel";
+import Attempt from "@/lib/models/attemptModel";
+import logger, { logDatabase } from "@/lib/logger";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { AuthenticationError } from "@/lib/errors";
+
+/**
+ * GET /api/quests/user - Get user's quest data (categorized)
+ */
 export async function GET() {
+  const requestId = generateRequestId();
+  
   try {
     const { userId } = auth();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new AuthenticationError("Authentication required");
     }
 
     await connect();
@@ -80,20 +91,18 @@ export async function GET() {
     logger.debug("User quests retrieved", { 
       userId, 
       activeCount: active.length, 
-      completedCount: completed.length 
+      completedCount: completed.length,
+      requestId
     });
 
-    return NextResponse.json({
+    return successResponse({
       active,
       completed,
       recent: recent.slice(0, 5),
       history,
     });
+    
   } catch (error) {
-    logger.error("Error in GET /api/quests/user", { error: error.message });
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }

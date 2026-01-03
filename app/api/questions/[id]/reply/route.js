@@ -10,30 +10,42 @@ import Question from "@/lib/models/questionModel";
 import User from "@/lib/models/userModel";
 import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
 import logger, { logDatabase, events } from "@/lib/logger";
 import { validateRequest, replySchema, isValidMongoId } from "@/lib/validation";
 import { withRateLimit } from "@/lib/ratelimit/middleware";
 import { replyLimiter } from "@/lib/ratelimit/limiters";
 import { getUserIdentifier } from "@/lib/ratelimit";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { 
+  ValidationError, 
+  AuthenticationError, 
+  NotFoundError 
+} from "@/lib/errors";
 
+/**
+ * POST /api/questions/[id]/reply - Add a reply to a question
+ * Rate limited: 10 replies per minute per user
+ */
 async function handlePost(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
     await connect();
 
     const { userId } = auth();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      throw new AuthenticationError("Authentication required");
     }
 
     const questionId = params.id;
 
     // Validate question ID parameter
     if (!isValidMongoId(questionId)) {
-      return NextResponse.json(
-        { error: "Invalid question ID format" },
-        { status: 400 }
-      );
+      throw new ValidationError("Invalid question ID format");
     }
 
     const body = await request.json();
@@ -41,11 +53,7 @@ async function handlePost(request, { params }) {
     // Validate request body with Zod schema
     const validation = validateRequest(replySchema, body);
     if (!validation.success) {
-      logger.warn("Reply validation failed", { questionId, error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      throw new ValidationError(validation.error, validation.errors);
     }
 
     const { content } = validation.data;
@@ -53,17 +61,12 @@ async function handlePost(request, { params }) {
     logDatabase("findById", "Question", { questionId, action: "reply" });
     const question = await Question.findById(questionId);
     if (!question) {
-      logger.warn("Question not found for reply", { questionId });
-      return NextResponse.json(
-        { error: "Question not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError("Question", questionId);
     }
 
     const user = await User.findOne({ clerkId: userId });
     if (!user) {
-      logger.warn("User not found for reply", { clerkId: userId });
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      throw new NotFoundError("User");
     }
 
     const reply = {
@@ -83,24 +86,18 @@ async function handlePost(request, { params }) {
     logger.info("Reply added to question", { 
       questionId, 
       replyAuthor: user.userName, 
-      totalReplies: question.answers 
+      totalReplies: question.answers,
+      requestId
     });
     events.questionAnswered(questionId, reply._id);
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       reply,
       answers: question.answers,
     });
+    
   } catch (error) {
-    logger.error("Error adding reply", { 
-      questionId: params.id, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
 

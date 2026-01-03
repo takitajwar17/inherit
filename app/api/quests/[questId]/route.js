@@ -1,8 +1,3 @@
-import { NextResponse } from "next/server";
-import { connect } from "@/lib/mongodb/mongoose";
-import Quest from "@/lib/models/questModel";
-import logger, { logDatabase } from "@/lib/logger";
-
 /**
  * Single Quest API
  * 
@@ -10,8 +5,30 @@ import logger, { logDatabase } from "@/lib/logger";
  * 
  * Retrieves details for a specific quest.
  */
+
+import { connect } from "@/lib/mongodb/mongoose";
+import Quest from "@/lib/models/questModel";
+import logger, { logDatabase } from "@/lib/logger";
+import { isValidMongoId } from "@/lib/validation";
+import { 
+  successResponse, 
+  errorResponse, 
+  generateRequestId 
+} from "@/lib/errors/apiResponse";
+import { ValidationError, NotFoundError } from "@/lib/errors";
+
+/**
+ * GET /api/quests/[questId] - Get quest details
+ */
 export async function GET(request, { params }) {
+  const requestId = generateRequestId();
+  
   try {
+    // Validate quest ID parameter
+    if (!isValidMongoId(params.questId)) {
+      throw new ValidationError("Invalid quest ID format");
+    }
+
     await connect();
     logDatabase("findById", "Quest", { questId: params.questId });
     
@@ -20,8 +37,7 @@ export async function GET(request, { params }) {
     );
 
     if (!quest) {
-      logger.warn("Quest not found", { questId: params.questId });
-      return NextResponse.json({ error: "Quest not found" }, { status: 404 });
+      throw new NotFoundError("Quest", params.questId);
     }
 
     // Log quest details for debugging
@@ -30,17 +46,12 @@ export async function GET(request, { params }) {
       startTime: quest.startTime,
       endTime: quest.endTime,
       timeLimit: quest.timeLimit,
+      requestId
     });
 
-    return NextResponse.json(quest);
+    return successResponse(quest.toObject());
+    
   } catch (error) {
-    logger.error("Error fetching quest", { 
-      questId: params.questId, 
-      error: error.message 
-    });
-    return NextResponse.json(
-      { error: "Failed to fetch quest" },
-      { status: 500 }
-    );
+    return errorResponse(error, requestId);
   }
 }
