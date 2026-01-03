@@ -4,10 +4,19 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 
+/**
+ * Admin Header Component
+ * 
+ * Displays the admin navigation header with branding, navigation links,
+ * current time, and logout functionality.
+ * 
+ * @component
+ */
 export default function AdminHeader() {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Update the clock every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -16,9 +25,14 @@ export default function AdminHeader() {
     return () => clearInterval(timer);
   }, []);
 
+  /**
+   * Handles admin logout by clearing the JWT token and redirecting to login
+   */
   const handleLogout = () => {
-    Cookies.remove("adminAuth", { path: "/" });
-    sessionStorage.removeItem("adminAuth");
+    // Remove JWT token from cookies
+    Cookies.remove("adminToken", { path: "/" });
+    
+    // Redirect to login page
     window.location.href = "/admin/login";
   };
 
@@ -54,7 +68,8 @@ export default function AdminHeader() {
             </div>
             <button
               onClick={handleLogout}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              aria-label="Logout from admin panel"
             >
               Logout
             </button>

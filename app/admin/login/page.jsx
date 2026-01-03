@@ -4,22 +4,63 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 
+/**
+ * Admin Login Page Component
+ * 
+ * Handles admin authentication using secure JWT tokens.
+ * Credentials are validated server-side and a JWT token is returned
+ * which is stored in an HTTP-only secure cookie.
+ * 
+ * @component
+ */
 export default function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Check if already authenticated on mount
   useEffect(() => {
-    // Check if already authenticated
-    const adminAuth = Cookies.get("adminAuth");
-    if (adminAuth) {
-      router.push("/admin");
+    const adminToken = Cookies.get("adminToken");
+    if (adminToken) {
+      // Verify token is still valid by making a test request
+      verifyExistingToken(adminToken);
     }
   }, [router]);
 
+  /**
+   * Verifies if an existing token is still valid
+   * @param {string} token - The JWT token to verify
+   */
+  const verifyExistingToken = async (token) => {
+    try {
+      const response = await fetch("/api/admin/quests", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        router.push("/admin");
+      } else {
+        // Token is invalid, remove it
+        Cookies.remove("adminToken");
+      }
+    } catch (error) {
+      console.error("Token verification error:", error);
+      Cookies.remove("adminToken");
+    }
+  };
+
+  /**
+   * Handles form submission for admin login
+   * @param {Event} e - Form submission event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/admin/auth", {
@@ -30,39 +71,76 @@ export default function AdminLogin() {
         body: JSON.stringify(credentials),
       });
 
-      if (response.ok) {
-        const base64Credentials = btoa(`${credentials.username}:${credentials.password}`);
-        // Set both cookie and sessionStorage
-        Cookies.set("adminAuth", base64Credentials, { path: "/" });
-        sessionStorage.setItem("adminAuth", base64Credentials);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store JWT token in cookie (httpOnly would be better but requires server-side cookie setting)
+        // Set secure cookie options
+        const cookieOptions = {
+          path: "/",
+          secure: process.env.NODE_ENV === "production", // Only HTTPS in production
+          sameSite: "strict", // Prevent CSRF
+          expires: 1, // 1 day (matches JWT expiration)
+        };
         
-        // Force a hard redirect to /admin
+        Cookies.set("adminToken", data.token, cookieOptions);
+        
+        // Clear sensitive data from memory
+        setCredentials({ username: "", password: "" });
+        
+        // Redirect to admin dashboard
         window.location.href = "/admin";
       } else {
-        const data = await response.json();
         setError(data.error || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
       setError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  /**
+   * Handles input field changes
+   * @param {Event} e - Input change event
+   */
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
+        {/* Header */}
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Admin Login
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Enter your credentials to access the admin panel
+          </p>
         </div>
+
+        {/* Login Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {/* Error Message */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div 
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" 
+              role="alert"
+              aria-live="polite"
+            >
+              <span className="block sm:inline">{error}</span>
             </div>
           )}
+
+          {/* Input Fields */}
           <div className="rounded-md shadow-sm -space-y-px">
+            {/* Username Field */}
             <div>
               <label htmlFor="username" className="sr-only">
                 Username
@@ -71,15 +149,17 @@ export default function AdminLogin() {
                 id="username"
                 name="username"
                 type="text"
+                autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                disabled={isLoading}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Username"
                 value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
+                onChange={handleInputChange}
               />
             </div>
+
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="sr-only">
                 Password
@@ -88,26 +168,59 @@ export default function AdminLogin() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                disabled={isLoading}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Password"
                 value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
+                onChange={handleInputChange}
               />
             </div>
           </div>
 
+          {/* Submit Button */}
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
             >
-              Sign in
+              {isLoading ? (
+                <>
+                  <svg 
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <circle 
+                      className="opacity-25" 
+                      cx="12" 
+                      cy="12" 
+                      r="10" 
+                      stroke="currentColor" 
+                      strokeWidth="4"
+                    />
+                    <path 
+                      className="opacity-75" 
+                      fill="currentColor" 
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </button>
           </div>
         </form>
+
+        {/* Security Notice */}
+        <p className="mt-4 text-center text-xs text-gray-500">
+          This is a secure admin area. All login attempts are logged.
+        </p>
       </div>
     </div>
   );

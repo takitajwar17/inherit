@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import QuestList from "./components/QuestList";
 
+/**
+ * Admin Dashboard Page Component
+ * 
+ * Main admin dashboard that displays quest management interface.
+ * Protected by JWT token authentication - redirects to login if not authenticated.
+ * 
+ * @component
+ */
 export default function AdminDashboard() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -14,23 +22,54 @@ export default function AdminDashboard() {
     upcomingQuests: 0,
   });
 
+  // Check authentication on component mount
   useEffect(() => {
-    const checkAuth = () => {
-      const adminAuth = Cookies.get("adminAuth");
-      if (!adminAuth) {
+    /**
+     * Verifies the admin token and redirects to login if invalid
+     */
+    const checkAuth = async () => {
+      const adminToken = Cookies.get("adminToken");
+      
+      if (!adminToken) {
+        // No token found, redirect to login
         window.location.href = "/admin/login";
         return;
       }
-      setIsLoading(false);
+
+      try {
+        // Verify token by making a test request to protected endpoint
+        const response = await fetch("/api/admin/quests", {
+          headers: {
+            "Authorization": `Bearer ${adminToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          // Token is invalid or expired, clear it and redirect
+          Cookies.remove("adminToken", { path: "/" });
+          window.location.href = "/admin/login";
+          return;
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        Cookies.remove("adminToken", { path: "/" });
+        window.location.href = "/admin/login";
+      }
     };
 
     checkAuth();
   }, []);
 
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="text-xl text-gray-600">Verifying authentication...</div>
+        </div>
       </div>
     );
   }
