@@ -1,5 +1,11 @@
-// pages/api/socket.js
+/**
+ * Socket/Pusher API Handler
+ * 
+ * Handles real-time collaboration events for the playground feature.
+ */
+
 import { pusher } from '../../lib/pusher';
+import logger from '../../lib/logger';
 
 // Store collaborators for each room
 const roomCollaborators = new Map();
@@ -35,7 +41,11 @@ export default async function handler(req, res) {
         timestamp: data.timestamp
       }));
       
-      console.log(`User ${username || userId} joined room ${roomId}. Current collaborators:`, collaborators);
+      logger.info("User joined room", { 
+        username: username || userId, 
+        roomId, 
+        collaboratorCount: collaborators.length 
+      });
       
       await pusher.trigger(
         `room-${roomId}`,
@@ -53,7 +63,11 @@ export default async function handler(req, res) {
           timestamp: data.timestamp
         }));
         
-        console.log(`User ${username || userId} left room ${roomId}. Current collaborators:`, collaborators);
+        logger.info("User left room", { 
+          username: username || userId, 
+          roomId, 
+          collaboratorCount: collaborators.length 
+        });
         
         if (roomCollaborators.get(roomId).size === 0) {
           roomCollaborators.delete(roomId);
@@ -68,7 +82,7 @@ export default async function handler(req, res) {
     }
     // Handle code updates
     else if (event === 'codeUpdate') {
-      console.log('Triggering code update:', {
+      logger.debug("Code update triggered", {
         channel: `room-${roomId}`,
         user: username || userId,
         contentLength: data?.length || 0
@@ -87,7 +101,7 @@ export default async function handler(req, res) {
       event,
     });
   } catch (error) {
-    console.error('Pusher error:', error);
+    logger.error("Pusher error", { error: error.message, roomId, event });
     res.status(500).json({ 
       message: 'Error sending event',
       error: error.message,
