@@ -13,6 +13,8 @@ import Quest from "@/lib/models/questModel";
 import { adminAuth } from "@/lib/middleware/adminAuth";
 import logger, { logDatabase, events } from "@/lib/logger";
 import { validateRequest, createQuestSchema } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { adminQuestLimiter } from "@/lib/ratelimit/limiters";
 
 export const GET = adminAuth(async () => {
   try {
@@ -32,7 +34,8 @@ export const GET = adminAuth(async () => {
   }
 });
 
-export const POST = adminAuth(async (req) => {
+// Wrap with rate limiting (20 operations per minute)
+const handlePost = adminAuth(async (req) => {
   try {
     await connect();
     const body = await req.json();
@@ -77,3 +80,5 @@ export const POST = adminAuth(async (req) => {
     );
   }
 });
+
+export const POST = withRateLimit(adminQuestLimiter, handlePost);

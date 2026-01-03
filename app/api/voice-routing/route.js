@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import logger, { logExternalApi } from '@/lib/logger';
 import { validateRequest, voiceCommandSchema } from '@/lib/validation';
+import { withRateLimit } from '@/lib/ratelimit/middleware';
+import { aiLimiter } from '@/lib/ratelimit/limiters';
 const Groq = require('groq-sdk');
 
 /**
@@ -18,7 +20,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-export async function POST(request) {
+async function handlePost(request) {
   try {
     // Parse JSON body with error handling
     let body;
@@ -158,3 +160,6 @@ export async function POST(request) {
     );
   }
 }
+
+// Export with rate limiting (20 requests per minute per IP)
+export const POST = withRateLimit(aiLimiter, handlePost);

@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import logger, { logAuth } from "@/lib/logger";
 import { validateRequest, adminLoginSchema } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { adminAuthLimiter } from "@/lib/ratelimit/limiters";
 
 /**
  * Admin Authentication API Route
@@ -51,10 +53,11 @@ async function generateAdminToken(username) {
 
 /**
  * Handles POST requests for admin authentication
+ * Rate limited: 5 requests per 15 minutes per IP
  * @param {Request} req - The incoming request object
  * @returns {NextResponse} JSON response with success status and token, or error
  */
-export async function POST(req) {
+async function handlePost(req) {
   try {
     // Parse JSON body with error handling
     let body;
@@ -135,3 +138,6 @@ export async function POST(req) {
     );
   }
 }
+
+// Export with rate limiting wrapper (5 requests per 15 minutes)
+export const POST = withRateLimit(adminAuthLimiter, handlePost);

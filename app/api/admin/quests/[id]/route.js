@@ -4,6 +4,8 @@ import Quest from "@/lib/models/questModel";
 import { adminAuth } from "@/lib/middleware/adminAuth";
 import logger from "@/lib/logger";
 import { validateRequest, updateQuestSchema, isValidMongoId } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { adminQuestLimiter } from "@/lib/ratelimit/limiters";
 
 export const GET = adminAuth(async (req, { params }) => {
   try {
@@ -35,7 +37,7 @@ export const GET = adminAuth(async (req, { params }) => {
   }
 });
 
-export const PUT = adminAuth(async (req, { params }) => {
+const handlePut = adminAuth(async (req, { params }) => {
   try {
     // Validate MongoDB ObjectId
     if (!isValidMongoId(params.id)) {
@@ -82,7 +84,7 @@ export const PUT = adminAuth(async (req, { params }) => {
   }
 });
 
-export const DELETE = adminAuth(async (req, { params }) => {
+const handleDelete = adminAuth(async (req, { params }) => {
   try {
     // Validate MongoDB ObjectId
     if (!isValidMongoId(params.id)) {
@@ -112,3 +114,7 @@ export const DELETE = adminAuth(async (req, { params }) => {
     );
   }
 });
+
+// Export with rate limiting (20 operations per minute)
+export const PUT = withRateLimit(adminQuestLimiter, handlePut);
+export const DELETE = withRateLimit(adminQuestLimiter, handleDelete);

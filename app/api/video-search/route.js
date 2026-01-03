@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import logger, { logExternalApi } from '@/lib/logger';
 import { validateRequest, videoSearchSchema } from '@/lib/validation';
+import { withRateLimit } from '@/lib/ratelimit/middleware';
+import { youtubeLimiter } from '@/lib/ratelimit/limiters';
 
 /**
  * Video Search API
@@ -48,7 +50,7 @@ const getVideoDetails = async (videoId) => {
   }
 };
 
-export async function POST(request) {
+async function handlePost(request) {
   try {
     // Parse JSON body with error handling
     let body;
@@ -133,3 +135,6 @@ export async function POST(request) {
     );
   }
 }
+
+// Export with rate limiting (30 requests per minute per IP)
+export const POST = withRateLimit(youtubeLimiter, handlePost);

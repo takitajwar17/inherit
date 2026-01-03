@@ -13,8 +13,11 @@ import Attempt from '@/lib/models/attemptModel';
 import { auth } from '@clerk/nextjs';
 import logger, { logDatabase, events } from '@/lib/logger';
 import { validateRequest, createAttemptSchema } from '@/lib/validation';
+import { withRateLimit } from '@/lib/ratelimit/middleware';
+import { attemptLimiter } from '@/lib/ratelimit/limiters';
+import { getUserIdentifier } from '@/lib/ratelimit';
 
-export async function POST(request) {
+async function handlePost(request) {
   try {
     await connect();
     
@@ -106,3 +109,11 @@ export async function POST(request) {
     );
   }
 }
+
+// Export with rate limiting (10 requests per minute, user-based)
+export const POST = withRateLimit(attemptLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});

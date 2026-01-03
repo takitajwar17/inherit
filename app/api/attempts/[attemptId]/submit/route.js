@@ -13,8 +13,11 @@ import { submitQuestAttempt } from "@/lib/actions/quest";
 import { auth } from "@clerk/nextjs";
 import logger, { logDatabase, events } from "@/lib/logger";
 import { validateRequest, submitAttemptSchema, isValidMongoId } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { submitLimiter } from "@/lib/ratelimit/limiters";
+import { getUserIdentifier } from "@/lib/ratelimit";
 
-export async function POST(request, { params }) {
+async function handlePost(request, { params }) {
   try {
     const { userId } = auth();
     if (!userId) {
@@ -113,3 +116,11 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+// Export with rate limiting (5 submissions per minute, user-based)
+export const POST = withRateLimit(submitLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});

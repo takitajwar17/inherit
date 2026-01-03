@@ -13,8 +13,11 @@ import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import logger, { logDatabase, events } from "@/lib/logger";
 import { validateRequest, replySchema, isValidMongoId } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { replyLimiter } from "@/lib/ratelimit/limiters";
+import { getUserIdentifier } from "@/lib/ratelimit";
 
-export async function POST(request, { params }) {
+async function handlePost(request, { params }) {
   try {
     await connect();
 
@@ -100,3 +103,11 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+// Export with rate limiting (10 replies per minute, user-based)
+export const POST = withRateLimit(replyLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});

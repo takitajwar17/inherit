@@ -12,8 +12,11 @@ import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import logger, { logDatabase } from "@/lib/logger";
 import { isValidMongoId } from "@/lib/validation";
+import { withRateLimit } from "@/lib/ratelimit/middleware";
+import { voteLimiter } from "@/lib/ratelimit/limiters";
+import { getUserIdentifier } from "@/lib/ratelimit";
 
-export async function POST(request, { params }) {
+async function handlePost(request, { params }) {
   try {
     await connect();
 
@@ -92,3 +95,11 @@ export async function POST(request, { params }) {
     );
   }
 }
+
+// Export with rate limiting (30 votes per minute, user-based)
+export const POST = withRateLimit(voteLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});
