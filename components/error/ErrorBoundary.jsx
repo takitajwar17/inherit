@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ErrorFallback } from './ErrorFallback';
 
 /**
  * ErrorBoundary - Catches JavaScript errors in child components
@@ -61,9 +62,6 @@ class ErrorBoundary extends React.Component {
         return this.props.fallback;
       }
 
-      // Import ErrorFallback dynamically to avoid circular imports
-      const { ErrorFallback } = require('./ErrorFallback');
-      
       // Default fallback UI based on variant
       return (
         <ErrorFallback
