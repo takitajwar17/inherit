@@ -57,8 +57,11 @@ const fetchDefaultVideos = async () => {
       },
     });
     
-    // Filter videos by duration
-    const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items);
+    // Filter videos by duration and ensure we have the correct ID structure
+    const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items).map(video => ({
+      ...video,
+      id: { videoId: video.id } // Ensure consistent ID structure
+    }));
     return qualityVideos;
   });
 
@@ -99,8 +102,11 @@ const searchVideos = async (searchQuery) => {
         },
       });
       
-      // Filter videos by duration
-      const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items);
+      // Filter videos by duration and ensure we have the correct ID structure
+      const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items).map(video => ({
+        ...video,
+        id: { videoId: video.id } // Ensure consistent ID structure
+      }));
       return qualityVideos;
     }
     return [];
@@ -335,11 +341,18 @@ const LearnPage = () => {
               ))}
             </>
           ) : displayedVideos && displayedVideos.length > 0 ? (
-            displayedVideos.map((video) => (
-              <div
-                key={video.id.videoId}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
-                onClick={() => router.push(`/learn/${video.id.videoId}`)}
+            displayedVideos.map((video) => {
+              // Video ID is now consistently structured
+              const videoId = video.id?.videoId;
+              
+              // Skip videos without valid IDs
+              if (!videoId) return null;
+              
+              return (
+                <div
+                  key={videoId}
+                  className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
+                  onClick={() => router.push(`/learn/${videoId}`)}
               >
                 <div className="relative" style={{ paddingBottom: "56.25%" }}>
                   <img
@@ -371,7 +384,8 @@ const LearnPage = () => {
                   </div>
                 </div>
               </div>
-            ))
+            );
+            }).filter(Boolean)
           ) : (
             /* Empty State */
             <div className="col-span-full text-center py-12">
