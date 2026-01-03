@@ -6,11 +6,13 @@
  * Searches YouTube for educational videos on a given topic.
  */
 
+import { auth } from '@clerk/nextjs';
 import axios from 'axios';
 import logger, { logExternalApi } from '@/lib/logger';
 import { validateRequest, videoSearchSchema } from '@/lib/validation';
 import { withRateLimit } from '@/lib/ratelimit/middleware';
 import { youtubeLimiter } from '@/lib/ratelimit/limiters';
+import { getUserIdentifier } from '@/lib/ratelimit';
 import { 
   successResponse, 
   errorResponse, 
@@ -58,7 +60,7 @@ const getVideoDetails = async (videoId) => {
 
 /**
  * POST /api/video-search - Search for educational videos
- * Rate limited: 30 requests per minute per IP
+ * Rate limited: 30 requests per minute per user (if authenticated) or per IP (if anonymous)
  */
 async function handlePost(request) {
   const requestId = generateRequestId();
@@ -137,5 +139,11 @@ async function handlePost(request) {
   }
 }
 
-// Export with rate limiting (30 requests per minute per IP)
-export const POST = withRateLimit(youtubeLimiter, handlePost);
+// Export with rate limiting (30 requests per minute per user/IP)
+// Uses user ID if authenticated, falls back to IP for anonymous users
+export const POST = withRateLimit(youtubeLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});

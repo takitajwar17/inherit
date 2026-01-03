@@ -7,10 +7,12 @@
  * Uses Groq AI to interpret the voice transcript.
  */
 
+import { auth } from '@clerk/nextjs';
 import logger, { logExternalApi } from '@/lib/logger';
 import { validateRequest, voiceCommandSchema } from '@/lib/validation';
 import { withRateLimit } from '@/lib/ratelimit/middleware';
 import { aiLimiter } from '@/lib/ratelimit/limiters';
+import { getUserIdentifier } from '@/lib/ratelimit';
 import { 
   successResponse, 
   errorResponse, 
@@ -28,7 +30,7 @@ const groq = new Groq({
 
 /**
  * POST /api/voice-routing - Process voice command
- * Rate limited: 20 requests per minute per IP
+ * Rate limited: 20 requests per minute per user (if authenticated) or per IP (if anonymous)
  */
 async function handlePost(request) {
   const requestId = generateRequestId();
@@ -153,5 +155,11 @@ async function handlePost(request) {
   }
 }
 
-// Export with rate limiting (20 requests per minute per IP)
-export const POST = withRateLimit(aiLimiter, handlePost);
+// Export with rate limiting (20 requests per minute per user/IP)
+// Uses user ID if authenticated, falls back to IP for anonymous users
+export const POST = withRateLimit(aiLimiter, handlePost, {
+  getIdentifier: (req) => {
+    const { userId } = auth();
+    return getUserIdentifier(req, userId);
+  }
+});
