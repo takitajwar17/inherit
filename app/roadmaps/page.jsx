@@ -31,7 +31,7 @@ const useRoadmapsWithProgress = (roadmaps) => {
   return useMemo(() => {
     if (!roadmaps) return [];
     
-    return roadmaps.map(roadmap => ({
+    return roadmaps.filter(roadmap => roadmap && roadmap._id).map(roadmap => ({
       ...roadmap,
       progress: getRoadmapProgress(roadmap._id, roadmap.content?.steps?.length || 0).progress
     }));
@@ -232,7 +232,7 @@ export default function RoadmapsPage() {
             </>
           ) : (
             <>
-              {roadmapsWithProgress.map((roadmap) => {
+              {(roadmapsWithProgress || []).map((roadmap) => {
                 return (
                   <div
                     key={roadmap._id}
@@ -249,7 +249,7 @@ export default function RoadmapsPage() {
                         {roadmap.prompt}
                       </p>
                       <div className="space-y-3">
-                        {roadmap.content.steps.slice(0, 3).map((step) => (
+                        {roadmap.content?.steps?.slice(0, 3).map((step) => (
                           <div
                             key={step.step}
                             className="flex items-start space-x-3"
@@ -261,10 +261,10 @@ export default function RoadmapsPage() {
                               {step.topic}
                             </p>
                           </div>
-                        ))}
-                        {roadmap.content.steps.length > 3 && (
+                        )) || []}
+                        {(roadmap.content?.steps?.length || 0) > 3 && (
                           <p className="text-sm text-gray-500 pl-9">
-                            +{roadmap.content.steps.length - 3} more steps
+                            +{(roadmap.content?.steps?.length || 0) - 3} more steps
                           </p>
                         )}
                       </div>
@@ -351,7 +351,7 @@ export default function RoadmapsPage() {
                   </div>
                 );
               })}
-              {roadmaps.length === 0 && !isLoadingRoadmaps && (
+              {(!roadmaps || roadmaps.length === 0) && !isLoadingRoadmaps && (
                 <div className="col-span-full">
                   <div className="text-center py-12 bg-white rounded-xl shadow-sm">
                     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
