@@ -6,8 +6,33 @@ import { useRouter } from "next/navigation";
 import { IoSearch } from "react-icons/io5";
 import { formatDistanceToNow } from "date-fns";
 
-// Lightning-fast fetch function
-const fetchVideos = async () => {
+// Helper function to parse YouTube duration and convert to minutes
+const parseDurationToMinutes = (duration) => {
+  if (!duration) return 0;
+  
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1]) || 0;
+  const minutes = parseInt(match[2]) || 0;
+  const seconds = parseInt(match[3]) || 0;
+  
+  return hours * 60 + minutes + seconds / 60;
+};
+
+// Filter function to remove shorts and videos < 20 minutes
+const filterQualityVideos = (videos) => {
+  return videos.filter(video => {
+    const duration = video.contentDetails?.duration;
+    const durationMinutes = parseDurationToMinutes(duration);
+    
+    // Filter out shorts and videos less than 20 minutes
+    return durationMinutes >= 20;
+  });
+};
+
+// Lightning-fast fetch function for default videos (no search)
+const fetchDefaultVideos = async () => {
   const apiKey = getRandomApiKey();
   
   const videoPromises = CHANNEL_IDS.map(async (channelId) => {
@@ -17,8 +42,9 @@ const fetchVideos = async () => {
         channelId,
         part: "snippet",
         order: "date",
-        maxResults: 25,
+        maxResults: 50, // Increased to account for filtering
         type: "video",
+        videoDuration: "long", // Only get long videos (>20 minutes)
       },
     });
     
@@ -31,11 +57,60 @@ const fetchVideos = async () => {
       },
     });
     
-    return videoDetailsResponse.data.items;
+    // Filter videos by duration
+    const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items);
+    return qualityVideos;
   });
 
   const results = await Promise.all(videoPromises);
-  return results.flat().sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt));
+  const allVideos = results.flat();
+  
+  // Sort by publish date and limit to reasonable amount
+  return allVideos
+    .sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt))
+    .slice(0, 24); // Limit to 24 quality videos
+};
+
+// Separate search API function
+const searchVideos = async (searchQuery) => {
+  const apiKey = getRandomApiKey();
+  
+  const videoPromises = CHANNEL_IDS.map(async (channelId) => {
+    const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
+      params: {
+        key: apiKey,
+        channelId,
+        part: "snippet",
+        q: searchQuery, // Search query
+        order: "relevance", // Order by relevance for search
+        maxResults: 25,
+        type: "video",
+        videoDuration: "long", // Only get long videos (>20 minutes)
+      },
+    });
+    
+    const videoIds = response.data.items.map((item) => item.id.videoId).join(",");
+    if (videoIds) {
+      const videoDetailsResponse = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
+        params: {
+          key: apiKey,
+          id: videoIds,
+          part: "snippet,statistics,contentDetails",
+        },
+      });
+      
+      // Filter videos by duration
+      const qualityVideos = filterQualityVideos(videoDetailsResponse.data.items);
+      return qualityVideos;
+    }
+    return [];
+  });
+
+  const results = await Promise.all(videoPromises);
+  const allVideos = results.flat();
+  
+  // Sort by relevance and duration
+  return allVideos.slice(0, 24); // Limit to 24 quality videos
 };
 
 const CHANNEL_IDS = [
@@ -49,34 +124,54 @@ const getRandomApiKey = () => {
   return apiKeys[randomIndex];
 };
 
-// Optimized video filtering with memoization  
-const useFilteredVideos = (videos, searchTerm) => {
-  return useMemo(() => {
-    if (!videos || !searchTerm.trim()) return videos || [];
-    
-    const lowercaseSearch = searchTerm.toLowerCase();
-    return videos.filter((video) =>
-      video.snippet.title.toLowerCase().includes(lowercaseSearch) ||
-      video.snippet.description.toLowerCase().includes(lowercaseSearch)
-    );
-  }, [videos, searchTerm]);
-};
 
 const LearnPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState(""); // Track actual search query
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const router = useRouter();
 
-  // Lightning-fast query with aggressive caching
-  const { data: videos, isLoading } = useQuery({
-    queryKey: ['youtube-videos'],
-    queryFn: fetchVideos,
-    staleTime: 300000, // 5 minutes
-    cacheTime: 900000, // 15 minutes  
+  // Default videos query (when not searching)
+  const { data: defaultVideos, isLoading: isLoadingDefault } = useQuery({
+    queryKey: ['youtube-videos-default'],
+    queryFn: fetchDefaultVideos,
+    staleTime: 600000, // 10 minutes
+    cacheTime: 1800000, // 30 minutes  
     refetchOnWindowFocus: false,
+    enabled: !isSearchMode, // Only fetch when not in search mode
   });
 
-  // Optimized video filtering
-  const filteredVideos = useFilteredVideos(videos, searchTerm);
+  // Search videos query (when searching)
+  const { data: searchResults, isLoading: isLoadingSearch } = useQuery({
+    queryKey: ['youtube-search', activeSearchQuery],
+    queryFn: () => searchVideos(activeSearchQuery),
+    staleTime: 300000, // 5 minutes (shorter for search results)
+    cacheTime: 900000, // 15 minutes
+    refetchOnWindowFocus: false,
+    enabled: isSearchMode && activeSearchQuery.length > 0, // Only fetch when actively searching
+  });
+
+  // Handle search execution
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      setActiveSearchQuery(searchTerm.trim());
+      setIsSearchMode(true);
+    } else {
+      setIsSearchMode(false);
+      setActiveSearchQuery("");
+    }
+  };
+
+  // Clear search and go back to default videos
+  const clearSearch = () => {
+    setSearchTerm("");
+    setActiveSearchQuery("");
+    setIsSearchMode(false);
+  };
+
+  // Determine which videos to show and loading state
+  const displayedVideos = isSearchMode ? searchResults : defaultVideos;
+  const isLoading = isSearchMode ? isLoadingSearch : isLoadingDefault;
 
   const formatDuration = (duration) => {
     if (!duration) return "0:00";
@@ -145,18 +240,16 @@ const LearnPage = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && searchTerm.trim()) {
-                        fetchVideosBySearch();
+                      if (e.key === "Enter") {
+                        handleSearch();
                       }
                     }}
                     placeholder="Search for coding tutorials..."
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 text-gray-900 placeholder-gray-500 shadow-sm"
                   />
                   <button
-                    onClick={() => searchTerm.trim() && fetchVideosBySearch()}
-                    className={`absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
-                      !searchTerm.trim() && "opacity-50 cursor-not-allowed"
-                    }`}
+                    onClick={handleSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Search
                   </button>
@@ -195,6 +288,26 @@ const LearnPage = () => {
         </div>
       </div>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Results Header */}
+        {isSearchMode && (
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Search Results for "{activeSearchQuery}"
+              </h2>
+              <p className="text-sm text-gray-600">
+                {displayedVideos?.length || 0} videos found
+              </p>
+            </div>
+            <button
+              onClick={clearSearch}
+              className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              Clear Search
+            </button>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
             <>
@@ -221,8 +334,8 @@ const LearnPage = () => {
                 </div>
               ))}
             </>
-          ) : (
-            filteredVideos.map((video) => (
+          ) : displayedVideos && displayedVideos.length > 0 ? (
+            displayedVideos.map((video) => (
               <div
                 key={video.id.videoId}
                 className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"
@@ -259,6 +372,32 @@ const LearnPage = () => {
                 </div>
               </div>
             ))
+          ) : (
+            /* Empty State */
+            <div className="col-span-full text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {isSearchMode ? 'No videos found' : 'No videos available'}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {isSearchMode 
+                  ? `No videos found for "${activeSearchQuery}". Try a different search term.`
+                  : 'Unable to load videos at the moment. Please try again later.'
+                }
+              </p>
+              {isSearchMode && (
+                <button
+                  onClick={clearSearch}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Browse All Videos
+                </button>
+              )}
+            </div>
           )}
         </div>
       </main>
