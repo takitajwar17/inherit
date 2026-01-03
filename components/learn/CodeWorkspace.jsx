@@ -13,6 +13,9 @@ import OutputPanel from "./editor/OutputPanel";
 import AIReviewPanel from "./editor/AIReviewPanel";
 import KeyboardShortcuts from "./editor/KeyboardShortcuts";
 
+// Import error boundary
+import { FeatureErrorBoundary } from "@/components/error";
+
 const SUPPORTED_LANGUAGES = [
   { id: "javascript", name: "JavaScript" },
   { id: "python", name: "Python" },
@@ -344,108 +347,110 @@ const CodeWorkspace = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-300">
-      <EditorHeader
-        fileName={fileName}
-        language={language}
-        languages={SUPPORTED_LANGUAGES}
-        onLanguageChange={handleLanguageChange}
-        onFileNameChange={setFileName}
-        onExport={handleExport}
-        onImport={handleImport}
-        onCopy={() =>
-          navigator.clipboard.writeText(editorRef.current?.getValue())
-        }
-        onClear={handleReset}
-        showKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
-        onRun={runCode}
-        onReview={handleReview}
-        onTabChange={setActiveTab}
-        activeTab={activeTab}
-        isRunning={loading && activeTab === "output"}
-        isReviewing={loading && activeTab === "review"}
-        hasOutput={output.length > 0}
-        hasReview={review !== ""}
-      />
+    <FeatureErrorBoundary feature="Code Editor" variant="card">
+      <div className="flex flex-col h-full bg-gray-900 text-gray-300">
+        <EditorHeader
+          fileName={fileName}
+          language={language}
+          languages={SUPPORTED_LANGUAGES}
+          onLanguageChange={handleLanguageChange}
+          onFileNameChange={setFileName}
+          onExport={handleExport}
+          onImport={handleImport}
+          onCopy={() =>
+            navigator.clipboard.writeText(editorRef.current?.getValue())
+          }
+          onClear={handleReset}
+          showKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+          onRun={runCode}
+          onReview={handleReview}
+          onTabChange={setActiveTab}
+          activeTab={activeTab}
+          isRunning={loading && activeTab === "output"}
+          isReviewing={loading && activeTab === "review"}
+          hasOutput={output.length > 0}
+          hasReview={review !== ""}
+        />
 
-      <div className="flex-1 relative">
-        {activeTab === "editor" && (
-          <Editor
-            height="100%"
-            theme="vs-dark"
-            language={language}
-            value={value}
-            onChange={(newValue) => {
-              setValue(newValue);
-              setHasChanges(true);
-            }}
-            onMount={handleEditorDidMount}
-            options={{
-              fontSize: 14,
-              fontFamily: "'Fira Code', monospace",
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              lineNumbers: "on",
-              renderWhitespace: "selection",
-              bracketPairColorization: true,
-              formatOnPaste: true,
-              formatOnType: true,
-              tabSize: 2,
-              autoClosingBrackets: "always",
-              autoClosingQuotes: "always",
-              wordWrap: "on",
-              suggestOnTriggerCharacters: true,
-              quickSuggestions: true,
-              folding: true,
-              foldingHighlight: true,
-              foldingStrategy: "indentation",
-              showFoldingControls: "always",
-              contextmenu: true,
-              mouseWheelZoom: true,
-              parameterHints: true,
-              codeLens: true,
-            }}
-          />
-        )}
+        <div className="flex-1 relative">
+          {activeTab === "editor" && (
+            <Editor
+              height="100%"
+              theme="vs-dark"
+              language={language}
+              value={value}
+              onChange={(newValue) => {
+                setValue(newValue);
+                setHasChanges(true);
+              }}
+              onMount={handleEditorDidMount}
+              options={{
+                fontSize: 14,
+                fontFamily: "'Fira Code', monospace",
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                lineNumbers: "on",
+                renderWhitespace: "selection",
+                bracketPairColorization: true,
+                formatOnPaste: true,
+                formatOnType: true,
+                tabSize: 2,
+                autoClosingBrackets: "always",
+                autoClosingQuotes: "always",
+                wordWrap: "on",
+                suggestOnTriggerCharacters: true,
+                quickSuggestions: true,
+                folding: true,
+                foldingHighlight: true,
+                foldingStrategy: "indentation",
+                showFoldingControls: "always",
+                contextmenu: true,
+                mouseWheelZoom: true,
+                parameterHints: true,
+                codeLens: true,
+              }}
+            />
+          )}
 
-        {activeTab === "output" && (
-          <OutputPanel
-            output={output}
-            isError={isError}
-            onClose={() => setActiveTab("editor")}
-            onClear={() => setOutput([])}
-            timestamp={executionTimestamp}
-            executionTime={executionTime}
-          />
-        )}
+          {activeTab === "output" && (
+            <OutputPanel
+              output={output}
+              isError={isError}
+              onClose={() => setActiveTab("editor")}
+              onClear={() => setOutput([])}
+              timestamp={executionTimestamp}
+              executionTime={executionTime}
+            />
+          )}
 
-        {activeTab === "review" && review && <AIReviewPanel review={review} />}
+          {activeTab === "review" && review && <AIReviewPanel review={review} />}
 
-        {loading && (
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-gray-800 rounded-lg shadow-xl p-4 flex items-center space-x-3">
-              <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-              <span className="text-sm font-medium">
-                {activeTab === "review"
-                  ? "Analyzing code..."
-                  : "Running code..."}
-              </span>
+          {loading && (
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-sm">
+              <div className="bg-gray-800 rounded-lg shadow-xl p-4 flex items-center space-x-3">
+                <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                <span className="text-sm font-medium">
+                  {activeTab === "review"
+                    ? "Analyzing code..."
+                    : "Running code..."}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
+
+        <EditorFooter
+          language={language}
+          position={cursorPosition}
+          wordCount={wordCount}
+          lastSaved={lastSaved}
+        />
+
+        {showKeyboardShortcuts && (
+          <KeyboardShortcuts onClose={() => setShowKeyboardShortcuts(false)} />
         )}
       </div>
-
-      <EditorFooter
-        language={language}
-        position={cursorPosition}
-        wordCount={wordCount}
-        lastSaved={lastSaved}
-      />
-
-      {showKeyboardShortcuts && (
-        <KeyboardShortcuts onClose={() => setShowKeyboardShortcuts(false)} />
-      )}
-    </div>
+    </FeatureErrorBoundary>
   );
 };
 

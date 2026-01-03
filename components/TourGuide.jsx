@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useUser } from "@clerk/nextjs";
 import { STATUS } from 'react-joyride';
+import { FeatureErrorBoundary } from "@/components/error";
 
 // Dynamically import Joyride with ssr disabled
 const Joyride = dynamic(() => import('react-joyride'), { ssr: false });
@@ -184,7 +185,7 @@ const TourGuide = () => {
   ];
 
   const handleJoyrideCallback = (data) => {
-    const { action, index, status, type } = data;
+    const { index, status, type } = data;
 
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
       setRun(false);
@@ -194,118 +195,120 @@ const TourGuide = () => {
   };
 
   return (
-    <Joyride
-      steps={isSignedIn ? userSteps : guestSteps}
-      run={run}
-      continuous
-      showProgress
-      showSkipButton
-      stepIndex={stepIndex}
-      scrollToFirstStep
-      spotlightPadding={0}
-      hideBackButton={false}
-      disableScrolling={false}
-      styles={{
-        options: {
-          primaryColor: '#4F46E5',
-          zIndex: 10000,
-          arrowColor: '#ffffff',
-          backgroundColor: '#ffffff',
-          overlayColor: 'rgba(0, 0, 0, 0.75)',
-          textColor: '#333',
-        },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-          padding: '1.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          backdropFilter: 'blur(8px)',
-          maxWidth: '320px',
-        },
-        tooltipContainer: {
-          textAlign: 'left',
-        },
-        tooltipContent: {
-          fontSize: '1rem',
-          lineHeight: '1.6',
-        },
-        buttonNext: {
-          backgroundColor: '#4F46E5',
-          borderRadius: '8px',
-          color: '#ffffff',
-          padding: '0.5rem 1rem',
-          fontSize: '0.875rem',
-          fontWeight: '600',
-          border: 'none',
-          boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            backgroundColor: '#4338CA',
-            transform: 'translateY(-1px)',
-            boxShadow: '0 4px 8px rgba(79, 70, 229, 0.2)',
+    <FeatureErrorBoundary feature="Tour Guide" variant="inline">
+      <Joyride
+        steps={isSignedIn ? userSteps : guestSteps}
+        run={run}
+        continuous
+        showProgress
+        showSkipButton
+        stepIndex={stepIndex}
+        scrollToFirstStep
+        spotlightPadding={0}
+        hideBackButton={false}
+        disableScrolling={false}
+        styles={{
+          options: {
+            primaryColor: '#4F46E5',
+            zIndex: 10000,
+            arrowColor: '#ffffff',
+            backgroundColor: '#ffffff',
+            overlayColor: 'rgba(0, 0, 0, 0.75)',
+            textColor: '#333',
           },
-        },
-        buttonBack: {
-          marginRight: '0.5rem',
-          color: '#4F46E5',
-          fontSize: '0.875rem',
-          fontWeight: '600',
-          padding: '0.5rem 1rem',
-          border: '1px solid rgba(79, 70, 229, 0.2)',
-          borderRadius: '8px',
-          backgroundColor: 'rgba(79, 70, 229, 0.05)',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-            borderColor: '#4F46E5',
-            transform: 'translateY(-1px)',
+          tooltip: {
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            padding: '1.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(8px)',
+            maxWidth: '320px',
           },
-        },
-        buttonSkip: {
-          color: '#6B7280',
-          fontSize: '0.875rem',
-          fontWeight: '600',
-          padding: '0.5rem 1rem',
-          border: '1px solid rgba(107, 114, 128, 0.2)',
-          borderRadius: '8px',
-          backgroundColor: '#ffffff',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            backgroundColor: '#F9FAFB',
-            color: '#4B5563',
-            transform: 'translateY(-1px)',
+          tooltipContainer: {
+            textAlign: 'left',
           },
-        },
-        buttonClose: {
-          display: 'none', // Hide the close button
-        },
-        spotlight: {
-          borderRadius: '12px',
-        },
-        overlay: {
-          mixBlendMode: 'multiply',
-        },
-        floater: {
-          filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1))',
-        },
-      }}
-      floaterProps={{
-        disableAnimation: false,
-        styles: {
+          tooltipContent: {
+            fontSize: '1rem',
+            lineHeight: '1.6',
+          },
+          buttonNext: {
+            backgroundColor: '#4F46E5',
+            borderRadius: '8px',
+            color: '#ffffff',
+            padding: '0.5rem 1rem',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            border: 'none',
+            boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: '#4338CA',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 4px 8px rgba(79, 70, 229, 0.2)',
+            },
+          },
+          buttonBack: {
+            marginRight: '0.5rem',
+            color: '#4F46E5',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            padding: '0.5rem 1rem',
+            border: '1px solid rgba(79, 70, 229, 0.2)',
+            borderRadius: '8px',
+            backgroundColor: 'rgba(79, 70, 229, 0.05)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: 'rgba(79, 70, 229, 0.1)',
+              borderColor: '#4F46E5',
+              transform: 'translateY(-1px)',
+            },
+          },
+          buttonSkip: {
+            color: '#6B7280',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            padding: '0.5rem 1rem',
+            border: '1px solid rgba(107, 114, 128, 0.2)',
+            borderRadius: '8px',
+            backgroundColor: '#ffffff',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: '#F9FAFB',
+              color: '#4B5563',
+              transform: 'translateY(-1px)',
+            },
+          },
+          buttonClose: {
+            display: 'none', // Hide the close button
+          },
+          spotlight: {
+            borderRadius: '12px',
+          },
+          overlay: {
+            mixBlendMode: 'multiply',
+          },
           floater: {
             filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1))',
           },
-        },
-      }}
-      locale={{
-        last: 'OK',
-        next: 'Next',
-        skip: 'Skip',
-        back: 'Back',
-      }}
-      callback={handleJoyrideCallback}
-    />
+        }}
+        floaterProps={{
+          disableAnimation: false,
+          styles: {
+            floater: {
+              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1))',
+            },
+          },
+        }}
+        locale={{
+          last: 'OK',
+          next: 'Next',
+          skip: 'Skip',
+          back: 'Back',
+        }}
+        callback={handleJoyrideCallback}
+      />
+    </FeatureErrorBoundary>
   );
 };
 

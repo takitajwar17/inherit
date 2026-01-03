@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ClientLayout from "./components/ClientLayout";
 import "./globals.css";
 import AccessibilityFloatingIcon from "./components/AccessibilityFloatingIcon";
+import { RootErrorBoundary } from "@/components/error";
 
 const kanit = Kanit({
   subsets: ["latin"],
@@ -57,14 +58,17 @@ export default function RootLayout({ children }) {
           <meta property="og:image" content={metadata.openGraph.image} />
         </head>
         <body className={kanit.className}>
-          {/* ClientLayout manages header, sidebar, and main content area */}
-          <ClientLayout>
-            {children}
-          </ClientLayout>
-          <AccessibilityFloatingIcon />
-          <ToastContainer />
-          <Analytics />
-          <SpeedInsights />
+          {/* RootErrorBoundary protects the entire app from critical errors */}
+          <RootErrorBoundary>
+            {/* ClientLayout manages header, sidebar, and main content area */}
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+            <AccessibilityFloatingIcon />
+            <ToastContainer />
+            <Analytics />
+            <SpeedInsights />
+          </RootErrorBoundary>
         </body>
       </html>
     </ClerkProvider>
