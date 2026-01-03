@@ -8,59 +8,59 @@ import QuestionHeader from "@/app/components/dev-discuss/QuestionHeader";
 import QuestionList from "@/app/components/dev-discuss/QuestionList";
 import QuestionTabs from "@/app/components/dev-discuss/QuestionTabs";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+
+// Lightning-fast fetch function
+const fetchQuestions = async () => {
+  const response = await fetch("/api/questions/all-questions");
+  const result = await response.json();
+  return result.data || result;
+};
+
+// Optimized question processing with memoization
+const useProcessedQuestions = (questionsData, selectedTab) => {
+  return useMemo(() => {
+    if (!questionsData) return [];
+
+    const { owned = [], others = [] } = questionsData;
+    
+    switch (selectedTab) {
+      case "all":
+        return [...owned, ...others];
+      case "my questions":
+        return owned;
+      case "popular":
+        return [...owned, ...others]
+          .map((question) => ({
+            ...question,
+            score: (question.votes || 0) + (question.answers || 0) * 2,
+          }))
+          .sort((a, b) => b.score - a.score);
+      default:
+        return [];
+    }
+  }, [questionsData, selectedTab]);
+};
 
 export default function Home() {
   const [selectedTab, setSelectedTab] = useState("all");
-  const [questions, setQuestions] = useState({
-    owned: [],
-    others: [],
-  });
-  const [loading, setLoading] = useState(true);
-
   const tabs = ["all", "my questions", "popular"];
 
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await fetch("/api/questions/all-questions");
-        if (response.ok) {
-          const result = await response.json();
-          // Extract data from the standardized API response format
-          const data = result.data || result;
-          setQuestions({
-            owned: data.owned,
-            others: data.others,
-          });
-        } else {
-          console.error("Failed to fetch questions");
-        }
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Lightning-fast query with aggressive caching
+  const { data: questionsData, isLoading } = useQuery({
+    queryKey: ['questions'],
+    queryFn: fetchQuestions,
+    staleTime: 30000, // 30 seconds
+    cacheTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
-    fetchQuestions();
-  }, []);
+  // Optimized question processing
+  const displayedQuestions = useProcessedQuestions(questionsData, selectedTab);
 
-  if (loading) {
+  if (isLoading) {
     return <QuestionsLoading />;
-  }
-
-  let displayedQuestions = [];
-  if (selectedTab === "all") {
-    displayedQuestions = [...questions.owned, ...questions.others];
-  } else if (selectedTab === "my questions") {
-    displayedQuestions = questions.owned;
-  } else if (selectedTab === "popular") {
-    displayedQuestions = [...questions.owned, ...questions.others]
-      .map((question) => ({
-        ...question,
-        score: question.votes + question.answers * 2, // Calculate weighted score
-      }))
-      .sort((a, b) => b.score - a.score); // Sort by score in descending order
   }
 
   return (

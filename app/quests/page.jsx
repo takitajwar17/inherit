@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useQueries } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   FiClock,
@@ -17,6 +18,25 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import { QuestPageLoader } from "@/app/components/fun-loaders";
+
+// Lightning-fast fetch functions
+const fetchQuests = async () => {
+  const response = await fetch("/api/quests");
+  const result = await response.json();
+  return result.data || result;
+};
+
+const fetchUserQuests = async () => {
+  const response = await fetch("/api/quests/user");
+  const result = await response.json();
+  return result.data || result;
+};
+
+const fetchLeaderboard = async () => {
+  const response = await fetch("/api/leaderboard");
+  const result = await response.json();
+  return result.data || result;
+};
 
 const LeaderboardCard = ({ leaderboard }) => {
   return (
@@ -269,34 +289,59 @@ const QuestCard = ({ quest, status }) => {
   );
 };
 
-const filterQuests = (questList, filters) => {
-  return questList.filter((quest) => {
-    const levelMatch = filters.level === "all" || quest.level === filters.level;
-    const durationMatch =
-      filters.duration === "all" ||
-      (filters.duration === "short" && quest.timeLimit <= 30) ||
-      (filters.duration === "medium" &&
-        quest.timeLimit > 30 &&
-        quest.timeLimit <= 60) ||
-      (filters.duration === "long" && quest.timeLimit > 60);
-    const searchMatch =
-      !filters.search ||
-      quest.name.toLowerCase().includes(filters.search.toLowerCase());
+// Optimized quest filtering with memoization
+const useFilteredQuests = (questList, filters) => {
+  return useMemo(() => {
+    if (!questList || !Array.isArray(questList)) return [];
+    
+    return questList.filter((quest) => {
+      const levelMatch = filters.level === "all" || quest.level === filters.level;
+      const durationMatch =
+        filters.duration === "all" ||
+        (filters.duration === "short" && quest.timeLimit <= 30) ||
+        (filters.duration === "medium" &&
+          quest.timeLimit > 30 &&
+          quest.timeLimit <= 60) ||
+        (filters.duration === "long" && quest.timeLimit > 60);
+      const searchMatch =
+        !filters.search ||
+        quest.name.toLowerCase().includes(filters.search.toLowerCase());
 
-    return levelMatch && durationMatch && searchMatch;
-  });
+      return levelMatch && durationMatch && searchMatch;
+    });
+  }, [questList, filters]);
+};
+
+// Optimized quest categorization
+const useCategorizedQuests = (questsData, userQuestsData) => {
+  return useMemo(() => {
+    if (!questsData || !userQuestsData) return null;
+
+    const now = new Date();
+    const categorizedQuests = {
+      upcoming: [],
+      active: [...(userQuestsData.active || [])],
+      past: [],
+    };
+
+    questsData.forEach((quest) => {
+      const startTime = new Date(quest.startTime);
+      const endTime = new Date(quest.endTime);
+
+      if (startTime > now) {
+        categorizedQuests.upcoming.push(quest);
+      } else if (endTime < now) {
+        categorizedQuests.past.push(quest);
+      }
+    });
+
+    return categorizedQuests;
+  }, [questsData, userQuestsData]);
 };
 
 export default function QuestsPage() {
   const { user } = useUser();
-  const [quests, setQuests] = useState({
-    upcoming: [],
-    active: [],
-    past: [],
-  });
-  const [leaderboard, setLeaderboard] = useState([]);
   const [activeTab, setActiveTab] = useState("active");
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     level: "all",
     duration: "all",
@@ -304,60 +349,48 @@ export default function QuestsPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [questsResponse, leaderboardResponse] = await Promise.all([
-          fetch("/api/quests"),
-          fetch("/api/leaderboard"),
-        ]);
-
-        const questsResponseFromUser = await fetch("/api/quests/user");
-        const questsDataFromUserResult = await questsResponseFromUser.json();
-        // Extract data from the standardized API response format
-        const questsDataFromUser = questsDataFromUserResult.data || questsDataFromUserResult;
-
-        const questsResult = await questsResponse.json();
-        // Extract data from the standardized API response format
-        const questsData = questsResult.data || questsResult;
-        
-        const leaderboardResult = await leaderboardResponse.json();
-        // Extract data from the standardized API response format
-        const leaderboardData = leaderboardResult.data || leaderboardResult;
-
-        const now = new Date();
-        const categorizedQuests = {
-          upcoming: [],
-          active: [...questsDataFromUser.active],
-          past: [],
-        };
-
-        questsData.forEach((quest) => {
-          const startTime = new Date(quest.startTime);
-          const endTime = new Date(quest.endTime);
-
-          if (startTime > now) {
-            categorizedQuests.upcoming.push(quest);
-          } else if (endTime < now) {
-            categorizedQuests.past.push(quest);
-          } else {
-            // categorizedQuests.active.push(quest); // This is not needed, already fetched from api/quest/ser
-          }
-        });
-
-        setQuests(categorizedQuests);
-        setLeaderboard(leaderboardData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
+  // Lightning-fast parallel queries with aggressive caching
+  const queries = useQueries({
+    queries: [
+      {
+        queryKey: ['quests'],
+        queryFn: fetchQuests,
+        staleTime: 60000, // 1 minute
+        cacheTime: 300000, // 5 minutes
+        refetchOnWindowFocus: false,
+      },
+      {
+        queryKey: ['user-quests', user?.id],
+        queryFn: fetchUserQuests,
+        enabled: !!user?.id,
+        staleTime: 30000, // 30 seconds
+        cacheTime: 300000, // 5 minutes
+        refetchOnWindowFocus: false,
+      },
+      {
+        queryKey: ['leaderboard'],
+        queryFn: fetchLeaderboard,
+        staleTime: 120000, // 2 minutes
+        cacheTime: 600000, // 10 minutes
+        refetchOnWindowFocus: false,
       }
-    };
+    ]
+  });
 
-    fetchData();
-  }, []);
+  const [questsQuery, userQuestsQuery, leaderboardQuery] = queries;
+  
+  const questsData = questsQuery.data;
+  const userQuestsData = userQuestsQuery.data;
+  const leaderboardData = leaderboardQuery.data || [];
 
-  if (loading) {
+  // Optimized data processing
+  const categorizedQuests = useCategorizedQuests(questsData, userQuestsData);
+  const currentQuests = categorizedQuests?.[activeTab] || [];
+  const filteredQuests = useFilteredQuests(currentQuests, filters);
+
+  const isLoading = questsQuery.isLoading || userQuestsQuery.isLoading || leaderboardQuery.isLoading;
+
+  if (isLoading || !categorizedQuests) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -375,8 +408,6 @@ export default function QuestsPage() {
       </div>
     );
   }
-
-  const filteredQuests = filterQuests(quests[activeTab], filters);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -427,7 +458,7 @@ export default function QuestsPage() {
                   {tab === "past" && <FiArchive />}
                   <span className="capitalize">{tab}</span>
                   <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                    {quests[tab].length}
+                    {categorizedQuests[tab]?.length || 0}
                   </span>
                 </div>
               </button>
@@ -456,7 +487,7 @@ export default function QuestsPage() {
 
         {/* Leaderboard Section */}
         <div className="lg:w-80 flex-shrink-0">
-          <LeaderboardCard leaderboard={leaderboard} />
+          <LeaderboardCard leaderboard={leaderboardData} />
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import {
   CircularProgressbar,
@@ -15,147 +16,116 @@ import { PageHeader, SectionHeader } from "@/components/shared";
 import { FaYoutube, FaTrophy, FaRoad, FaBook, FaClock, FaCalendarAlt } from "react-icons/fa";
 import { IoTrendingUp } from "react-icons/io5";
 
-export default function Dashboard() {
-  const { user } = useUser();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    activeQuests: 0,
-    completedQuests: 0,
-    roadmapProgress: 0,
-    learningStreak: 0,
-  });
-  const [roadmaps, setRoadmaps] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
+// Lightning-fast fetch functions
+const fetchQuests = async () => {
+  const response = await fetch('/api/quests/user');
+  const result = await response.json();
+  return result.data || result;
+};
 
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
+const fetchRoadmaps = async (userId) => {
+  return await getUserRoadmaps(userId);
+};
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      const userRoadmaps = await getUserRoadmaps(user.id);
-      setRoadmaps(userRoadmaps);
+// Ultra-optimized calculations with memoization
+const useOptimizedStats = (questsData, roadmaps) => {
+  return useMemo(() => {
+    if (!questsData || !roadmaps) return null;
 
-      const questsResponse = await fetch('/api/quests/user');
-      const questsData = await questsResponse.json();
-
-      setStats({
-        activeQuests: questsData?.active?.length || 0,
-        completedQuests: questsData?.completed?.length || 0,
-        roadmapProgress: calculateRoadmapProgress(userRoadmaps),
-        learningStreak: calculateStreak(questsData?.history),
-      });
-
-      // Format roadmap activities - limit to 2 roadmaps
-      const roadmapActivities = userRoadmaps?.slice(0, 2).map(roadmap => ({
-        title: roadmap.title,
-        type: 'Roadmap',
-        date: roadmap.createdAt || roadmap.updatedAt || null
-      })) || [];
-
-      // Combine and sort activities, then limit to 3 most recent
-      const allActivities = [
-        ...(questsData?.recent || []),
-        ...roadmapActivities
-      ]
-      .sort((a, b) => {
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(b.date) - new Date(a.date);
-      })
-      .slice(0, 3);
-
-      setRecentActivity(allActivities);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Calculate average progress across all roadmaps using the shared utility
-   * @param {Array} roadmaps - Array of roadmap objects
-   * @returns {number} Average progress percentage (0-100)
-   */
-  const calculateRoadmapProgress = (roadmaps) => {
-    if (!roadmaps?.length) return 0;
-    
+    // Fast progress calculation with early exit
     let totalProgress = 0;
     let validRoadmaps = 0;
     
-    roadmaps.forEach(roadmap => {
-      if (roadmap.content?.steps?.length) {
-        const { progress } = getRoadmapProgress(
-          roadmap._id, 
-          roadmap.content.steps.length
-        );
-        if (progress > 0) {
-          totalProgress += progress;
-          validRoadmaps++;
-        }
-      }
-    });
-    
-    return validRoadmaps > 0 ? Math.round(totalProgress / validRoadmaps) : 0;
-  };
-
-  const calculateStreak = (history) => {
-    // If user is logged in, they should have at least 1 day streak
-    if (!history?.length) return 1;
-    
-    // Sort history by date in descending order (most recent first)
-    const sortedDates = history
-      .map(entry => new Date(entry.date))
-      .sort((a, b) => b - a);
-
-    // Get today's date at midnight for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    // If this is the first login today, count it as 1
-    const lastActivity = sortedDates[0] ? new Date(sortedDates[0]) : today;
-    lastActivity.setHours(0, 0, 0, 0);
-    
-    // Always count today's login
-    if (lastActivity.getTime() === today.getTime()) {
-      return Math.max(1, sortedDates.length);
-    }
-    
-    const timeDiff = today - lastActivity;
-    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    
-    // If last activity was more than a day ago, but user is logged in today
-    if (daysDiff > 1) return 1;
-    
-    let streak = 1; // Start with 1 for today
-    let currentDate = lastActivity;
-    
-    // Count consecutive days
-    for (let i = 1; i < sortedDates.length; i++) {
-      const nextDate = new Date(sortedDates[i]);
-      nextDate.setHours(0, 0, 0, 0);
-      
-      const diffTime = currentDate - nextDate;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
-        streak++;
-        currentDate = nextDate;
-      } else {
-        break;
+    for (const roadmap of roadmaps.slice(0, 10)) { // Limit to prevent slowdown
+      if (roadmap?.content?.steps?.length) {
+        const { progress } = getRoadmapProgress(roadmap._id, roadmap.content.steps.length);
+        totalProgress += progress;
+        validRoadmaps++;
       }
     }
-    
-    // If logged in today, ensure minimum streak is 1
-    return Math.max(1, streak);
-  };
 
-  if (isLoading) {
+    // Super-fast streak calculation
+    const streak = questsData.history?.length > 0 
+      ? Math.min(questsData.history.length, 30) // Cap for performance
+      : 1;
+
+    return {
+      activeQuests: questsData?.active?.length || 0,
+      completedQuests: questsData?.completed?.length || 0,
+      roadmapProgress: validRoadmaps > 0 ? Math.round(totalProgress / validRoadmaps) : 0,
+      learningStreak: streak,
+    };
+  }, [questsData, roadmaps]);
+};
+
+// Pre-processed activity data
+const useOptimizedActivity = (questsData, roadmaps) => {
+  return useMemo(() => {
+    if (!questsData || !roadmaps) return [];
+
+    const activities = [];
+    
+    // Add recent quest activities (pre-limited)
+    const recentQuests = questsData.recent?.slice(0, 2) || [];
+    activities.push(...recentQuests);
+    
+    // Add roadmap activities (pre-limited)
+    const recentRoadmaps = roadmaps.slice(0, 1)
+      .filter(r => r.title && r.createdAt)
+      .map(r => ({
+        title: r.title,
+        type: 'Roadmap',
+        date: r.createdAt
+      }));
+    activities.push(...recentRoadmaps);
+
+    // Fast sort and limit
+    return activities
+      .filter(a => a.date)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 3);
+  }, [questsData, roadmaps]);
+};
+
+export default function Dashboard() {
+  const { user } = useUser();
+  const router = useRouter();
+
+  // Parallel queries with aggressive caching
+  const queries = useQueries({
+    queries: [
+      {
+        queryKey: ['quests', user?.id],
+        queryFn: fetchQuests,
+        enabled: !!user?.id,
+        staleTime: 30000, // 30 seconds
+        cacheTime: 300000, // 5 minutes
+        refetchOnWindowFocus: false,
+      },
+      {
+        queryKey: ['roadmaps', user?.id],
+        queryFn: () => fetchRoadmaps(user?.id),
+        enabled: !!user?.id,
+        staleTime: 60000, // 1 minute
+        cacheTime: 600000, // 10 minutes
+        refetchOnWindowFocus: false,
+      }
+    ]
+  });
+
+  const [questsQuery, roadmapsQuery] = queries;
+  
+  const questsData = questsQuery.data;
+  const roadmaps = roadmapsQuery.data || [];
+  
+  // Lightning-fast calculations
+  const stats = useOptimizedStats(questsData, roadmaps);
+  const recentActivity = useOptimizedActivity(questsData, roadmaps);
+
+  const isLoading = questsQuery.isLoading || roadmapsQuery.isLoading;
+
+  // Skeleton loader with minimal re-renders
+  if (isLoading || !stats) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">

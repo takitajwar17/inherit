@@ -1,9 +1,42 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { IoSearch } from "react-icons/io5";
 import { formatDistanceToNow } from "date-fns";
+
+// Lightning-fast fetch function
+const fetchVideos = async () => {
+  const apiKey = getRandomApiKey();
+  
+  const videoPromises = CHANNEL_IDS.map(async (channelId) => {
+    const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
+      params: {
+        key: apiKey,
+        channelId,
+        part: "snippet",
+        order: "date",
+        maxResults: 25,
+        type: "video",
+      },
+    });
+    
+    const videoIds = response.data.items.map((item) => item.id.videoId).join(",");
+    const videoDetailsResponse = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
+      params: {
+        key: apiKey,
+        id: videoIds,
+        part: "snippet,statistics,contentDetails",
+      },
+    });
+    
+    return videoDetailsResponse.data.items;
+  });
+
+  const results = await Promise.all(videoPromises);
+  return results.flat().sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt));
+};
 
 const CHANNEL_IDS = [
   "UC8butISFwT-Wl7EV0hUK0BQ", // freeCodeCamp
@@ -16,10 +49,34 @@ const getRandomApiKey = () => {
   return apiKeys[randomIndex];
 };
 
+// Optimized video filtering with memoization  
+const useFilteredVideos = (videos, searchTerm) => {
+  return useMemo(() => {
+    if (!videos || !searchTerm.trim()) return videos || [];
+    
+    const lowercaseSearch = searchTerm.toLowerCase();
+    return videos.filter((video) =>
+      video.snippet.title.toLowerCase().includes(lowercaseSearch) ||
+      video.snippet.description.toLowerCase().includes(lowercaseSearch)
+    );
+  }, [videos, searchTerm]);
+};
+
 const LearnPage = () => {
-  const [videos, setVideos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
+
+  // Lightning-fast query with aggressive caching
+  const { data: videos, isLoading } = useQuery({
+    queryKey: ['youtube-videos'],
+    queryFn: fetchVideos,
+    staleTime: 300000, // 5 minutes
+    cacheTime: 900000, // 15 minutes  
+    refetchOnWindowFocus: false,
+  });
+
+  // Optimized video filtering
+  const filteredVideos = useFilteredVideos(videos, searchTerm);
 
   const formatDuration = (duration) => {
     if (!duration) return "0:00";
@@ -47,98 +104,6 @@ const LearnPage = () => {
     return formattedDuration;
   };
 
-  const getVideoDetails = async (videoIds) => {
-    try {
-      const response = await axios.get(
-        `https://www.googleapis.com/youtube/v3/videos`,
-        {
-          params: {
-            part: "contentDetails",
-            id: videoIds.join(","),
-            key: getRandomApiKey(),
-          },
-        }
-      );
-      return response.data.items;
-    } catch (error) {
-      return [];
-    }
-  };
-
-  const fetchVideos = async () => {
-    try {
-      const promises = CHANNEL_IDS.map((channelId) =>
-        axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-          params: {
-            part: "snippet",
-            channelId: channelId,
-            maxResults: 6,
-            order: "date",
-            key: getRandomApiKey(),
-          },
-        })
-      );
-      const results = await Promise.all(promises);
-      const allVideos = results.flatMap((result) => result.data.items);
-
-      const videoIds = allVideos.map((video) => video.id.videoId);
-      const videoDetails = await getVideoDetails(videoIds);
-
-      const videosWithDuration = allVideos.map((video) => {
-        const details = videoDetails.find(
-          (detail) => detail.id === video.id.videoId
-        );
-        return {
-          ...video,
-          contentDetails: details?.contentDetails || null,
-        };
-      });
-
-      setVideos(videosWithDuration);
-    } catch (error) {
-      // Failed to fetch videos
-    }
-  };
-
-  const fetchVideosBySearch = async () => {
-    try {
-      const promises = CHANNEL_IDS.map((channelId) =>
-        axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-          params: {
-            part: "snippet",
-            channelId: channelId,
-            maxResults: 12,
-            order: "relevance",
-            q: searchTerm,
-            key: getRandomApiKey(),
-          },
-        })
-      );
-      const results = await Promise.all(promises);
-      const allVideos = results.flatMap((result) => result.data.items);
-
-      const videoIds = allVideos.map((video) => video.id.videoId);
-      const videoDetails = await getVideoDetails(videoIds);
-
-      const videosWithDuration = allVideos.map((video) => {
-        const details = videoDetails.find(
-          (detail) => detail.id === video.id.videoId
-        );
-        return {
-          ...video,
-          contentDetails: details?.contentDetails || null,
-        };
-      });
-
-      setVideos(videosWithDuration);
-    } catch (error) {
-      // Failed to fetch videos
-    }
-  };
-
-  useEffect(() => {
-    fetchVideos();
-  }, []);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -231,7 +196,7 @@ const LearnPage = () => {
       </div>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.length === 0 ? (
+          {isLoading ? (
             <>
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div
@@ -257,7 +222,7 @@ const LearnPage = () => {
               ))}
             </>
           ) : (
-            videos.map((video) => (
+            filteredVideos.map((video) => (
               <div
                 key={video.id.videoId}
                 className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden flex flex-col h-full"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,80 +21,79 @@ import { getRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import { FaYoutube } from "react-icons/fa";
 import { FiExternalLink, FiChevronRight } from "react-icons/fi";
 
+// Lightning-fast fetch function
+const fetchUserRoadmaps = async (userId) => {
+  return await getUserRoadmaps(userId);
+};
+
+// Optimized roadmap processing with memoization
+const useRoadmapsWithProgress = (roadmaps) => {
+  return useMemo(() => {
+    if (!roadmaps) return [];
+    
+    return roadmaps.map(roadmap => ({
+      ...roadmap,
+      progress: getRoadmapProgress(roadmap._id, roadmap.content?.steps?.length || 0).progress
+    }));
+  }, [roadmaps]);
+};
+
 export default function RoadmapsPage() {
   const { user } = useUser();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingRoadmaps, setIsLoadingRoadmaps] = useState(true);
+  const queryClient = useQueryClient();
+  
   const [open, setOpen] = useState(false);
-  const [roadmaps, setRoadmaps] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     prompt: "",
   });
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (user) {
-      fetchUserRoadmaps();
-    }
-  }, [user]);
+  // Lightning-fast query with aggressive caching
+  const { data: roadmaps, isLoading: isLoadingRoadmaps } = useQuery({
+    queryKey: ['roadmaps', user?.id],
+    queryFn: () => fetchUserRoadmaps(user?.id),
+    enabled: !!user?.id,
+    staleTime: 60000, // 1 minute
+    cacheTime: 600000, // 10 minutes
+    refetchOnWindowFocus: false,
+  });
 
-  /**
-   * Get progress for a roadmap using the shared utility function
-   * @param {Object} roadmap - Roadmap object with _id and content.steps
-   * @returns {number} Progress percentage (0-100)
-   */
-  const getProgress = (roadmap) => {
-    const { progress } = getRoadmapProgress(
-      roadmap._id, 
-      roadmap.content?.steps?.length || 0
-    );
-    return progress;
-  };
+  // Optimized roadmap processing
+  const roadmapsWithProgress = useRoadmapsWithProgress(roadmaps);
 
-  const fetchUserRoadmaps = async () => {
-    setIsLoadingRoadmaps(true);
-    try {
-      const userRoadmaps = await getUserRoadmaps(user.id);
-      setRoadmaps(userRoadmaps);
-    } catch (error) {
-      console.error("Error fetching roadmaps:", error);
-    } finally {
-      setIsLoadingRoadmaps(false);
+  // Lightning-fast mutation for creating roadmaps
+  const createRoadmapMutation = useMutation({
+    mutationFn: ({ title, prompt, userId }) => createRoadmap(title, prompt, userId),
+    onSuccess: () => {
+      // Instantly update cache
+      queryClient.invalidateQueries(['roadmaps', user?.id]);
+      setOpen(false);
+      setFormData({ title: "", prompt: "" });
+      setError("");
+    },
+    onError: (error) => {
+      console.error("Error creating roadmap:", error);
+      const errorMessage = error.message || 
+        (error.response?.data?.message);
+      
+      if (errorMessage?.includes("INVALID_TOPIC")) {
+        setError("Please enter a topic related to computer science or IT only.");
+      } else {
+        setError("An error occurred while creating the roadmap. Please try again.");
+      }
     }
-  };
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
-    try {
-      await createRoadmap(formData.title, formData.prompt, user.id);
-      setOpen(false);
-      setFormData({ title: "", prompt: "" });
-      fetchUserRoadmaps();
-    } catch (error) {
-      console.error("Error creating roadmap:", error);
-      const errorMessage =
-        error.message ||
-        (error.response && error.response.data && error.response.data.message);
-      if (
-        errorMessage &&
-        (errorMessage === "INVALID_TOPIC" ||
-          errorMessage.includes("INVALID_TOPIC"))
-      ) {
-        setError(
-          "Please enter a topic related to computer science or IT only."
-        );
-      } else {
-        setError(
-          "An error occurred while creating the roadmap. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    createRoadmapMutation.mutate({
+      title: formData.title,
+      prompt: formData.prompt,
+      userId: user.id
+    });
   };
 
   return (
@@ -180,10 +180,10 @@ export default function RoadmapsPage() {
                   <DialogFooter>
                     <Button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={createRoadmapMutation.isPending}
                       className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50"
                     >
-                      {isLoading ? (
+                      {createRoadmapMutation.isPending ? (
                         <div className="flex items-center justify-center gap-2">
                           <div className="w-5 h-5 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
                           Creating...
@@ -232,8 +232,7 @@ export default function RoadmapsPage() {
             </>
           ) : (
             <>
-              {roadmaps.map((roadmap) => {
-                const progress = getProgress(roadmap);
+              {roadmapsWithProgress.map((roadmap) => {
                 return (
                   <div
                     key={roadmap._id}
@@ -293,7 +292,7 @@ export default function RoadmapsPage() {
                             Progress
                           </span>
                           <span className="text-xs font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">
-                            {progress}%
+                            {roadmap.progress}%
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden relative">
@@ -309,7 +308,7 @@ export default function RoadmapsPage() {
                           <div
                             className="relative h-full transition-all duration-300 ease-out"
                             style={{
-                              width: `${progress}%`,
+                              width: `${roadmap.progress}%`,
                               background: "rgba(255, 255, 255, 0.25)",
                               boxShadow:
                                 "inset 0 0 10px rgba(255, 255, 255, 0.5)",

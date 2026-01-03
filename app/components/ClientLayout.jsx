@@ -14,6 +14,7 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import dynamic from 'next/dynamic';
 import { cn } from "@/lib/utils";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 // Dynamically import TourGuide with no SSR
 const TourGuide = dynamic(() => import("@/components/TourGuide"), {
@@ -91,7 +92,7 @@ export default function ClientLayout({ children }) {
   };
 
   return (
-    <>
+    <QueryProvider>
       {/* Conditionally render Header */}
       {!isHomePage && <Header />}
 
@@ -113,6 +114,6 @@ export default function ClientLayout({ children }) {
           </div>
         </div>
       </main>
-    </>
+    </QueryProvider>
   );
 }
