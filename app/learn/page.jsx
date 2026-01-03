@@ -10,7 +10,6 @@ const CHANNEL_IDS = [
   "UC59K-uG2A5ogwIrHw4bmlEg", // Telusko
 ];
 
-// Function to get a random API key
 const getRandomApiKey = () => {
   const apiKeys = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY.split(",");
   const randomIndex = Math.floor(Math.random() * apiKeys.length);
@@ -23,11 +22,10 @@ const LearnPage = () => {
   const router = useRouter();
 
   const formatDuration = (duration) => {
-    console.log("Duration input:", duration); // Debug log
-    if (!duration) return "0:00"; // Handle null or undefined duration
+    if (!duration) return "0:00";
 
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-    if (!match) return "0:00"; // Handle invalid format
+    if (!match) return "0:00";
 
     const hours = (match[1] || "").replace("H", "");
     const minutes = (match[2] || "").replace("M", "");
@@ -63,7 +61,6 @@ const LearnPage = () => {
       );
       return response.data.items;
     } catch (error) {
-      console.error("Error fetching video details:", error);
       return [];
     }
   };
@@ -84,11 +81,9 @@ const LearnPage = () => {
       const results = await Promise.all(promises);
       const allVideos = results.flatMap((result) => result.data.items);
 
-      // Get video durations
       const videoIds = allVideos.map((video) => video.id.videoId);
       const videoDetails = await getVideoDetails(videoIds);
 
-      // Merge duration information with video data
       const videosWithDuration = allVideos.map((video) => {
         const details = videoDetails.find(
           (detail) => detail.id === video.id.videoId
@@ -101,7 +96,7 @@ const LearnPage = () => {
 
       setVideos(videosWithDuration);
     } catch (error) {
-      console.error("Error fetching videos", error);
+      // Failed to fetch videos
     }
   };
 
@@ -122,11 +117,9 @@ const LearnPage = () => {
       const results = await Promise.all(promises);
       const allVideos = results.flatMap((result) => result.data.items);
 
-      // Get video durations
       const videoIds = allVideos.map((video) => video.id.videoId);
       const videoDetails = await getVideoDetails(videoIds);
 
-      // Merge duration information with video data
       const videosWithDuration = allVideos.map((video) => {
         const details = videoDetails.find(
           (detail) => detail.id === video.id.videoId
@@ -139,7 +132,7 @@ const LearnPage = () => {
 
       setVideos(videosWithDuration);
     } catch (error) {
-      console.error("Error fetching videos by search", error);
+      // Failed to fetch videos
     }
   };
 
@@ -234,29 +227,22 @@ const LearnPage = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.length === 0 ? (
-            // Loading Skeleton
             <>
               {[1, 2, 3, 4, 5, 6].map((item) => (
                 <div
                   key={item}
                   className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-full"
                 >
-                  {/* Thumbnail Skeleton */}
                   <div className="relative" style={{ paddingBottom: "56.25%" }}>
                     <div className="absolute inset-0 bg-gray-200 animate-pulse">
                       <div className="absolute bottom-2 right-2 w-12 h-5 bg-gray-300 rounded animate-pulse"></div>
                     </div>
                   </div>
-
-                  {/* Content Skeleton */}
                   <div className="flex flex-col flex-grow p-5">
-                    {/* Title Skeleton */}
                     <div className="space-y-2 mb-2">
                       <div className="h-5 bg-gray-200 rounded w-full animate-pulse"></div>
                       <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse"></div>
                     </div>
-
-                    {/* Footer Skeleton */}
                     <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
                       <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
                       <div className="w-20 h-3 bg-gray-200 rounded animate-pulse"></div>

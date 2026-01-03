@@ -93,7 +93,6 @@ export default function QuestForm({ quest, onSave, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting form data:", formData);
     onSave(formData);
   };
 

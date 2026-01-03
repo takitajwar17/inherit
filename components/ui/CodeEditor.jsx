@@ -31,20 +31,17 @@ const CodeEditor = () => {
 
   const runCode = async () => {
     const sourceCode = editorRef.current.getValue();
-    console.log(sourceCode);
     if (!sourceCode) return;
     try {
-      setLoading(true); // Set loading to true when execution starts
+      setLoading(true);
       const { run: result } = await executeCode(language, sourceCode);
       setOutput(result.output.split("\n"));
-      console.log(result.output);
       result.stderr ? setIsError(true) : setIsError(false);
-      setActiveTab("Output"); // Ensure we switch to Output tab after execution
+      setActiveTab("Output");
     } catch (error) {
-      console.log(error);
       alert("An error occurred: " + (error.message || "Unable to run code"));
     } finally {
-      setLoading(false); // Set loading to false when execution ends
+      setLoading(false);
     }
   };
 
@@ -56,9 +53,7 @@ const CodeEditor = () => {
 
   const handleGetReview = async () => {
     const code = getCode();
-    console.log("Fetched Code:", code);
     const reviewText = await generateReview(code);
-    console.log("Review Text:", reviewText);
     setReview(reviewText);
     setActiveTab("Review");
   };

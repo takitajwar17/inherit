@@ -121,31 +121,19 @@ const CodeWorkspace = () => {
       if (!confirm) return;
     }
 
-    // Reset code to default snippet
     setValue(CODE_SNIPPETS[language]);
-
-    // Reset editor states
     setHasChanges(false);
     setLastSaved(null);
     setCursorPosition({ line: 1, column: 1 });
     setWordCount(0);
-
-    // Reset output panel
     setOutput([]);
     setIsError(false);
     setExecutionTime(null);
     setExecutionTimestamp(null);
-
-    // Reset AI review
     setReview("");
-
-    // Reset loading state
     setLoading(false);
-
-    // Switch back to editor tab
     setActiveTab("editor");
 
-    // Focus editor after reset
     if (editorRef.current) {
       editorRef.current.focus();
     }
@@ -163,15 +151,10 @@ const CodeWorkspace = () => {
   };
 
   const runCode = async () => {
-    if (!editorRef.current) {
-      console.error("Editor not initialized");
-      return;
-    }
+    if (!editorRef.current) return;
 
-    // Switch to editor tab first if not already there
     if (activeTab !== "editor") {
       setActiveTab("editor");
-      // Wait for tab switch and editor to be ready
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
@@ -181,18 +164,15 @@ const CodeWorkspace = () => {
     try {
       setLoading(true);
       const startTime = performance.now();
-
       const { run: result } = await executeCode(language, sourceCode);
-
       const endTime = performance.now();
+      
       setExecutionTime(Math.round(endTime - startTime));
       setExecutionTimestamp(new Date());
-
       setOutput(result.output.split("\n"));
       setIsError(result.stderr ? true : false);
       setActiveTab("output");
     } catch (error) {
-      console.error("Error running code:", error);
       setOutput([error.message || "An error occurred while running the code"]);
       setIsError(true);
       setActiveTab("output");
@@ -202,15 +182,10 @@ const CodeWorkspace = () => {
   };
 
   const handleReview = async () => {
-    if (!editorRef.current) {
-      console.error("Editor not initialized");
-      return;
-    }
+    if (!editorRef.current) return;
 
-    // Switch to editor tab first if not already there.
     if (activeTab !== "editor") {
       setActiveTab("editor");
-      // Wait for tab switch and editor to be ready.
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
@@ -223,7 +198,6 @@ const CodeWorkspace = () => {
       setReview(reviewText);
       setActiveTab("review");
     } catch (error) {
-      console.error("Error getting review:", error);
       setReview("Failed to get code review. Please try again.");
       setActiveTab("review");
     } finally {
@@ -232,41 +206,22 @@ const CodeWorkspace = () => {
   };
 
   const applyCodeFix = (newCode, lineNumber) => {
-    console.log("Applying fix:", { newCode, lineNumber });
-
-    // First check if we're in editor tab
     if (activeTab !== "editor") {
-      console.log("Switching to editor tab first");
       setActiveTab("editor");
-      // Wait for tab switch and try again
       setTimeout(() => applyCodeFix(newCode, lineNumber), 100);
       return;
     }
 
-    if (!editorRef.current || !newCode) {
-      console.error("Editor or code missing:", {
-        hasEditor: !!editorRef.current,
-        hasCode: !!newCode,
-      });
-      return;
-    }
+    if (!editorRef.current || !newCode) return;
 
     const editor = editorRef.current;
-
-    // Add max retry count to prevent infinite loop
     const maxRetries = 10;
     let retryCount = 0;
 
     const tryApplyFix = () => {
-      if (retryCount >= maxRetries) {
-        console.error("Max retries reached, editor model not ready");
-        return;
-      }
+      if (retryCount >= maxRetries) return;
 
       if (!editor.getModel()) {
-        console.log(
-          `Editor model not ready, retry ${retryCount + 1}/${maxRetries}`
-        );
         retryCount++;
         setTimeout(tryApplyFix, 100);
         return;
@@ -286,7 +241,6 @@ const CodeWorkspace = () => {
             endColumn: lines[lineNumber - 1].length + 1,
           };
         } else {
-          // Find best matching line if no line number provided
           const bestMatch = findBestMatchingLine(lines, newCode);
           if (bestMatch.index >= 0) {
             range = {
@@ -296,7 +250,6 @@ const CodeWorkspace = () => {
               endColumn: lines[bestMatch.index].length + 1,
             };
           } else {
-            // If no match found, insert at cursor position
             const position = editor.getPosition();
             range = {
               startLineNumber: position.lineNumber,
@@ -316,36 +269,28 @@ const CodeWorkspace = () => {
         ]);
 
         if (success) {
-          console.log("Edit applied successfully");
           setValue(editor.getValue());
           editor.focus();
 
-          // Format document after successful edit
           setTimeout(() => {
             try {
-              const formatAction = editor.getAction(
-                "editor.action.formatDocument"
-              );
+              const formatAction = editor.getAction("editor.action.formatDocument");
               if (formatAction) {
                 formatAction.run();
               }
             } catch (formatError) {
-              console.warn("Format error:", formatError);
+              // Formatting failed silently
             }
           }, 100);
-        } else {
-          console.error("Edit operation failed");
         }
       } catch (error) {
-        console.error("Error applying fix:", error);
+        // Edit failed silently
       }
     };
 
-    // Start the first attempt
     tryApplyFix();
   };
 
-  // Helper function to find best matching line
   const findBestMatchingLine = (lines, newCode) => {
     const newCodeTrimmed = newCode.trim();
     let bestIndex = -1;

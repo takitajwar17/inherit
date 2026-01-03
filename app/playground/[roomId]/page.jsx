@@ -72,7 +72,6 @@ const RoomPage = () => {
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    console.log('Subscribing to channel:', `room-${roomId}`);
     const channel = pusherClient.subscribe(`room-${roomId}`);
     
     // Join room
@@ -80,9 +79,7 @@ const RoomPage = () => {
       try {
         const response = await fetch('/api/socket', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             roomId,
             userId,
@@ -91,61 +88,41 @@ const RoomPage = () => {
           }),
         });
         if (!response.ok) {
-          console.error('Failed to join room:', await response.text());
+          // Failed to join room
         }
       } catch (error) {
-        console.error('Error joining room:', error);
+        // Error joining room
       }
     };
     
     joinRoom();
 
     channel.bind('collaboratorsUpdate', (data) => {
-      console.log('Received collaborators update:', data);
       if (Array.isArray(data)) {
-        // Sort collaborators by timestamp to ensure consistent order
         const sortedCollaborators = [...data].sort((a, b) => b.timestamp - a.timestamp);
         setCollaborators(sortedCollaborators);
       }
     });
 
     channel.bind('codeUpdate', (data) => {
-      console.log('Received code update from:', data.username || data.userId);
       if (data && data.userId !== userId) {
         setLastUpdateFromServer(data.data);
         setCode(data.data);
       }
     });
 
-    // Debug Pusher connection
-    pusherClient.connection.bind('state_change', (states) => {
-      console.log('Pusher state changed:', states);
-    });
-
-    pusherClient.connection.bind('connected', () => {
-      console.log('Pusher client connected successfully');
-    });
-
-    pusherClient.connection.bind('error', (err) => {
-      console.error('Pusher connection error:', err);
-    });
-
     return () => {
-      // Leave room
       fetch('/api/socket', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roomId,
           userId,
           username: getDisplayName(user),
           event: 'leave-room',
         }),
-      }).catch(error => console.error('Error leaving room:', error));
+      }).catch(() => {});
 
-      console.log('Unsubscribing from channel:', `room-${roomId}`);
       channel.unbind_all();
       pusherClient.unsubscribe(`room-${roomId}`);
     };
@@ -176,7 +153,6 @@ const RoomPage = () => {
       setWordCount(content.trim().split(/\s+/).length);
       setHasChanges(true);
       
-      // Debounce the update
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         handleEditorChange(content);
@@ -193,9 +169,7 @@ const RoomPage = () => {
     
     fetch('/api/socket', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         roomId,
         userId,
@@ -224,10 +198,7 @@ const RoomPage = () => {
   };
 
   const handleRunCode = async () => {
-    if (!editorRef.current) {
-      console.error('Editor not initialized');
-      return;
-    }
+    if (!editorRef.current) return;
 
     try {
       setLoading(true);
@@ -243,7 +214,6 @@ const RoomPage = () => {
       setOutput(result.run.output.split("\n"));
       setIsError(result.run.stderr ? true : false);
     } catch (error) {
-      console.error("Error running code:", error);
       setOutput([error.message || "An error occurred while running the code"]);
       setIsError(true);
     } finally {
@@ -261,9 +231,7 @@ const RoomPage = () => {
     setCode(newCode);
     fetch('/api/socket', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         roomId,
         userId,
@@ -280,7 +248,7 @@ const RoomPage = () => {
       setShowCopySuccess(prev => ({ ...prev, code: true }));
       setTimeout(() => setShowCopySuccess(prev => ({ ...prev, code: false })), 2000);
     } catch (err) {
-      console.error('Failed to copy room code:', err);
+      // Copy failed
     }
   };
 
@@ -290,7 +258,7 @@ const RoomPage = () => {
       setShowCopySuccess(prev => ({ ...prev, link: true }));
       setTimeout(() => setShowCopySuccess(prev => ({ ...prev, link: false })), 2000);
     } catch (err) {
-      console.error('Failed to copy share link:', err);
+      // Copy failed
     }
   };
 
@@ -367,7 +335,6 @@ const RoomPage = () => {
         </div>
       </div>
 
-      {/* Main editor area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <EditorHeader
           fileName={fileName}

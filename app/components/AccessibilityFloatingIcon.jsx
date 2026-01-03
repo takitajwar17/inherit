@@ -1,4 +1,4 @@
-'use client';  // Ensure this is present for client-side rendering
+'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { FaMicrophone, FaAccessibleIcon, FaKeyboard, FaPaperPlane, FaTimes } from 'react-icons/fa';
@@ -17,9 +17,7 @@ const AccessibilityFloatingIcon = () => {
     try {
       const response = await fetch('/api/voice-routing', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript }),
       });
 
@@ -30,16 +28,10 @@ const AccessibilityFloatingIcon = () => {
       const data = await response.json();
       
       if (data.route) {
-        // If we have video data, we can display a toast or notification
-        if (data.videoData) {
-          console.log('Found video:', data.videoData.title);
-        }
         router.push(data.route);
-      } else {
-        console.log('No matching route found for command:', transcript);
       }
     } catch (error) {
-      console.error('Failed to process voice command:', error);
+      // Voice command processing failed
     }
   };
 
@@ -52,24 +44,18 @@ const AccessibilityFloatingIcon = () => {
 
       recognition.onstart = () => {
         setIsListening(true);
-        console.log('Voice recognition started');
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        console.log('Recognized speech:', transcript);
-        
         processVoiceCommand(transcript);
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        console.log('Voice recognition ended');
       };
 
       recognition.start();
-    } else {
-      console.warn('Web Speech API is not supported in this browser');
     }
   };
 
@@ -86,7 +72,6 @@ const AccessibilityFloatingIcon = () => {
   const toggleMenu = () => {
     setIsExpanded(!isExpanded);
     if (!isExpanded) {
-      // Reset states when opening menu
       setIsListening(false);
       setShowTextInput(false);
     }
@@ -101,7 +86,6 @@ const AccessibilityFloatingIcon = () => {
     setShowTextInput(true);
     setIsListening(false);
     
-    // Focus the text input
     setTimeout(() => {
       if (textInputRef.current) {
         textInputRef.current.focus();
@@ -109,7 +93,6 @@ const AccessibilityFloatingIcon = () => {
     }, 100);
   };
   
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target) && isExpanded) {
@@ -124,10 +107,8 @@ const AccessibilityFloatingIcon = () => {
     };
   }, [isExpanded]);
   
-  // Close menu after successful voice recognition
   useEffect(() => {
     if (!isListening && isExpanded) {
-      // Small delay to allow for processing
       const timer = setTimeout(() => {
         setIsExpanded(false);
       }, 1000);
@@ -138,7 +119,6 @@ const AccessibilityFloatingIcon = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end" ref={menuRef}>
-      {/* Text input form */}
       {showTextInput && (
         <div className="mb-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 animate-fade-in">
           <form onSubmit={handleTextSubmit} className="flex items-center space-x-2">
@@ -162,7 +142,6 @@ const AccessibilityFloatingIcon = () => {
         </div>
       )}
       
-      {/* Option buttons that appear when main button is clicked */}
       {isExpanded && !showTextInput && (
         <div className="mb-2 flex space-x-2 animate-fade-in">
           <button
@@ -200,7 +179,6 @@ const AccessibilityFloatingIcon = () => {
         </div>
       )}
       
-      {/* Main accessibility button */}
       <button 
         onClick={toggleMenu}
         className={`

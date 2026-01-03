@@ -5,20 +5,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@clerk/nextjs"; // Adjust based on your authentication method
+import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { createQuestion } from "../../../lib/actions/question"; // Adjust the import path as necessary
+import { createQuestion } from "../../../lib/actions/question";
 
 export default function AskQuestionPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
-  const [aiResponseRequested, setAiResponseRequested] = useState(false); // New state for AI response checkbox
+  const [aiResponseRequested, setAiResponseRequested] = useState(false);
   const router = useRouter();
-  const { userId } = useAuth(); // Get the authenticated user's ID
+  const { userId } = useAuth();
 
   const handleTagInputKeyDown = (e) => {
     if (e.key === " " || e.key === "Enter") {
@@ -47,18 +47,16 @@ export default function AskQuestionPage() {
     }
 
     try {
-      const question = await createQuestion(
+      await createQuestion(
         title,
         description,
         tags,
         userId,
         aiResponseRequested
-      ); // Pass aiResponseRequested
-      console.log("Question created:", question);
+      );
       toast.success("Question posted successfully!");
-      router.push("/dev-discuss"); // Redirect to the discussion page
+      router.push("/dev-discuss");
     } catch (error) {
-      console.error("Error creating question:", error);
       toast.error("Error posting question. Please try again.");
     }
   };
@@ -68,7 +66,6 @@ export default function AskQuestionPage() {
       <div className="max-w-3xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Ask a Question</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title Field */}
           <div>
             <label className="block text-sm font-medium mb-2">Title</label>
             <Input
@@ -78,7 +75,6 @@ export default function AskQuestionPage() {
             />
           </div>
 
-          {/* Description Field */}
           <div>
             <label className="block text-sm font-medium mb-2">
               Description
@@ -91,7 +87,6 @@ export default function AskQuestionPage() {
             />
           </div>
 
-          {/* Tags Field */}
           <div>
             <label className="block text-sm font-medium mb-2">Tags</label>
             <div className="flex flex-wrap items-center gap-2 border border-input rounded-md p-2 focus-within:border-ring">
@@ -125,7 +120,6 @@ export default function AskQuestionPage() {
             </p>
           </div>
 
-          {/* AI Response Checkbox */}
           <div className="flex items-center mb-4">
             <input
               type="checkbox"
@@ -143,7 +137,6 @@ export default function AskQuestionPage() {
             <strong>initial point of reference</strong>.
           </p>
 
-          {/* Submit Button */}
           <div className="flex justify-end">
             <Button type="submit">Post Your Question</Button>
           </div>
