@@ -11,6 +11,7 @@ import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import logger, { logDatabase } from "@/lib/logger";
+import { isValidMongoId } from "@/lib/validation";
 
 export async function POST(request, { params }) {
   try {
@@ -23,6 +24,15 @@ export async function POST(request, { params }) {
     }
 
     const questionId = params.id;
+
+    // Validate question ID parameter
+    if (!isValidMongoId(questionId)) {
+      return NextResponse.json(
+        { error: "Invalid question ID format" },
+        { status: 400 }
+      );
+    }
+
     logDatabase("findById", "Question", { questionId, action: "upvote" });
     const question = await Question.findById(questionId);
 

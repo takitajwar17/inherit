@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import logger, { logExternalApi } from '@/lib/logger';
+import { validateRequest, videoSearchSchema } from '@/lib/validation';
 
 /**
  * Video Search API
@@ -49,15 +50,29 @@ const getVideoDetails = async (videoId) => {
 
 export async function POST(request) {
   try {
-    const { topic } = await request.json();
-    
-    if (!topic) {
+    // Parse JSON body with error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      logger.warn("Video search: Invalid JSON body");
       return NextResponse.json(
-        { error: 'Topic is required' },
+        { error: "Invalid JSON body" },
         { status: 400 }
       );
     }
 
+    // Validate request body with Zod schema
+    const validation = validateRequest(videoSearchSchema, body);
+    if (!validation.success) {
+      logger.warn("Video search validation failed", { error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { topic } = validation.data;
     logger.info("Searching for educational video", { topic });
 
     // Search for videos across specified channels

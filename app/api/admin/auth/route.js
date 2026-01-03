@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import logger, { logAuth } from "@/lib/logger";
+import { validateRequest, adminLoginSchema } from "@/lib/validation";
 
 /**
  * Admin Authentication API Route
@@ -55,19 +56,29 @@ async function generateAdminToken(username) {
  */
 export async function POST(req) {
   try {
-    const { username, password } = await req.json();
-
-    // Validate required fields
-    if (!username || !password) {
-      logger.warn("Admin auth attempt missing credentials", { 
-        hasUsername: !!username, 
-        hasPassword: !!password 
-      });
+    // Parse JSON body with error handling
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      logger.warn("Admin auth: Invalid JSON body");
       return NextResponse.json(
-        { error: "Username and password are required" },
+        { error: "Invalid JSON body" },
         { status: 400 }
       );
     }
+
+    // Validate request body with Zod schema
+    const validation = validateRequest(adminLoginSchema, body);
+    if (!validation.success) {
+      logger.warn("Admin auth validation failed", { error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { username, password } = validation.data;
 
     // Get admin credentials from environment variables
     const adminUsername = process.env.ADMIN_USERNAME;

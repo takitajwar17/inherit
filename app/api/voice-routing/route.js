@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import logger, { logExternalApi } from '@/lib/logger';
+import { validateRequest, voiceCommandSchema } from '@/lib/validation';
 const Groq = require('groq-sdk');
 
 /**
@@ -19,15 +20,29 @@ const groq = new Groq({
 
 export async function POST(request) {
   try {
-    const { transcript } = await request.json();
-    
-    if (!transcript) {
+    // Parse JSON body with error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      logger.warn("Voice routing: Invalid JSON body");
       return NextResponse.json(
-        { error: 'Transcript is required' },
+        { error: "Invalid JSON body" },
         { status: 400 }
       );
     }
 
+    // Validate request body with Zod schema
+    const validation = validateRequest(voiceCommandSchema, body);
+    if (!validation.success) {
+      logger.warn("Voice command validation failed", { error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { transcript } = validation.data;
     logger.debug("Processing voice command", { transcript });
 
     // Define the system prompt for Groq

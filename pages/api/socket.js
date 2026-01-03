@@ -6,6 +6,7 @@
 
 import { pusher } from '../../lib/pusher';
 import logger from '../../lib/logger';
+import { validateRequest, socketEventSchema } from '../../lib/validation';
 
 // Store collaborators for each room
 const roomCollaborators = new Map();
@@ -15,14 +16,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { roomId, userId, username, event, data } = req.body;
-
-  if (!roomId || !userId || !event) {
+  // Validate request body with Zod schema
+  const validation = validateRequest(socketEventSchema, req.body);
+  if (!validation.success) {
+    logger.warn("Socket event validation failed", { error: validation.error });
     return res.status(400).json({ 
-      message: 'Missing required fields',
-      required: { roomId, userId, event },
+      message: 'Validation failed',
+      error: validation.error,
     });
   }
+
+  const { roomId, userId, username, event, data } = validation.data;
 
   try {
     // Handle collaborator joining/leaving

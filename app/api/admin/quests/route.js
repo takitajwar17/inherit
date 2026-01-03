@@ -12,6 +12,7 @@ import { connect } from "@/lib/mongodb/mongoose";
 import Quest from "@/lib/models/questModel";
 import { adminAuth } from "@/lib/middleware/adminAuth";
 import logger, { logDatabase, events } from "@/lib/logger";
+import { validateRequest, createQuestSchema } from "@/lib/validation";
 
 export const GET = adminAuth(async () => {
   try {
@@ -34,30 +35,19 @@ export const GET = adminAuth(async () => {
 export const POST = adminAuth(async (req) => {
   try {
     await connect();
-    const questData = await req.json();
+    const body = await req.json();
 
-    // Validate questions array
-    if (!questData.questions) {
-      questData.questions = [];
+    // Validate request body with Zod schema
+    const validation = validateRequest(createQuestSchema, body);
+    if (!validation.success) {
+      logger.warn("Quest creation validation failed", { error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
     }
 
-    // Validate each question's structure
-    questData.questions = questData.questions.map((question) => {
-      if (question.type === "coding" && question.testCases) {
-        question.testCases = question.testCases.map((testCase) => {
-          if (!testCase.input || !testCase.expectedOutput) {
-            throw new Error(
-              "Test cases must have both input and expectedOutput fields"
-            );
-          }
-          return {
-            input: testCase.input,
-            expectedOutput: testCase.expectedOutput,
-          };
-        });
-      }
-      return question;
-    });
+    const questData = validation.data;
 
     // Log the incoming data
     logger.info("Creating new quest", { 

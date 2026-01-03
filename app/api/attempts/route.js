@@ -12,6 +12,7 @@ import Quest from '@/lib/models/questModel';
 import Attempt from '@/lib/models/attemptModel';
 import { auth } from '@clerk/nextjs';
 import logger, { logDatabase, events } from '@/lib/logger';
+import { validateRequest, createAttemptSchema } from '@/lib/validation';
 
 export async function POST(request) {
   try {
@@ -25,7 +26,19 @@ export async function POST(request) {
       );
     }
 
-    const { questId } = await request.json();
+    const body = await request.json();
+
+    // Validate request body with Zod schema
+    const validation = validateRequest(createAttemptSchema, body);
+    if (!validation.success) {
+      logger.warn("Attempt creation validation failed", { error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { questId } = validation.data;
     logDatabase("findById", "Quest", { questId, operation: "create_attempt" });
 
     // Check if quest exists and is still active

@@ -63,6 +63,7 @@
     "tailwindcss-animate": "^1.0.7",
     "use-sound": "^4.0.3",
     "uuid": "^11.0.2",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "zod": "^4.3.4"
   }
 }

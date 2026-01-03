@@ -12,6 +12,7 @@ import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import logger, { logDatabase, events } from "@/lib/logger";
+import { validateRequest, replySchema, isValidMongoId } from "@/lib/validation";
 
 export async function POST(request, { params }) {
   try {
@@ -23,7 +24,28 @@ export async function POST(request, { params }) {
     }
 
     const questionId = params.id;
-    const { content } = await request.json();
+
+    // Validate question ID parameter
+    if (!isValidMongoId(questionId)) {
+      return NextResponse.json(
+        { error: "Invalid question ID format" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Validate request body with Zod schema
+    const validation = validateRequest(replySchema, body);
+    if (!validation.success) {
+      logger.warn("Reply validation failed", { questionId, error: validation.error });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { content } = validation.data;
 
     logDatabase("findById", "Question", { questionId, action: "reply" });
     const question = await Question.findById(questionId);

@@ -12,6 +12,7 @@ import Attempt from "@/lib/models/attemptModel";
 import { submitQuestAttempt } from "@/lib/actions/quest";
 import { auth } from "@clerk/nextjs";
 import logger, { logDatabase, events } from "@/lib/logger";
+import { validateRequest, submitAttemptSchema, isValidMongoId } from "@/lib/validation";
 
 export async function POST(request, { params }) {
   try {
@@ -23,7 +24,30 @@ export async function POST(request, { params }) {
       );
     }
 
-    const { answers } = await request.json();
+    // Validate attemptId parameter
+    if (!isValidMongoId(params.attemptId)) {
+      return NextResponse.json(
+        { error: "Invalid attempt ID format" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Validate request body with Zod schema
+    const validation = validateRequest(submitAttemptSchema, body);
+    if (!validation.success) {
+      logger.warn("Attempt submission validation failed", { 
+        attemptId: params.attemptId, 
+        error: validation.error 
+      });
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { answers } = validation.data;
     await connect();
 
     logDatabase("findById", "Attempt", { attemptId: params.attemptId, operation: "submit" });
