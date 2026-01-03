@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ClientLayout from "./components/ClientLayout";
 import "./globals.css";
 import AccessibilityFloatingIcon from "./components/AccessibilityFloatingIcon";
+
 const kanit = Kanit({
   subsets: ["latin"],
   display: "swap",
@@ -28,6 +29,15 @@ export const metadata = {
   },
 };
 
+/**
+ * RootLayout - Root layout component for the entire application
+ * 
+ * @description
+ * Wraps the entire app with ClerkProvider for authentication,
+ * ClientLayout for sidebar/header management, and global components.
+ * 
+ * Note: The <main> tag is in ClientLayout to avoid duplicate main tags.
+ */
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider
@@ -47,14 +57,9 @@ export default function RootLayout({ children }) {
           <meta property="og:image" content={metadata.openGraph.image} />
         </head>
         <body className={kanit.className}>
-          {/* Retain ClientLayout to manage conditional Sidebar rendering */}
+          {/* ClientLayout manages header, sidebar, and main content area */}
           <ClientLayout>
-            <main>
-              {/* Keep the new background styling from the incoming changes */}
-              <div className="flex items-start justify-center min-h-screen min-w-full">
-                <div className="w-full h-full">{children}</div>
-              </div>
-            </main>
+            {children}
           </ClientLayout>
           <AccessibilityFloatingIcon />
           <ToastContainer />
