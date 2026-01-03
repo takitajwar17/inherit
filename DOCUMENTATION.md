@@ -232,7 +232,7 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 # DATABASE
 # ============================================
 # MongoDB Atlas connection string
-MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>
 
 # ============================================
 # AI SERVICES
