@@ -10,6 +10,7 @@ import {
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { getUserRoadmaps } from "@/lib/actions/roadmap";
+import { getRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import { FaYoutube, FaTrophy, FaRoad, FaBook, FaClock, FaCalendarAlt } from "react-icons/fa";
 import { IoTrendingUp } from "react-icons/io5";
 
@@ -75,6 +76,11 @@ export default function Dashboard() {
     }
   };
 
+  /**
+   * Calculate average progress across all roadmaps using the shared utility
+   * @param {Array} roadmaps - Array of roadmap objects
+   * @returns {number} Average progress percentage (0-100)
+   */
   const calculateRoadmapProgress = (roadmaps) => {
     if (!roadmaps?.length) return 0;
     
@@ -82,13 +88,15 @@ export default function Dashboard() {
     let validRoadmaps = 0;
     
     roadmaps.forEach(roadmap => {
-      // Get progress from localStorage using _id
-      const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
-      if (saved && roadmap.content?.steps?.length) {
-        const completedSteps = new Set(JSON.parse(saved));
-        const progress = Math.round((completedSteps.size / roadmap.content.steps.length) * 100);
-        totalProgress += progress;
-        validRoadmaps++;
+      if (roadmap.content?.steps?.length) {
+        const { progress } = getRoadmapProgress(
+          roadmap._id, 
+          roadmap.content.steps.length
+        );
+        if (progress > 0) {
+          totalProgress += progress;
+          validRoadmaps++;
+        }
       }
     });
     
@@ -324,12 +332,10 @@ export default function Dashboard() {
               <FaRoad className="text-gray-400" />
             </div>
             <div className="space-y-4">
-              {roadmaps.slice(0, 2).map((roadmap, index) => {
-                // Get progress from localStorage using _id
-                const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
-                const completedSteps = saved ? new Set(JSON.parse(saved)) : new Set();
-                const progress = roadmap.content?.steps ? 
-                  Math.round((completedSteps.size / roadmap.content.steps.length) * 100) : 0;
+              {roadmaps.slice(0, 2).map((roadmap) => {
+                // Use the shared utility for progress calculation
+                const totalSteps = roadmap.content?.steps?.length || 0;
+                const { completedCount, progress } = getRoadmapProgress(roadmap._id, totalSteps);
 
                 return (
                   <div
@@ -359,7 +365,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="mt-2 flex justify-between text-sm text-gray-500">
-                      <span>{completedSteps.size} / {roadmap.content.steps?.length || 0} steps completed</span>
+                      <span>{completedCount} / {totalSteps} steps completed</span>
                       <span>{progress}% complete</span>
                     </div>
                   </div>

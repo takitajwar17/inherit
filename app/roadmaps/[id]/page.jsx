@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FaYoutube, FaCheckCircle, FaLock } from "react-icons/fa";
 import { FiExternalLink, FiArrowLeft, FiClock, FiBookOpen } from "react-icons/fi";
 import { getRoadmapById } from "@/lib/actions/roadmap";
 import Progress from "@/components/Progress";
+import { useRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import dynamic from 'next/dynamic';
 import useSound from 'use-sound';
 
@@ -37,16 +38,40 @@ export default function RoadmapDetailPage() {
   const [roadmap, setRoadmap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState(new Set());
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 0,
     height: typeof window !== 'undefined' ? window.innerHeight : 0
   });
 
-  // Add sound effects
+  // Sound effects
   const [playComplete] = useSound('/sounds/complete.mp3', { volume: 0.5 });
   const [playSuccess] = useSound('/sounds/success.mp3', { volume: 0.75 });
+
+  // Callback when a step is completed
+  const handleStepComplete = useCallback((stepIndex, isAllComplete) => {
+    if (isAllComplete) {
+      // Last step completed - show confetti and play success sound
+      setShowConfetti(true);
+      playSuccess();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Regular step completed - play sound and advance to next step
+      playComplete();
+      setActiveStep(stepIndex + 1);
+    }
+  }, [playComplete, playSuccess]);
+
+  // Use the custom hook for progress management
+  const { 
+    completedSteps, 
+    progress: progressPercentage, 
+    toggleStep 
+  } = useRoadmapProgress(
+    params.id, 
+    roadmap?.content?.steps?.length || 0,
+    { onStepComplete: handleStepComplete }
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -69,16 +94,12 @@ export default function RoadmapDetailPage() {
     }
   }, [showConfetti]);
 
+  // Fetch roadmap data
   useEffect(() => {
     const fetchRoadmap = async () => {
       try {
         const data = await getRoadmapById(params.id);
         setRoadmap(data);
-        // Load completed steps from localStorage
-        const saved = localStorage.getItem(`roadmap-${params.id}-progress`);
-        if (saved) {
-          setCompletedSteps(new Set(JSON.parse(saved)));
-        }
       } catch (error) {
         console.error("Error fetching roadmap:", error);
       } finally {
@@ -141,32 +162,6 @@ export default function RoadmapDetailPage() {
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
   }, []);
-
-  const toggleStepCompletion = (stepIndex) => {
-    const newCompleted = new Set(completedSteps);
-    if (completedSteps.has(stepIndex)) {
-      newCompleted.delete(stepIndex);
-    } else {
-      newCompleted.add(stepIndex);
-      
-      // If this is the last step and it's being completed
-      if (stepIndex === roadmap.content.steps.length - 1) {
-        setShowConfetti(true);
-        playSuccess();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        // Move to next step and play completion sound
-        playComplete();
-        setActiveStep(stepIndex + 1);
-      }
-    }
-    setCompletedSteps(newCompleted);
-    localStorage.setItem(`roadmap-${params.id}-progress`, JSON.stringify([...newCompleted]));
-  };
-
-  const progressPercentage = roadmap 
-    ? Math.round((completedSteps.size / roadmap.content.steps.length) * 100)
-    : 0;
 
   if (loading) {
     return (
@@ -390,7 +385,7 @@ export default function RoadmapDetailPage() {
                         onClick={(e) => {
                           if (activeStep === index) {
                             e.stopPropagation();
-                            toggleStepCompletion(index);
+                            toggleStep(index);
                           }
                         }}
                         className={`p-2 rounded-full transition-colors ${

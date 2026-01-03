@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createRoadmap, getUserRoadmaps } from "@/lib/actions/roadmap";
+import { getRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import { FaYoutube } from "react-icons/fa";
 import { FiExternalLink, FiChevronRight } from "react-icons/fi";
 
@@ -38,15 +39,17 @@ export default function RoadmapsPage() {
     }
   }, [user]);
 
+  /**
+   * Get progress for a roadmap using the shared utility function
+   * @param {Object} roadmap - Roadmap object with _id and content.steps
+   * @returns {number} Progress percentage (0-100)
+   */
   const getProgress = (roadmap) => {
-    const saved = localStorage.getItem(`roadmap-${roadmap._id}-progress`);
-    if (saved && roadmap.content?.steps?.length) {
-      const completedSteps = new Set(JSON.parse(saved));
-      return Math.round(
-        (completedSteps.size / roadmap.content.steps.length) * 100
-      );
-    }
-    return 0;
+    const { progress } = getRoadmapProgress(
+      roadmap._id, 
+      roadmap.content?.steps?.length || 0
+    );
+    return progress;
   };
 
   const fetchUserRoadmaps = async () => {
