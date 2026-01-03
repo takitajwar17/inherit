@@ -1,8 +1,17 @@
+/**
+ * Quest Attempts API
+ * 
+ * POST /api/attempts
+ * 
+ * Creates a new attempt for a quest.
+ */
+
 import { NextResponse } from 'next/server';
 import { connect } from '@/lib/mongodb/mongoose';
 import Quest from '@/lib/models/questModel';
 import Attempt from '@/lib/models/attemptModel';
 import { auth } from '@clerk/nextjs';
+import logger, { logDatabase, events } from '@/lib/logger';
 
 export async function POST(request) {
   try {
@@ -17,10 +26,12 @@ export async function POST(request) {
     }
 
     const { questId } = await request.json();
+    logDatabase("findById", "Quest", { questId, operation: "create_attempt" });
 
     // Check if quest exists and is still active
     const quest = await Quest.findById(questId);
     if (!quest) {
+      logger.warn("Quest not found for attempt creation", { questId });
       return NextResponse.json(
         { error: 'Quest not found' },
         { status: 404 }
@@ -30,6 +41,7 @@ export async function POST(request) {
     const now = new Date();
     const endTime = new Date(quest.endTime);
     if (now >= endTime) {
+      logger.warn("Attempt on ended quest", { questId, endTime });
       return NextResponse.json(
         { error: 'This quest has ended' },
         { status: 400 }
@@ -44,6 +56,7 @@ export async function POST(request) {
     });
 
     if (existingAttempt) {
+      logger.warn("Duplicate quest attempt", { userId, questId });
       return NextResponse.json(
         { error: 'You have already attempted this quest' },
         { status: 400 }
@@ -63,9 +76,17 @@ export async function POST(request) {
     });
 
     await attempt.save();
+    
+    logger.info("Quest attempt created", { 
+      userId, 
+      questId, 
+      attemptId: attempt._id 
+    });
+    events.questAttempted(userId, questId);
+
     return NextResponse.json(attempt);
   } catch (error) {
-    console.error('Error creating attempt:', error);
+    logger.error("Error creating attempt", { error: error.message });
     return NextResponse.json(
       { error: 'Failed to create attempt' },
       { status: 500 }

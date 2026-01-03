@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import logger, { logExternalApi } from '@/lib/logger';
 const Groq = require('groq-sdk');
+
+/**
+ * Voice Routing API
+ * 
+ * POST /api/voice-routing
+ * 
+ * Processes voice commands and routes to appropriate pages or actions.
+ * Uses Groq AI to interpret the voice transcript.
+ */
 
 // Initialize the Groq client
 const groq = new Groq({
@@ -17,6 +27,8 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    logger.debug("Processing voice command", { transcript });
 
     // Define the system prompt for Groq
     const systemPrompt = `You are a voice command routing assistant. 
@@ -46,6 +58,7 @@ export async function POST(request) {
     `;
 
     // Call Groq API
+    logExternalApi("groq", "voice_routing");
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -73,7 +86,10 @@ export async function POST(request) {
     try {
       routeData = JSON.parse(responseContent);
     } catch (error) {
-      console.error('Error parsing Groq response:', error);
+      logger.error("Error parsing Groq voice routing response", { 
+        error: error.message, 
+        responseContent 
+      });
       return NextResponse.json(
         { error: 'Failed to parse Groq response' },
         { status: 500 }
@@ -83,6 +99,8 @@ export async function POST(request) {
     // Handle learning action by searching for a video on the topic
     if (routeData.action === 'learn' && routeData.topic) {
       try {
+        logger.info("Voice command triggered learn action", { topic: routeData.topic });
+        
         // Call the video-search API
         const videoSearchResponse = await fetch(new URL('/api/video-search', request.url), {
           method: 'POST',
@@ -104,7 +122,10 @@ export async function POST(request) {
           videoData: videoData
         });
       } catch (error) {
-        console.error('Error searching for video:', error);
+        logger.error("Error searching for video from voice command", { 
+          topic: routeData.topic, 
+          error: error.message 
+        });
         return NextResponse.json(
           { error: 'Failed to find a video for this topic' },
           { status: 500 }
@@ -112,9 +133,10 @@ export async function POST(request) {
       }
     }
 
+    logger.debug("Voice routing result", { routeData });
     return NextResponse.json(routeData);
   } catch (error) {
-    console.error('Error processing voice command:', error);
+    logger.error("Error processing voice command", { error: error.message });
     return NextResponse.json(
       { error: 'Failed to process voice command' },
       { status: 500 }

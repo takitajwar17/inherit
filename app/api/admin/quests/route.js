@@ -1,15 +1,29 @@
+/**
+ * Admin Quests Management API
+ * 
+ * GET /api/admin/quests - List all quests
+ * POST /api/admin/quests - Create a new quest
+ * 
+ * Protected by admin authentication.
+ */
+
 import { NextResponse } from "next/server";
 import { connect } from "@/lib/mongodb/mongoose";
 import Quest from "@/lib/models/questModel";
 import { adminAuth } from "@/lib/middleware/adminAuth";
+import logger, { logDatabase, events } from "@/lib/logger";
 
 export const GET = adminAuth(async () => {
   try {
     await connect();
+    logDatabase("find", "Quest", { operation: "admin_list_all" });
+    
     const quests = await Quest.find({}).sort({ createdAt: -1 });
+    
+    logger.debug("Admin fetched all quests", { count: quests.length });
     return NextResponse.json(quests.map((quest) => quest.toObject()));
   } catch (error) {
-    console.error("Error fetching quests:", error);
+    logger.error("Error fetching quests (admin)", { error: error.message });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
@@ -46,7 +60,11 @@ export const POST = adminAuth(async (req) => {
     });
 
     // Log the incoming data
-    console.log("Received quest data:", JSON.stringify(questData, null, 2));
+    logger.info("Creating new quest", { 
+      questName: questData.name, 
+      questionCount: questData.questions.length 
+    });
+    logger.debug("Quest data received", { questData });
 
     const quest = await Quest.create({
       ...questData,
@@ -54,11 +72,15 @@ export const POST = adminAuth(async (req) => {
     });
 
     // Log the created quest
-    console.log("Created quest:", JSON.stringify(quest, null, 2));
+    logger.info("Quest created successfully", { 
+      questId: quest._id, 
+      questName: quest.name 
+    });
+    events.questCreated(quest._id, quest.name);
 
     return NextResponse.json(quest.toObject());
   } catch (error) {
-    console.error("Error creating quest:", error);
+    logger.error("Error creating quest", { error: error.message });
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
       { status: 500 }

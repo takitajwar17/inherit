@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import logger, { logExternalApi } from '@/lib/logger';
+
+/**
+ * Video Search API
+ * 
+ * POST /api/video-search
+ * 
+ * Searches YouTube for educational videos on a given topic.
+ */
 
 // Function to get a random API key
 const getRandomApiKey = () => {
@@ -17,6 +26,7 @@ const CHANNEL_IDS = [
 // Function to get video details (duration)
 const getVideoDetails = async (videoId) => {
   try {
+    logExternalApi("youtube", "get_video_details", { videoId });
     const response = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos`,
       {
@@ -29,7 +39,10 @@ const getVideoDetails = async (videoId) => {
     );
     return response.data.items[0];
   } catch (error) {
-    console.error("Error fetching video details:", error);
+    logger.error("Error fetching YouTube video details", { 
+      videoId, 
+      error: error.message 
+    });
     return null;
   }
 };
@@ -44,6 +57,8 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    logger.info("Searching for educational video", { topic });
 
     // Search for videos across specified channels
     const promises = CHANNEL_IDS.map((channelId) =>
@@ -60,11 +75,13 @@ export async function POST(request) {
       })
     );
 
+    logExternalApi("youtube", "search_videos", { topic, channelCount: CHANNEL_IDS.length });
     const results = await Promise.all(promises);
     const allVideos = results.flatMap((result) => result.data.items);
 
     // If no videos found
     if (allVideos.length === 0) {
+      logger.warn("No videos found for topic", { topic });
       return NextResponse.json(
         { error: 'No videos found for this topic' },
         { status: 404 }
@@ -78,6 +95,12 @@ export async function POST(request) {
     // Get video duration
     const videoDetails = await getVideoDetails(videoId);
     
+    logger.info("Video search successful", { 
+      topic, 
+      videoId, 
+      title: bestMatch.snippet.title 
+    });
+    
     // Return the video information
     return NextResponse.json({
       videoId,
@@ -88,7 +111,7 @@ export async function POST(request) {
       contentDetails: videoDetails?.contentDetails || null
     });
   } catch (error) {
-    console.error('Error searching for video:', error);
+    logger.error("Error searching for video", { error: error.message });
     return NextResponse.json(
       { error: 'Failed to search for video' },
       { status: 500 }

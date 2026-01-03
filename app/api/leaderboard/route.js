@@ -1,12 +1,22 @@
+/**
+ * Leaderboard API
+ * 
+ * GET /api/leaderboard
+ * 
+ * Retrieves the top 10 users based on quest scores.
+ */
+
 import { connect } from "@/lib/mongodb/mongoose";
 import Attempt from "@/lib/models/attemptModel";
 import User from "@/lib/models/userModel";
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs";
+import logger, { logDatabase } from "@/lib/logger";
 
 export async function GET() {
   try {
     await connect();
+    logDatabase("aggregate", "Attempt", { operation: "leaderboard" });
 
     // Get leaderboard data
     const leaderboardData = await Attempt.aggregate([
@@ -51,9 +61,10 @@ export async function GET() {
       username: userMap.get(entry._id) || entry._id.slice(0, 8) + "..." // Fallback to truncated ID if username not found
     }));
 
+    logger.debug("Leaderboard fetched", { entries: leaderboard.length });
     return NextResponse.json(leaderboard);
   } catch (error) {
-    console.error("Error fetching leaderboard:", error);
+    logger.error("Error fetching leaderboard", { error: error.message });
     return NextResponse.json(
       { error: "Failed to fetch leaderboard" },
       { status: 500 }

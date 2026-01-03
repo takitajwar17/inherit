@@ -3,7 +3,15 @@ import { auth } from "@clerk/nextjs";
 import { connect } from "@/lib/mongodb/mongoose";
 import Quest from "@/lib/models/questModel";
 import Attempt from "@/lib/models/attemptModel";
+import logger, { logDatabase } from "@/lib/logger";
 
+/**
+ * User Quests API
+ * 
+ * GET /api/quests/user
+ * 
+ * Retrieves quest data categorized by status for the authenticated user.
+ */
 export async function GET() {
   try {
     const { userId } = auth();
@@ -12,6 +20,7 @@ export async function GET() {
     }
 
     await connect();
+    logDatabase("find", "Quest", { operation: "user_quests", userId });
 
     // Get all quests and attempts for the user
     const quests = await Quest.find({});
@@ -67,6 +76,13 @@ export async function GET() {
       }));
 
     recent.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    logger.debug("User quests retrieved", { 
+      userId, 
+      activeCount: active.length, 
+      completedCount: completed.length 
+    });
+
     return NextResponse.json({
       active,
       completed,
@@ -74,7 +90,7 @@ export async function GET() {
       history,
     });
   } catch (error) {
-    console.error("Error in GET /api/quests/user:", error);
+    logger.error("Error in GET /api/quests/user", { error: error.message });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

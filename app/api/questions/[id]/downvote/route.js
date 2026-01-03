@@ -1,7 +1,16 @@
+/**
+ * Question Downvote API
+ * 
+ * POST /api/questions/[id]/downvote
+ * 
+ * Handles downvoting a question.
+ */
+
 import Question from "@/lib/models/questionModel";
 import { connect } from "@/lib/mongodb/mongoose";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import logger, { logDatabase } from "@/lib/logger";
 
 export async function POST(request, { params }) {
   try {
@@ -13,9 +22,11 @@ export async function POST(request, { params }) {
     }
 
     const questionId = params.id;
+    logDatabase("findById", "Question", { questionId, action: "downvote" });
     const question = await Question.findById(questionId);
 
     if (!question) {
+      logger.warn("Question not found for downvote", { questionId });
       return NextResponse.json(
         { error: "Question not found" },
         { status: 404 }
@@ -47,9 +58,19 @@ export async function POST(request, { params }) {
     }
 
     await question.save();
+    
+    logger.debug("Question downvoted", { 
+      questionId, 
+      userId, 
+      newVoteCount: question.votes 
+    });
+
     return NextResponse.json({ success: true, votes: question.votes });
   } catch (error) {
-    console.error("Error downvoting question:", error);
+    logger.error("Error downvoting question", { 
+      questionId: params.id, 
+      error: error.message 
+    });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
+import logger, { logAuth } from "@/lib/logger";
 
 /**
  * Admin Authentication API Route
@@ -58,6 +59,10 @@ export async function POST(req) {
 
     // Validate required fields
     if (!username || !password) {
+      logger.warn("Admin auth attempt missing credentials", { 
+        hasUsername: !!username, 
+        hasPassword: !!password 
+      });
       return NextResponse.json(
         { error: "Username and password are required" },
         { status: 400 }
@@ -70,7 +75,7 @@ export async function POST(req) {
 
     // Ensure environment variables are configured
     if (!adminUsername || !adminPasswordHash) {
-      console.error("Admin credentials not configured in environment variables");
+      logger.error("Admin credentials not configured in environment variables");
       return NextResponse.json(
         { error: "Server configuration error" },
         { status: 500 }
@@ -82,6 +87,7 @@ export async function POST(req) {
       // Use constant-time comparison behavior by still checking password
       // This prevents timing attacks that could reveal valid usernames
       await bcrypt.compare(password, adminPasswordHash);
+      logAuth("admin_login", false, { username, reason: "invalid_username" });
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
@@ -92,6 +98,7 @@ export async function POST(req) {
     const isPasswordValid = await bcrypt.compare(password, adminPasswordHash);
     
     if (!isPasswordValid) {
+      logAuth("admin_login", false, { username, reason: "invalid_password" });
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
@@ -100,6 +107,7 @@ export async function POST(req) {
 
     // Generate JWT token for authenticated admin
     const token = await generateAdminToken(username);
+    logAuth("admin_login", true, { username });
 
     // Return success with token
     return NextResponse.json({ 
@@ -109,7 +117,7 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error("Admin auth error:", error.message);
+    logger.error("Admin auth error", { error: error.message, stack: error.stack });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

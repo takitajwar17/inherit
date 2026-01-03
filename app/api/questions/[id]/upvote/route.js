@@ -1,9 +1,16 @@
-// app/api/questions/[id]/upvote/route.js
+/**
+ * Question Upvote API
+ * 
+ * POST /api/questions/[id]/upvote
+ * 
+ * Handles upvoting a question.
+ */
 
 import Question from "@/lib/models/questionModel";
 import { connect } from "@/lib/mongodb/mongoose";
-import { auth } from "@clerk/nextjs"; // Adjust based on your auth provider
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+import logger, { logDatabase } from "@/lib/logger";
 
 export async function POST(request, { params }) {
   try {
@@ -16,16 +23,18 @@ export async function POST(request, { params }) {
     }
 
     const questionId = params.id;
+    logDatabase("findById", "Question", { questionId, action: "upvote" });
     const question = await Question.findById(questionId);
 
     if (!question) {
+      logger.warn("Question not found for upvote", { questionId });
       return NextResponse.json(
         { error: "Question not found" },
         { status: 404 }
       );
     }
 
-    // **Add this block to initialize voters if undefined**
+    // Initialize voters if undefined
     if (!question.voters) {
       question.voters = [];
     }
@@ -54,10 +63,19 @@ export async function POST(request, { params }) {
     }
 
     await question.save();
+    
+    logger.debug("Question upvoted", { 
+      questionId, 
+      userId, 
+      newVoteCount: question.votes 
+    });
 
     return NextResponse.json({ success: true, votes: question.votes });
   } catch (error) {
-    console.error("Error upvoting question:", error);
+    logger.error("Error upvoting question", { 
+      questionId: params.id, 
+      error: error.message 
+    });
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
