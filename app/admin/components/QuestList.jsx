@@ -242,61 +242,61 @@ export default function QuestList({ onStatsUpdate }) {
           </div>
         ) : (
           quests.map((quest) => {
-            const status = getQuestStatus(quest);
-            return (
-              <div
-                key={quest._id}
-                className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {quest.name}
-                      </h3>
-                      <div className="mt-1 text-sm text-gray-500">
-                        Level: {quest.level.charAt(0).toUpperCase() + quest.level.slice(1)}
-                      </div>
+          const status = getQuestStatus(quest);
+          return (
+            <div
+              key={quest._id}
+              className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {quest.name}
+                    </h3>
+                    <div className="mt-1 text-sm text-gray-500">
+                      Level: {quest.level.charAt(0).toUpperCase() + quest.level.slice(1)}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${status.color}-100 text-${status.color}-800`}>
-                        {status.status}
-                      </span>
-                      <button
-                        onClick={() => setEditingQuest(quest)}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-${status.color}-100 text-${status.color}-800`}>
+                      {status.status}
+                    </span>
+                    <button
+                      onClick={() => setEditingQuest(quest)}
                         className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(quest._id)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(quest._id)}
                         className="text-sm text-red-600 hover:text-red-800 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Time Limit:</span>{" "}
-                      {quest.timeLimit} minutes
-                    </div>
-                    <div>
-                      <span className="font-medium">Questions:</span>{" "}
-                      {quest.questions.length}
-                    </div>
-                    <div>
-                      <span className="font-medium">Points:</span>{" "}
-                      {quest.questions.reduce((sum, q) => sum + q.points, 0)}
-                    </div>
-                  </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <div>Start: {new Date(quest.startTime).toLocaleString()}</div>
-                    <div>End: {new Date(quest.endTime).toLocaleString()}</div>
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Time Limit:</span>{" "}
+                    {quest.timeLimit} minutes
+                  </div>
+                  <div>
+                    <span className="font-medium">Questions:</span>{" "}
+                    {quest.questions.length}
+                  </div>
+                  <div>
+                    <span className="font-medium">Points:</span>{" "}
+                    {quest.questions.reduce((sum, q) => sum + q.points, 0)}
+                  </div>
+                </div>
+                <div className="mt-2 text-sm text-gray-500">
+                  <div>Start: {new Date(quest.startTime).toLocaleString()}</div>
+                  <div>End: {new Date(quest.endTime).toLocaleString()}</div>
+                </div>
               </div>
-            );
+            </div>
+          );
           })
         )}
       </div>

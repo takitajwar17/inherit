@@ -105,7 +105,7 @@ export default function RoadmapsPage() {
               <h1 className="text-3xl font-bold text-gray-900">
                 My Learning Roadmaps
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-base text-gray-600">
                 Create and manage your personalized learning paths
               </p>
             </div>
@@ -241,7 +241,7 @@ export default function RoadmapsPage() {
                     className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
                   >
                     <div className="bg-gradient-to-r from-[#101826] to-[#1c2c47] p-6">
-                      <h2 className="text-xl font-bold text-white">
+                      <h2 className="text-lg font-semibold text-white">
                         {roadmap.title}
                       </h2>
                     </div>
@@ -370,7 +370,7 @@ export default function RoadmapsPage() {
                         />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
                       No Roadmaps Yet
                     </h3>
                     <p className="text-gray-600 mb-6">

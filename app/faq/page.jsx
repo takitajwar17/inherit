@@ -191,10 +191,10 @@ export default function FAQPage() {
       <div className="bg-white border-b">
         <div className="max-w-5xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">
               How can we help you today?
             </h1>
-            <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
+            <p className="text-base text-gray-600 mb-12 max-w-2xl mx-auto">
               Find instant answers or get in touch with our support team
             </p>
             
@@ -236,7 +236,7 @@ export default function FAQPage() {
         {searchQuery ? (
           // Search Results
           <div className="space-y-8">
-            <h2 className="text-2xl font-semibold text-gray-900 flex items-center">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
               Search Results
               <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                 {filteredQuestions.length}

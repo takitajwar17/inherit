@@ -51,7 +51,7 @@ export default function AdminDashboard() {
           return;
         }
 
-        setIsLoading(false);
+      setIsLoading(false);
       } catch (error) {
         console.error("Auth check error:", error);
         Cookies.remove("adminToken", { path: "/" });

@@ -66,12 +66,12 @@ const Playground = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header Section */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section - Standardized typography */}
         <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-slate-900">Code Playground</h1>
-          <p className="text-slate-600 mt-2">Real-time collaborative coding environment</p>
+          <h1 className="text-3xl font-bold text-gray-900">Code Playground</h1>
+          <p className="text-base text-gray-600 mt-1">Real-time collaborative coding environment</p>
         </div>
 
         {/* Main Content */}
@@ -83,9 +83,9 @@ const Playground = () => {
                 <div className="bg-blue-50 p-2 rounded">
                   <FaCode className="text-xl text-blue-600" />
                 </div>
-                <h2 className="text-xl font-medium text-slate-900">Create Room</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Create Room</h2>
               </div>
-              <p className="text-slate-600 text-sm mb-6">
+              <p className="text-sm text-gray-600 mb-6">
                 Start a new collaborative coding session with a unique room code
               </p>
               <div className="mt-auto">
@@ -106,9 +106,9 @@ const Playground = () => {
                 <div className="bg-emerald-50 p-2 rounded">
                   <FaUsers className="text-xl text-emerald-600" />
                 </div>
-                <h2 className="text-xl font-medium text-slate-900">Join Room</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Join Room</h2>
               </div>
-              <p className="text-slate-600 text-sm mb-4">
+              <p className="text-sm text-gray-600 mb-4">
                 Enter a room code to join an existing session
               </p>
               <div className="space-y-3 mt-auto">
@@ -117,7 +117,7 @@ const Playground = () => {
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                   placeholder="Enter room code"
-                  className="w-full px-3 py-2 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   maxLength={7}
                 />
                 <button

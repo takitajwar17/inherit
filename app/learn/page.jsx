@@ -163,6 +163,11 @@ const LearnPage = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-20 z-40 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          {/* Page Header */}
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">Learn</h1>
+            <p className="text-base text-gray-600 mt-1">Watch tutorials and practice coding in real-time</p>
+          </div>
           <div className="flex items-center justify-between space-x-4">
             <div className="flex-1 max-w-2xl">
               <div className="relative">

@@ -11,6 +11,7 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { getUserRoadmaps } from "@/lib/actions/roadmap";
 import { getRoadmapProgress } from "@/hooks/useRoadmapProgress";
+import { PageHeader, SectionHeader } from "@/components/shared";
 import { FaYoutube, FaTrophy, FaRoad, FaBook, FaClock, FaCalendarAlt } from "react-icons/fa";
 import { IoTrendingUp } from "react-icons/io5";
 
@@ -220,13 +221,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8 space-y-4">
-          <h1 className="text-4xl font-bold text-gray-900">
-            Welcome back, <span className="text-primary">{user?.firstName}</span>!
-          </h1>
-          <p className="text-gray-600">Here's an overview of your learning journey</p>
-        </div>
+        {/* Header Section - Standardized typography */}
+        <PageHeader
+          title={<>Welcome back, <span className="text-primary">{user?.firstName}</span>!</>}
+          subtitle="Here's an overview of your learning journey"
+        />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -297,10 +296,10 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Activity */}
           <Card className="bg-white p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-              <FaClock className="text-gray-400" />
-            </div>
+            <SectionHeader
+              title="Recent Activity"
+              icon={<FaClock />}
+            />
             <div className="space-y-4">
               {recentActivity.map((activity, index) => (
                 <div
@@ -327,10 +326,10 @@ export default function Dashboard() {
 
           {/* Active Roadmaps */}
           <Card className="bg-white p-6 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Active Roadmaps</h2>
-              <FaRoad className="text-gray-400" />
-            </div>
+            <SectionHeader
+              title="Active Roadmaps"
+              icon={<FaRoad />}
+            />
             <div className="space-y-4">
               {roadmaps.slice(0, 2).map((roadmap) => {
                 // Use the shared utility for progress calculation

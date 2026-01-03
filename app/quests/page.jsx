@@ -22,7 +22,7 @@ const LeaderboardCard = ({ leaderboard }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
           <FiTrophy className="text-yellow-500" />
           Leaderboard
         </h2>
@@ -199,7 +199,7 @@ const QuestCard = ({ quest, status }) => {
       <div className="space-y-4">
         {/* Quest Header */}
         <div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{quest.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{quest.name}</h3>
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <FiAward
               className={`
@@ -377,7 +377,10 @@ export default function QuestsPage() {
         <div className="flex-1">
           {/* Header with Filter Toggle */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Quests</h1>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Quests</h1>
+              <p className="text-base text-gray-600 mt-1">Complete challenges and climb the leaderboard</p>
+            </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
