@@ -117,7 +117,7 @@ Inherit is a modern educational platform built with Next.js, designed to provide
 - **Code Editor**: Monaco Editor
 - **Markdown**: React Markdown with GFM
 - **Analytics**: Vercel Analytics & Speed Insights
-- **AI Services**: Groq AI, Plagiarism Check, OpenAI
+- **AI Services**: Groq AI
 
 ## 🚦 Getting Started
 
@@ -147,7 +147,6 @@ MONGODB_URI=your_mongodb_uri
 
 # AI Services
 GROQ_API_KEY=your_groq_api_key
-PLAGIARISM_CHECK_API_KEY=your_plagiarism_check_api_key
 
 # URLs
 NEXT_PUBLIC_SOCKET_SERVER_URL=http://localhost:3000
