@@ -157,10 +157,8 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete, initialE
               <>
                 <button
                   onClick={() => {
-                    if (confirm("Delete this task?")) {
-                      onDelete(task._id);
-                      onClose();
-                    }
+                    onDelete(task._id);
+                    onClose();
                   }}
                   className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete task"

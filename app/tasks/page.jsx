@@ -39,6 +39,7 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useState("list"); // 'list', 'calendar', 'stats'
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
@@ -139,9 +140,17 @@ export default function TasksPage() {
     }
   };
 
-  // Delete task
-  const handleDeleteTask = async (taskId) => {
-    if (!confirm("Are you sure you want to delete this task?")) return;
+  // Initiate delete task
+  const handleDeleteTask = (taskId) => {
+    // Find the task object if we only have the ID (optional, for UI feedback)
+    const task = tasks.find(t => t._id === taskId);
+    setTaskToDelete(task || { _id: taskId });
+  };
+
+  // Confirm delete task
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete._id;
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -150,7 +159,8 @@ export default function TasksPage() {
 
       if (response.ok) {
         setTasks((prev) => prev.filter((t) => t._id !== taskId));
-        setSelectedTask(null); // Close modal if open
+        setSelectedTask(null); // Close detail modal if open
+        setTaskToDelete(null); // Close confirmation modal
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -345,6 +355,7 @@ export default function TasksPage() {
           onEdit={handleViewTask}
           onDelete={handleDeleteTask}
           onReorder={handleReorder}
+          onUpdateTask={handleUpdateTask}
         />
       ) : viewMode === "board" ? (
         <TaskBoard
@@ -393,6 +404,39 @@ export default function TasksPage() {
           onDelete={handleDeleteTask}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {taskToDelete && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl border border-gray-200"
+            >
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Task?</h3>
+              <p className="text-gray-500 mb-6 text-sm">
+                Are you sure you want to delete <span className="font-medium text-gray-700">"{taskToDelete.title || 'this task'}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setTaskToDelete(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteTask}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </PageContainer>
   );
 }
