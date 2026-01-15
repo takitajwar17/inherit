@@ -50,8 +50,13 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
   const getTasksForDate = (date) => {
     const dateStr = date.toDateString();
     return tasks.filter(task => {
-      if (!task.dueDate) return false;
-      return new Date(task.dueDate).toDateString() === dateStr;
+      if (!task?.dueDate) return false;
+      try {
+        return new Date(task.dueDate).toDateString() === dateStr;
+      } catch (error) {
+        console.warn('Invalid date format for task:', task);
+        return false;
+      }
     });
   };
 

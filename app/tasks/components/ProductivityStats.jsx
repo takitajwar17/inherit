@@ -44,17 +44,25 @@ export default function ProductivityStats({ tasks }) {
     const todayCompleted = todayTasks.filter(t => t.status === "completed").length;
     const todayPending = todayTasks.length - todayCompleted;
 
-    // This week
+    // This week - use updatedAt or createdAt as fallback
     const thisWeekTasks = tasks.filter(t => {
-      if (!t.completedAt) return false;
-      const completedDate = new Date(t.completedAt);
+      if (t.status !== "completed") return false;
+      const completedDate = t.completedAt 
+        ? new Date(t.completedAt) 
+        : t.updatedAt 
+        ? new Date(t.updatedAt) 
+        : new Date(t.createdAt);
       return completedDate >= thisWeekStart;
     });
 
     // Last week
     const lastWeekTasks = tasks.filter(t => {
-      if (!t.completedAt) return false;
-      const completedDate = new Date(t.completedAt);
+      if (t.status !== "completed") return false;
+      const completedDate = t.completedAt 
+        ? new Date(t.completedAt) 
+        : t.updatedAt 
+        ? new Date(t.updatedAt) 
+        : new Date(t.createdAt);
       return completedDate >= lastWeekStart && completedDate < thisWeekStart;
     });
 
@@ -64,8 +72,12 @@ export default function ProductivityStats({ tasks }) {
     
     while (currentStreak < 365) {
       const dayTasks = tasks.filter(t => {
-        if (!t.completedAt) return false;
-        const completedDate = new Date(t.completedAt);
+        if (t.status !== "completed") return false;
+        const completedDate = t.completedAt 
+          ? new Date(t.completedAt) 
+          : t.updatedAt 
+          ? new Date(t.updatedAt) 
+          : new Date(t.createdAt);
         return completedDate.toDateString() === checkDate.toDateString();
       });
       
@@ -100,8 +112,12 @@ export default function ProductivityStats({ tasks }) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dayTasks = tasks.filter(t => {
-        if (!t.completedAt) return false;
-        const completedDate = new Date(t.completedAt);
+        if (t.status !== "completed") return false;
+        const completedDate = t.completedAt 
+          ? new Date(t.completedAt) 
+          : t.updatedAt 
+          ? new Date(t.updatedAt) 
+          : new Date(t.createdAt);
         return completedDate.toDateString() === date.toDateString();
       });
       last7Days.push({

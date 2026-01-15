@@ -30,7 +30,7 @@ export default function TaskBoard({
         bgColor: "bg-blue-50",
         borderColor: "border-blue-200",
         tasks: tasks.filter(
-          (t) => t.status !== "completed" && t.status !== "in_progress"
+          (t) => !t.status || (t.status !== "completed" && t.status !== "in_progress")
         ),
       },
       {

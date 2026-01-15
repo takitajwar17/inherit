@@ -35,9 +35,14 @@ export default function TaskList({
       case "today":
         return tasks.filter(t => {
           if (t.status === "completed") return false;
-          if (!t.dueDate) return false;
+          if (!t.dueDate) {
+            // Show tasks without due dates in "today" view
+            return true;
+          }
           const dueDate = new Date(t.dueDate);
-          return dueDate >= today && dueDate < tomorrow;
+          const dueDateStr = dueDate.toDateString();
+          const todayStr = today.toDateString();
+          return dueDateStr === todayStr;
         });
       
       case "upcoming":
@@ -64,6 +69,12 @@ export default function TaskList({
       
       case "p3":
         return tasks.filter(t => t.status !== "completed" && t.priority === "low");
+      
+      case "completed":
+        return tasks.filter(t => t.status === "completed");
+      
+      case "all":
+        return tasks;
       
       default:
         // Category views
@@ -105,6 +116,8 @@ export default function TaskList({
       today: "Today",
       upcoming: "Upcoming",
       overdue: "Overdue",
+      completed: "Completed",
+      all: "All Tasks",
       p1: "Priority 1",
       p2: "Priority 2",
       p3: "Priority 3",
@@ -124,6 +137,8 @@ export default function TaskList({
       today: "Tasks due today",
       upcoming: "Tasks due in the next 7 days",
       overdue: "Tasks that are past their due date",
+      completed: "All completed tasks",
+      all: "All your tasks",
       p1: "High priority tasks",
       p2: "Medium priority tasks",
       p3: "Low priority tasks",

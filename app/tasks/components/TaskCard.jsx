@@ -47,9 +47,9 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
   const [showActions, setShowActions] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const isCompleted = task.status === "completed";
+  const isCompleted = task?.status === "completed";
   const isOverdue =
-    task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+    task?.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
 
   const formatDate = (date) => {
     if (!date) return null;
@@ -134,7 +134,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
                     : "text-gray-900"
                 )}
               >
-                {task.title}
+                {task?.title || 'Untitled Task'}
               </h3>
 
               {/* Priority Flag (inline) */}
@@ -148,7 +148,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
             </div>
 
             {/* Description */}
-            {task.description && (
+            {task?.description && (
               <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                 {task.description}
               </p>
