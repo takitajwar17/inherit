@@ -44,6 +44,17 @@ const CodeWorkspace = () => {
   const [executionTime, setExecutionTime] = useState(null);
   const [executionTimestamp, setExecutionTimestamp] = useState(null);
 
+  // Force Monaco theme reload on mount
+  useEffect(() => {
+    if (monacoRef.current && editorRef.current) {
+      try {
+        monacoRef.current.editor.setTheme("cosmic-glass");
+      } catch (e) {
+        console.log("Theme will load on editor mount");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Load saved code and metadata from localStorage
     const savedCode = localStorage.getItem(`code-${language}`);
@@ -80,8 +91,56 @@ const CodeWorkspace = () => {
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+
+    // Define Cosmic Glass Theme
+    monaco.editor.defineTheme("cosmic-glass", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [
+        { token: "comment", foreground: "6B7280", fontStyle: "italic" },
+        { token: "keyword", foreground: "8B5CF6", fontStyle: "bold" },
+        { token: "string", foreground: "06B6D4" },
+        { token: "number", foreground: "F59E0B" },
+        { token: "function", foreground: "10B981" },
+        { token: "variable", foreground: "E5E7EB" },
+        { token: "type", foreground: "A78BFA" },
+        { token: "class", foreground: "EC4899" },
+      ],
+      colors: {
+        "editor.background": "#030014",
+        "editor.foreground": "#E5E7EB",
+        "editor.lineHighlightBackground": "#1E1B4B20",
+        "editor.selectionBackground": "#8B5CF640",
+        "editor.inactiveSelectionBackground": "#8B5CF620",
+        "editorCursor.foreground": "#06B6D4",
+        "editorWhitespace.foreground": "#6B728040",
+        "editorIndentGuide.background": "#6B728020",
+        "editorIndentGuide.activeBackground": "#8B5CF660",
+        "editorLineNumber.foreground": "#6B7280",
+        "editorLineNumber.activeForeground": "#06B6D4",
+        "editor.selectionHighlightBackground": "#8B5CF630",
+        "editor.wordHighlightBackground": "#06B6D420",
+        "editor.findMatchBackground": "#F59E0B40",
+        "editor.findMatchHighlightBackground": "#F59E0B20",
+        "editorBracketMatch.background": "#8B5CF640",
+        "editorBracketMatch.border": "#8B5CF6",
+        "scrollbarSlider.background": "#6B728040",
+        "scrollbarSlider.hoverBackground": "#6B728060",
+        "scrollbarSlider.activeBackground": "#6B728080",
+        "minimap.background": "#03001410",
+        "minimapSlider.background": "#6B728040",
+        "minimapSlider.hoverBackground": "#6B728060",
+      },
+    });
+
+    // Apply the theme
+    console.log("🎨 Applying Cosmic Glass theme...");
+    monaco.editor.setTheme("cosmic-glass");
+    console.log("✅ Cosmic Glass theme applied!");
+
     editor.focus();
 
+    // Track cursor position
     editor.onDidChangeCursorPosition((e) => {
       const position = e.position;
       setCursorPosition({
@@ -90,15 +149,66 @@ const CodeWorkspace = () => {
       });
     });
 
+    // Track content changes
     editor.onDidChangeModelContent(() => {
       const content = editor.getValue();
-      setWordCount(content.trim().split(/\\s+/).length);
+      setWordCount(content.trim().split(/\s+/).length);
       setHasChanges(true);
     });
 
+    // Keyboard Shortcuts
+
+    // Ctrl/Cmd + S: Save
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       handleSave();
     });
+
+    // Ctrl/Cmd + R: Run Code
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyR, () => {
+      runCode();
+    });
+
+    // Ctrl/Cmd + Shift + R: Get AI Review
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyR,
+      () => {
+        handleReview();
+      }
+    );
+
+    // Ctrl/Cmd + D: Duplicate Line
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD, () => {
+      editor.trigger("keyboard", "editor.action.copyLinesDownAction", {});
+    });
+
+    // Alt + Up/Down: Move Line Up/Down
+    editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.UpArrow, () => {
+      editor.trigger("keyboard", "editor.action.moveLinesUpAction", {});
+    });
+    editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.DownArrow, () => {
+      editor.trigger("keyboard", "editor.action.moveLinesDownAction", {});
+    });
+
+    // Ctrl/Cmd + /: Toggle Comment
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash, () => {
+      editor.trigger("keyboard", "editor.action.commentLine", {});
+    });
+
+    // Ctrl/Cmd + Shift + K: Delete Line
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyK,
+      () => {
+        editor.trigger("keyboard", "editor.action.deleteLines", {});
+      }
+    );
+
+    // Ctrl/Cmd + Shift + F: Format Document
+    editor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF,
+      () => {
+        editor.trigger("keyboard", "editor.action.formatDocument", {});
+      }
+    );
   };
 
   const handleSave = () => {
@@ -169,7 +279,7 @@ const CodeWorkspace = () => {
       const startTime = performance.now();
       const { run: result } = await executeCode(language, sourceCode);
       const endTime = performance.now();
-      
+
       setExecutionTime(Math.round(endTime - startTime));
       setExecutionTimestamp(new Date());
       setOutput(result.output.split("\n"));
@@ -277,7 +387,9 @@ const CodeWorkspace = () => {
 
           setTimeout(() => {
             try {
-              const formatAction = editor.getAction("editor.action.formatDocument");
+              const formatAction = editor.getAction(
+                "editor.action.formatDocument"
+              );
               if (formatAction) {
                 formatAction.run();
               }
@@ -376,7 +488,7 @@ const CodeWorkspace = () => {
           {activeTab === "editor" && (
             <Editor
               height="100%"
-              theme="vs-dark"
+              theme="cosmic-glass"
               language={language}
               value={value}
               onChange={(newValue) => {
@@ -385,29 +497,179 @@ const CodeWorkspace = () => {
               }}
               onMount={handleEditorDidMount}
               options={{
+                // Font & Display
                 fontSize: 14,
-                fontFamily: "'Fira Code', monospace",
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
+                fontFamily:
+                  "'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace",
+                fontLigatures: true, // Enable font ligatures (e.g., => becomes arrow)
+                lineHeight: 22,
+                letterSpacing: 0.5,
+
+                // Minimap (Code Overview)
+                minimap: {
+                  enabled: true,
+                  side: "right",
+                  showSlider: "mouseover",
+                  renderCharacters: false, // Faster rendering
+                  maxColumn: 80,
+                  scale: 1,
+                },
+
+                // Line Numbers & Guides
                 lineNumbers: "on",
+                lineNumbersMinChars: 3,
+                glyphMargin: true, // Space for breakpoints/icons
+                renderLineHighlight: "all", // Highlight current line
+                renderLineHighlightOnlyWhenFocus: false,
+                guides: {
+                  indentation: true,
+                  highlightActiveIndentation: true,
+                  bracketPairs: true,
+                  bracketPairsHorizontal: "active",
+                },
+
+                // Scrolling
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                scrollbar: {
+                  vertical: "visible",
+                  horizontal: "visible",
+                  useShadows: true,
+                  verticalScrollbarSize: 14,
+                  horizontalScrollbarSize: 14,
+                  arrowSize: 30,
+                },
+
+                // Whitespace & Formatting
                 renderWhitespace: "selection",
-                bracketPairColorization: true,
+                renderControlCharacters: true,
                 formatOnPaste: true,
                 formatOnType: true,
+                autoIndent: "full",
                 tabSize: 2,
+                insertSpaces: true,
+                detectIndentation: true,
+                trimAutoWhitespace: true,
+
+                // Bracket Matching
+                bracketPairColorization: {
+                  enabled: true,
+                  independentColorPoolPerBracketType: true,
+                },
+                matchBrackets: "always",
                 autoClosingBrackets: "always",
                 autoClosingQuotes: "always",
+                autoClosingDelete: "always",
+                autoClosingOvertype: "always",
+                autoSurround: "languageDefined",
+
+                // Word Wrap
                 wordWrap: "on",
+                wordWrapColumn: 120,
+                wrappingIndent: "indent",
+                wrappingStrategy: "advanced",
+
+                // IntelliSense & Suggestions
                 suggestOnTriggerCharacters: true,
-                quickSuggestions: true,
+                acceptSuggestionOnCommitCharacter: true,
+                acceptSuggestionOnEnter: "on",
+                tabCompletion: "on",
+                quickSuggestions: {
+                  other: true,
+                  comments: true,
+                  strings: true,
+                },
+                quickSuggestionsDelay: 10,
+                suggestSelection: "first",
+                snippetSuggestions: "top", // Show snippets first
+                wordBasedSuggestions: true,
+                wordBasedSuggestionsMode: "matchingDocuments",
+
+                // Inline Suggestions (GitHub Copilot-style)
+                inlineSuggest: {
+                  enabled: true,
+                  mode: "subwordSmart",
+                },
+
+                // Parameter Hints
+                parameterHints: {
+                  enabled: true,
+                  cycle: true,
+                },
+
+                // Code Folding
                 folding: true,
                 foldingHighlight: true,
                 foldingStrategy: "indentation",
-                showFoldingControls: "always",
+                foldingImportsByDefault: false,
+                showFoldingControls: "mouseover",
+                unfoldOnClickAfterEndOfLine: true,
+
+                // Find & Replace
+                find: {
+                  addExtraSpaceOnTop: true,
+                  autoFindInSelection: "multiline",
+                  seedSearchStringFromSelection: "selection",
+                  globalFindClipboard: false,
+                },
+
+                // Multi-Cursor & Selection
+                multiCursorModifier: "ctrlCmd",
+                multiCursorMergeOverlapping: true,
+                multiCursorPaste: "spread",
+                selectionHighlight: true,
+                occurrencesHighlight: true,
+                selectionClipboard: false,
+
+                // Context Menu & Interactions
                 contextmenu: true,
                 mouseWheelZoom: true,
-                parameterHints: true,
+                mouseWheelScrollSensitivity: 1,
+                fastScrollSensitivity: 5,
+                links: true,
+                colorDecorators: true,
+
+                // Code Lens (Inline code info)
                 codeLens: true,
+                codeLensFontFamily: "'Fira Code', monospace",
+                codeLensFontSize: 12,
+
+                // Sticky Scroll (Keep function/class names visible)
+                stickyScroll: {
+                  enabled: true,
+                  maxLineCount: 5,
+                },
+
+                // Hover
+                hover: {
+                  enabled: true,
+                  delay: 300,
+                  sticky: true,
+                },
+
+                // Performance
+                renderValidationDecorations: "on",
+                renderFinalNewline: "on",
+                unicodeHighlight: {
+                  ambiguousCharacters: true,
+                  invisibleCharacters: true,
+                },
+
+                // Accessibility
+                accessibilitySupport: "auto",
+                accessibilityPageSize: 10,
+
+                // Cursor
+                cursorBlinking: "smooth",
+                cursorSmoothCaretAnimation: "on",
+                cursorStyle: "line",
+                cursorWidth: 2,
+
+                // Padding
+                padding: {
+                  top: 16,
+                  bottom: 16,
+                },
               }}
             />
           )}
@@ -423,7 +685,9 @@ const CodeWorkspace = () => {
             />
           )}
 
-          {activeTab === "review" && review && <AIReviewPanel review={review} />}
+          {activeTab === "review" && review && (
+            <AIReviewPanel review={review} />
+          )}
 
           {loading && (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center backdrop-blur-sm">
