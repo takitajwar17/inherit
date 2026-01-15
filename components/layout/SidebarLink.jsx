@@ -2,17 +2,17 @@
 
 /**
  * SidebarLink - Reusable navigation link component for sidebar
- * 
+ *
  * @description
  * A single navigation link with icon, label, and tooltip on hover.
  * Handles both expanded and collapsed sidebar states.
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.href - Link destination URL
  * @param {React.ComponentType} props.icon - Icon component to display
  * @param {string} props.label - Link label text
  * @param {boolean} props.isOpen - Whether sidebar is expanded
- * 
+ *
  * @example
  * <SidebarLink
  *   href="/dashboard"
@@ -30,9 +30,9 @@ export const SidebarLink = ({ href, icon: Icon, label, isOpen }) => {
     <Link
       href={href}
       className={cn(
-        "flex items-center text-gray-900 hover:text-indigo-600 hover:bg-white rounded-lg",
+        "flex items-center text-gray-400 hover:text-white hover:bg-white/10 rounded-xl",
         "transition-all duration-300 relative group",
-        isOpen ? "p-2" : "p-1.5 justify-center"
+        isOpen ? "p-2 mx-2" : "p-2 justify-center"
       )}
       title={label}
     >
@@ -46,8 +46,8 @@ export const SidebarLink = ({ href, icon: Icon, label, isOpen }) => {
 
       {/* Tooltip - shown when sidebar is collapsed */}
       {!isOpen && (
-        <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left">
-          <div className="bg-white text-gray-900 px-4 py-2 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] font-medium whitespace-nowrap">
+        <div className="absolute left-full ml-4 scale-0 group-hover:scale-100 transition-all duration-300 origin-left z-50">
+          <div className="bg-black/80 backdrop-blur-md text-white border border-white/10 px-3 py-1.5 rounded-lg shadow-xl text-xs font-medium whitespace-nowrap">
             {label}
           </div>
         </div>
@@ -67,4 +67,3 @@ export const SidebarLink = ({ href, icon: Icon, label, isOpen }) => {
 };
 
 export default SidebarLink;
-

@@ -425,14 +425,14 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
       {/* Close button */}
       <button
         onClick={handleClose}
-        className="absolute top-6 right-6 p-3 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+        className="absolute top-6 right-6 p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors backdrop-blur-md border border-white/10"
       >
         <X className="w-6 h-6 text-white" />
       </button>
 
       {/* Language indicator */}
-      <div className="absolute top-6 left-6 px-4 py-2 rounded-full bg-gray-800/50 text-white text-sm flex items-center gap-2">
-        <Languages className="w-4 h-4" />
+      <div className="absolute top-6 left-6 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-sm flex items-center gap-2 backdrop-blur-md">
+        <Languages className="w-4 h-4 text-primary" />
         {language === "bn" ? "বাংলা" : "English"}
       </div>
 
@@ -454,7 +454,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-xl"
+          className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 blur-2xl"
         />
 
         <motion.div
@@ -473,7 +473,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
             ease: "easeInOut",
             delay: 0.2,
           }}
-          className="absolute w-52 h-52 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-lg"
+          className="absolute w-52 h-52 rounded-full bg-gradient-to-r from-primary/30 to-secondary/30 blur-xl"
         />
 
         {/* Main circle */}
@@ -491,14 +491,14 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
             repeat: Infinity,
             ease: "easeInOut",
           }}
-          className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+          className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 border border-white/10 backdrop-blur-md ${
             status === "listening"
-              ? "bg-gradient-to-br from-blue-500 to-cyan-500 shadow-[0_0_60px_rgba(59,130,246,0.5)]"
+              ? "bg-gradient-to-br from-primary to-secondary shadow-[0_0_60px_rgba(139,92,246,0.5)]"
               : status === "speaking"
-              ? "bg-gradient-to-br from-violet-500 to-purple-500 shadow-[0_0_60px_rgba(139,92,246,0.5)]"
+              ? "bg-gradient-to-br from-fuchsia-500 to-primary shadow-[0_0_60px_rgba(236,72,153,0.5)]"
               : status === "processing"
               ? "bg-gradient-to-br from-amber-500 to-orange-500 shadow-[0_0_60px_rgba(245,158,11,0.5)]"
-              : "bg-gradient-to-br from-gray-600 to-gray-700 shadow-[0_0_30px_rgba(100,100,100,0.3)]"
+              : "bg-gradient-to-br from-muted/50 to-muted/80 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
           }`}
           onClick={() => {
             if (status === "listening") {
@@ -584,8 +584,8 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
           animate={{ opacity: 1, y: 0 }}
           className="mt-8 max-w-lg mx-auto px-6"
         >
-          <div className="bg-gray-800/50 rounded-2xl px-6 py-4 backdrop-blur-sm">
-            <p className="text-white text-center">{transcript}</p>
+          <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-4 backdrop-blur-md">
+            <p className="text-white text-center font-medium">{transcript}</p>
           </div>
         </motion.div>
       )}
@@ -597,7 +597,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 max-w-2xl mx-auto px-6 max-h-[40vh] overflow-y-auto"
         >
-          <div className="bg-violet-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm border border-violet-500/30">
+          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl px-6 py-4 backdrop-blur-md border border-white/10">
             <MarkdownMessage content={aiResponse} className="text-sm" />
           </div>
           {/* Stop Speech Button */}
@@ -1269,14 +1269,14 @@ export default function AICompanion() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`fixed z-50 bg-gray-900 shadow-2xl flex flex-col overflow-hidden border border-gray-700 transition-all duration-300 ${
+            className={`fixed z-50 flex flex-col overflow-hidden transition-all duration-300 backdrop-blur-xl border border-white/10 shadow-2xl shadow-primary/20 ${
               isExpanded
-                ? "inset-4 rounded-2xl"
-                : "bottom-6 right-6 w-96 h-[600px] max-h-[80vh] rounded-2xl"
+                ? "inset-4 rounded-3xl bg-black/80"
+                : "bottom-6 right-6 w-96 h-[600px] max-h-[80vh] rounded-2xl bg-black/60"
             }`}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-primary/90 to-secondary/90 px-4 py-3 flex items-center justify-between backdrop-blur-md">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-white" />
                 <span className="font-semibold text-white">
@@ -1417,12 +1417,12 @@ export default function AICompanion() {
                     )}
                     <div className="max-w-[80%]">
                       <div
-                        className={`px-4 py-2 rounded-2xl ${
+                        className={`max-w-[85%] rounded-2xl p-4 shadow-lg backdrop-blur-md border ${
                           msg.role === "user"
-                            ? "bg-violet-600 text-white rounded-br-sm"
+                            ? "bg-primary/20 border-primary/30 text-white rounded-br-none ml-auto"
                             : msg.error
-                            ? "bg-red-900/50 text-red-200 rounded-bl-sm"
-                            : "bg-gray-800 text-gray-100 rounded-bl-sm"
+                            ? "bg-red-900/50 border-red-700/30 text-red-200 rounded-bl-none"
+                            : "bg-white/5 border-white/10 text-gray-100 rounded-bl-none"
                         }`}
                       >
                         {msg.role === "user" ? (
@@ -1510,7 +1510,7 @@ export default function AICompanion() {
             {/* Input */}
             <form
               onSubmit={sendMessage}
-              className="p-4 border-t border-gray-700"
+              className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-md"
             >
               {/* Conversation mode indicator */}
               {conversationModeRef.current && isListening && (
@@ -1564,14 +1564,15 @@ export default function AICompanion() {
                       ? "আপনার প্রশ্ন লিখুন..."
                       : "Type your message..."
                   }
-                  className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="flex-1 bg-white/10 text-white px-4 py-2 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 border border-white/10 placeholder-gray-400"
                   disabled={isLoading}
                 />
+
                 <button
                   id="companion-send-btn"
                   type="submit"
                   disabled={!input.trim() || isLoading}
-                  className="p-2 rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 rounded-full bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary/20"
                 >
                   <Send className="w-5 h-5" />
                 </button>

@@ -2,12 +2,12 @@
 
 /**
  * Sidebar - Main navigation sidebar component
- * 
+ *
  * @description
  * Collapsible sidebar navigation that displays on the left side of the app.
  * Automatically collapses on mobile devices and expands on desktop.
  * Uses configuration-driven navigation from lib/constants/navigation.js
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.isOpen - Whether sidebar is expanded
  * @param {Function} props.setIsOpen - Function to toggle sidebar state
@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {/* Sidebar Container */}
       <div
         className={cn(
-          "fixed top-20 left-0 h-full bg-sky-50 z-50 shadow-2xl transition-all duration-300",
+          "fixed top-20 left-0 h-full bg-black/60 backdrop-blur-xl z-50 transition-all duration-300 border-r border-white/10",
           isOpen ? "w-56" : "w-14"
         )}
       >
