@@ -7,7 +7,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ClientLayout from "./components/ClientLayout";
 import "./globals.css";
-import AccessibilityFloatingIcon from "./components/AccessibilityFloatingIcon";
+
 import { RootErrorBoundary } from "@/components/error";
 import AICompanion from "@/components/companion/AICompanion";
 
@@ -63,7 +63,7 @@ export default function RootLayout({ children }) {
           <RootErrorBoundary>
             {/* ClientLayout manages header, sidebar, and main content area */}
             <ClientLayout>{children}</ClientLayout>
-            <AccessibilityFloatingIcon />
+
             <AICompanion />
             <ToastContainer />
             <Analytics />
