@@ -198,6 +198,390 @@ function MarkdownMessage({ content, className = "" }) {
 }
 
 /**
+ * Voice Mode Component - ChatGPT-style full-screen voice interface
+ */
+function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [status, setStatus] = useState("idle"); // idle, listening, processing, speaking
+
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(null);
+  const autoSendTimeoutRef = useRef(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = language === "bn" ? "bn-BD" : "en-US";
+
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const text = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += text;
+          } else {
+            interimTranscript += text;
+          }
+        }
+
+        setTranscript((prev) => {
+          if (finalTranscript) {
+            return (prev + " " + finalTranscript).trim();
+          }
+          return prev + interimTranscript;
+        });
+
+        // Auto-send after 2 seconds of silence
+        if (finalTranscript) {
+          if (autoSendTimeoutRef.current) {
+            clearTimeout(autoSendTimeoutRef.current);
+          }
+          autoSendTimeoutRef.current = setTimeout(() => {
+            handleSend();
+          }, 2000);
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error !== "no-speech") {
+          setIsListening(false);
+          setStatus("idle");
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        // Auto-restart if still in listening mode
+        if (isListening && status === "listening") {
+          try {
+            recognitionRef.current?.start();
+          } catch (e) {
+            // Already started
+          }
+        }
+      };
+    }
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      synthRef.current = window.speechSynthesis;
+    }
+
+    // Auto-start listening when voice mode opens
+    startListening();
+
+    return () => {
+      if (autoSendTimeoutRef.current) {
+        clearTimeout(autoSendTimeoutRef.current);
+      }
+      recognitionRef.current?.stop();
+      synthRef.current?.cancel();
+    };
+  }, [isOpen, language]);
+
+  const startListening = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        setStatus("listening");
+        setTranscript("");
+        setAiResponse("");
+      } catch (e) {
+        console.error("Failed to start recognition:", e);
+      }
+    }
+  };
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+    if (autoSendTimeoutRef.current) {
+      clearTimeout(autoSendTimeoutRef.current);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!transcript.trim()) return;
+
+    stopListening();
+    setStatus("processing");
+
+    const messageToSend = transcript.trim();
+    setTranscript("");
+
+    try {
+      // Send message and get response
+      const response = await onSendMessage(messageToSend);
+
+      if (response) {
+        setAiResponse(response);
+        speakResponse(response);
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setStatus("idle");
+      startListening();
+    }
+  };
+
+  const speakResponse = (text) => {
+    if (!synthRef.current) return;
+
+    setStatus("speaking");
+    setIsSpeaking(true);
+    synthRef.current.cancel();
+
+    // Clean markdown for speech
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      .replace(/\*(.*?)\*/g, "$1")
+      .replace(/`(.*?)`/g, "$1")
+      .replace(/#{1,6}\s/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/\n/g, ". ");
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+    utterance.rate = 1.0;
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      setStatus("listening");
+      // Resume listening after speaking
+      startListening();
+    };
+
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      setStatus("idle");
+    };
+
+    synthRef.current.speak(utterance);
+  };
+
+  const handleClose = () => {
+    stopListening();
+    synthRef.current?.cancel();
+    setStatus("idle");
+    setTranscript("");
+    setAiResponse("");
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-gradient-to-b from-gray-900 via-gray-900 to-black flex flex-col items-center justify-center"
+    >
+      {/* Close button */}
+      <button
+        onClick={handleClose}
+        className="absolute top-6 right-6 p-3 rounded-full bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+      >
+        <X className="w-6 h-6 text-white" />
+      </button>
+
+      {/* Language indicator */}
+      <div className="absolute top-6 left-6 px-4 py-2 rounded-full bg-gray-800/50 text-white text-sm flex items-center gap-2">
+        <Languages className="w-4 h-4" />
+        {language === "bn" ? "বাংলা" : "English"}
+      </div>
+
+      {/* Main animated circle */}
+      <div className="relative flex items-center justify-center">
+        {/* Outer glow rings */}
+        <motion.div
+          animate={{
+            scale:
+              status === "listening"
+                ? [1, 1.2, 1]
+                : status === "speaking"
+                ? [1, 1.3, 1]
+                : 1,
+            opacity: status === "idle" ? 0.3 : 0.6,
+          }}
+          transition={{
+            duration: status === "speaking" ? 0.5 : 1.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute w-64 h-64 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-xl"
+        />
+
+        <motion.div
+          animate={{
+            scale:
+              status === "listening"
+                ? [1, 1.15, 1]
+                : status === "speaking"
+                ? [1, 1.25, 1]
+                : 1,
+            opacity: status === "idle" ? 0.4 : 0.7,
+          }}
+          transition={{
+            duration: status === "speaking" ? 0.4 : 1.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.2,
+          }}
+          className="absolute w-52 h-52 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-lg"
+        />
+
+        {/* Main circle */}
+        <motion.div
+          animate={{
+            scale:
+              status === "listening"
+                ? [1, 1.05, 1]
+                : status === "speaking"
+                ? [1, 1.1, 1]
+                : 1,
+          }}
+          transition={{
+            duration: status === "speaking" ? 0.3 : 0.8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className={`relative w-40 h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ${
+            status === "listening"
+              ? "bg-gradient-to-br from-blue-500 to-cyan-500 shadow-[0_0_60px_rgba(59,130,246,0.5)]"
+              : status === "speaking"
+              ? "bg-gradient-to-br from-violet-500 to-purple-500 shadow-[0_0_60px_rgba(139,92,246,0.5)]"
+              : status === "processing"
+              ? "bg-gradient-to-br from-amber-500 to-orange-500 shadow-[0_0_60px_rgba(245,158,11,0.5)]"
+              : "bg-gradient-to-br from-gray-600 to-gray-700 shadow-[0_0_30px_rgba(100,100,100,0.3)]"
+          }`}
+          onClick={() => {
+            if (status === "listening") {
+              handleSend();
+            } else if (status === "idle") {
+              startListening();
+            }
+          }}
+        >
+          {/* Inner wave animation for speaking */}
+          {status === "speaking" && (
+            <div className="absolute inset-0 flex items-center justify-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{
+                    height: [12, 32, 12],
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
+                  }}
+                  className="w-2 bg-white/80 rounded-full"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Microphone icon */}
+          {status !== "speaking" && (
+            <motion.div
+              animate={{
+                scale: status === "listening" ? [1, 1.1, 1] : 1,
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+              }}
+            >
+              {status === "processing" ? (
+                <Loader2 className="w-12 h-12 text-white animate-spin" />
+              ) : (
+                <Mic className="w-12 h-12 text-white" />
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Status text */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-12 text-center"
+      >
+        <p className="text-2xl font-medium text-white mb-2">
+          {status === "listening" &&
+            (language === "bn" ? "শুনছি..." : "Listening...")}
+          {status === "speaking" &&
+            (language === "bn" ? "বলছি..." : "Speaking...")}
+          {status === "processing" &&
+            (language === "bn" ? "ভাবছি..." : "Thinking...")}
+          {status === "idle" &&
+            (language === "bn" ? "শুরু করতে ট্যাপ করুন" : "Tap to start")}
+        </p>
+        <p className="text-gray-400 text-sm">
+          {status === "listening" &&
+            (language === "bn"
+              ? "আপনার প্রশ্ন জিজ্ঞাসা করুন"
+              : "Ask me anything")}
+          {status === "speaking" &&
+            (language === "bn" ? "উত্তর দিচ্ছি" : "Responding to you")}
+          {status === "processing" &&
+            (language === "bn" ? "অপেক্ষা করুন" : "Please wait")}
+        </p>
+      </motion.div>
+
+      {/* Transcript display */}
+      {transcript && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 max-w-lg mx-auto px-6"
+        >
+          <div className="bg-gray-800/50 rounded-2xl px-6 py-4 backdrop-blur-sm">
+            <p className="text-white text-center">{transcript}</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* AI Response display */}
+      {aiResponse && status === "speaking" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 max-w-lg mx-auto px-6"
+        >
+          <div className="bg-violet-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm border border-violet-500/30">
+            <p className="text-gray-200 text-center text-sm line-clamp-3">
+              {aiResponse}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Bottom hint */}
+      <div className="absolute bottom-8 text-center text-gray-500 text-sm">
+        {language === "bn"
+          ? "কথা বলুন অথবা বন্ধ করতে X চাপুন"
+          : "Speak naturally or tap X to close"}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
  * Think State Indicator Component
  */
 function ThinkStateIndicator({ status, agent }) {
@@ -300,6 +684,7 @@ export default function AICompanion() {
   const [conversationId, setConversationId] = useState(null);
   const [useStreaming, setUseStreaming] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [voiceModeOpen, setVoiceModeOpen] = useState(false);
 
   // Think state
   const [thinkState, setThinkState] = useState(null);
@@ -310,34 +695,103 @@ export default function AICompanion() {
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
+  const conversationModeRef = useRef(false);
+  const autoSendTimeoutRef = useRef(null);
+  const lastTranscriptRef = useRef("");
 
   // Don't render on public routes or when not authenticated
   if (!isLoaded) return null;
   if (!isSignedIn) return null;
   if (PUBLIC_ROUTES.includes(pathname)) return null;
 
-  // Initialize speech recognition
+  // Initialize speech recognition with continuous mode support
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
       const SpeechRecognition = window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
 
       recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setInput(transcript);
-        setIsListening(false);
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Show interim results in input
+        if (interimTranscript) {
+          setInput(lastTranscriptRef.current + interimTranscript);
+        }
+
+        // When we get a final result
+        if (finalTranscript) {
+          lastTranscriptRef.current += finalTranscript + " ";
+          setInput(lastTranscriptRef.current.trim());
+
+          // Clear any existing timeout
+          if (autoSendTimeoutRef.current) {
+            clearTimeout(autoSendTimeoutRef.current);
+          }
+
+          // Auto-send after 1.5 seconds of silence (in conversation mode)
+          if (conversationModeRef.current) {
+            autoSendTimeoutRef.current = setTimeout(() => {
+              const messageToSend = lastTranscriptRef.current.trim();
+              if (messageToSend) {
+                // Trigger send
+                lastTranscriptRef.current = "";
+                setInput("");
+                // Stop listening while processing
+                recognitionRef.current?.stop();
+                setIsListening(false);
+                // Send the message by simulating form submit
+                document.getElementById("companion-send-btn")?.click();
+              }
+            }, 1500);
+          }
+        }
       };
 
-      recognitionRef.current.onerror = () => setIsListening(false);
-      recognitionRef.current.onend = () => setIsListening(false);
+      recognitionRef.current.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        if (event.error !== "no-speech") {
+          setIsListening(false);
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        // Auto-restart in conversation mode (unless we're processing)
+        if (conversationModeRef.current && !isLoading && !isSpeaking) {
+          try {
+            recognitionRef.current?.start();
+          } catch (e) {
+            // Already started, ignore
+          }
+        } else {
+          setIsListening(false);
+        }
+      };
     }
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       synthRef.current = window.speechSynthesis;
     }
-  }, []);
+
+    // Cleanup
+    return () => {
+      if (autoSendTimeoutRef.current) {
+        clearTimeout(autoSendTimeoutRef.current);
+      }
+      recognitionRef.current?.stop();
+    };
+  }, [isLoading, isSpeaking]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -383,37 +837,79 @@ export default function AICompanion() {
     [handleNavigation]
   );
 
-  // Toggle voice input
-  const toggleVoiceInput = useCallback(() => {
-    if (!recognitionRef.current) {
-      alert(
-        language === "bn"
-          ? "আপনার ব্রাউজার ভয়েস ইনপুট সমর্থন করে না"
-          : "Your browser doesn't support voice input"
-      );
-      return;
-    }
+  // Toggle voice input (single or conversation mode)
+  const toggleVoiceInput = useCallback(
+    (startConversationMode = false) => {
+      if (!recognitionRef.current) {
+        alert(
+          language === "bn"
+            ? "আপনার ব্রাউজার ভয়েস ইনপুট সমর্থন করে না"
+            : "Your browser doesn't support voice input"
+        );
+        return;
+      }
 
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.lang = language === "bn" ? "bn-BD" : "en-US";
-      recognitionRef.current.start();
-      setIsListening(true);
-    }
-  }, [isListening, language]);
+      if (isListening) {
+        // Stop listening
+        conversationModeRef.current = false;
+        recognitionRef.current.stop();
+        setIsListening(false);
+        lastTranscriptRef.current = "";
+        if (autoSendTimeoutRef.current) {
+          clearTimeout(autoSendTimeoutRef.current);
+        }
+      } else {
+        // Start listening
+        conversationModeRef.current = startConversationMode;
+        recognitionRef.current.lang = language === "bn" ? "bn-BD" : "en-US";
+        lastTranscriptRef.current = "";
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+          // Enable voice output in conversation mode
+          if (startConversationMode) {
+            setVoiceEnabled(true);
+          }
+        } catch (e) {
+          console.error("Failed to start speech recognition:", e);
+        }
+      }
+    },
+    [isListening, language]
+  );
 
-  // Speak response
+  // Speak response and restart listening in conversation mode
   const speakText = useCallback(
     (text) => {
       if (!synthRef.current || !voiceEnabled) return;
       synthRef.current.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      // Strip markdown for speech
+      const cleanText = text
+        .replace(/\*\*(.*?)\*\*/g, "$1") // Bold
+        .replace(/\*(.*?)\*/g, "$1") // Italic
+        .replace(/`(.*?)`/g, "$1") // Code
+        .replace(/#{1,6}\s/g, "") // Headers
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Links
+        .replace(/\n/g, ". "); // Newlines
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+      utterance.rate = 1.0;
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        // Restart listening in conversation mode
+        if (conversationModeRef.current && recognitionRef.current) {
+          try {
+            lastTranscriptRef.current = "";
+            recognitionRef.current.start();
+            setIsListening(true);
+          } catch (e) {
+            // Already started
+          }
+        }
+      };
       utterance.onerror = () => setIsSpeaking(false);
 
       synthRef.current.speak(utterance);
@@ -651,13 +1147,87 @@ export default function AICompanion() {
     return config;
   };
 
+  // Send message for voice mode (returns response content)
+  const sendMessageForVoice = async (userMessage) => {
+    // Add user message to chat
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: userMessage,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    try {
+      const response = await fetch("/api/companion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          conversationId,
+          language,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || "Request failed");
+      }
+
+      const assistantMessage = {
+        role: "assistant",
+        content: data.data.response,
+        agent: data.data.agent,
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setConversationId(data.data.conversationId);
+
+      return data.data.response;
+    } catch (error) {
+      console.error("Voice mode error:", error);
+      const errorMsg =
+        language === "bn"
+          ? "দুঃখিত, একটি সমস্যা হয়েছে।"
+          : "Sorry, something went wrong.";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: errorMsg,
+          error: true,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+
+      return errorMsg;
+    }
+  };
+
   return (
     <>
+      {/* Voice Mode Full Screen Interface */}
+      <AnimatePresence>
+        {voiceModeOpen && (
+          <VoiceMode
+            isOpen={voiceModeOpen}
+            onClose={() => setVoiceModeOpen(false)}
+            language={language}
+            onSendMessage={sendMessageForVoice}
+            isLoading={isLoading}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Floating button */}
       <motion.button
         onClick={() => setIsOpen(true)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform ${
-          isOpen ? "hidden" : ""
+          isOpen || voiceModeOpen ? "hidden" : ""
         }`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -693,6 +1263,17 @@ export default function AICompanion() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {/* Voice Mode Button */}
+                <button
+                  onClick={() => {
+                    setVoiceModeOpen(true);
+                    setIsOpen(false);
+                  }}
+                  className="p-1.5 hover:bg-white/20 rounded-full transition-colors group"
+                  title={language === "bn" ? "ভয়েস মোড" : "Voice Mode"}
+                >
+                  <Mic className="w-4 h-4 text-white group-hover:text-cyan-300 transition-colors" />
+                </button>
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
@@ -925,20 +1506,42 @@ export default function AICompanion() {
               onSubmit={sendMessage}
               className="p-4 border-t border-gray-700"
             >
+              {/* Conversation mode indicator */}
+              {conversationModeRef.current && isListening && (
+                <div className="flex items-center justify-center gap-2 mb-2 text-xs text-violet-400">
+                  <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse" />
+                  <span>
+                    Conversation mode - speak naturally, I'm listening...
+                  </span>
+                </div>
+              )}
               <div className="flex gap-2 items-center">
+                {/* Single tap: one-shot voice, Long press: conversation mode */}
                 <button
                   type="button"
-                  onClick={toggleVoiceInput}
-                  className={`p-2 rounded-full transition-colors ${
+                  onClick={() => toggleVoiceInput(false)}
+                  onDoubleClick={() => toggleVoiceInput(true)}
+                  className={`p-2 rounded-full transition-colors relative ${
                     isListening
-                      ? "bg-red-500 text-white animate-pulse"
+                      ? conversationModeRef.current
+                        ? "bg-violet-500 text-white animate-pulse"
+                        : "bg-red-500 text-white animate-pulse"
                       : "bg-gray-800 text-gray-400 hover:text-white"
                   }`}
+                  title={
+                    isListening
+                      ? "Stop listening"
+                      : "Click: Voice input | Double-click: Conversation mode"
+                  }
                 >
                   {isListening ? (
                     <MicOff className="w-5 h-5" />
                   ) : (
                     <Mic className="w-5 h-5" />
+                  )}
+                  {/* Conversation mode indicator dot */}
+                  {conversationModeRef.current && isListening && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-violet-300 rounded-full border-2 border-gray-900" />
                   )}
                 </button>
                 <input
@@ -947,7 +1550,11 @@ export default function AICompanion() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
-                    language === "bn"
+                    isListening
+                      ? language === "bn"
+                        ? "শুনছি..."
+                        : "Listening..."
+                      : language === "bn"
                       ? "আপনার প্রশ্ন লিখুন..."
                       : "Type your message..."
                   }
@@ -955,6 +1562,7 @@ export default function AICompanion() {
                   disabled={isLoading}
                 />
                 <button
+                  id="companion-send-btn"
                   type="submit"
                   disabled={!input.trim() || isLoading}
                   className="p-2 rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -962,6 +1570,11 @@ export default function AICompanion() {
                   <Send className="w-5 h-5" />
                 </button>
               </div>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                {language === "bn"
+                  ? "ডাবল-ক্লিক করুন কথোপকথন মোডের জন্য"
+                  : "Double-click mic for conversation mode"}
+              </p>
             </form>
           </motion.div>
         )}
