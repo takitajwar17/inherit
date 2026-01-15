@@ -55,7 +55,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       {/* Sidebar Container */}
       <div
         className={cn(
-          "fixed top-20 left-0 h-full bg-black/60 backdrop-blur-xl z-50 transition-all duration-300 border-r border-white/10",
+          "fixed top-20 left-0 h-full bg-[#030014] backdrop-blur-3xl z-50 transition-all duration-300 border-r-2 border-secondary/30",
           isOpen ? "w-56" : "w-14"
         )}
       >

@@ -30,7 +30,7 @@ export const SidebarLink = ({ href, icon: Icon, label, isOpen }) => {
     <Link
       href={href}
       className={cn(
-        "flex items-center text-gray-400 hover:text-white hover:bg-white/10 rounded-xl",
+        "flex items-center text-gray-400 hover:text-secondary hover:bg-secondary/10 rounded-xl",
         "transition-all duration-300 relative group",
         isOpen ? "p-2 mx-2" : "p-2 justify-center"
       )}

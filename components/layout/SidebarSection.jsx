@@ -46,7 +46,7 @@ export const SidebarSection = ({
       className={cn(
         "space-y-2",
         isOpen
-          ? cn(getPaddingClass(), showBorder && "border-b border-white/5")
+          ? cn(getPaddingClass(), showBorder && "border-b border-secondary/10")
           : "space-y-6"
       )}
     >
