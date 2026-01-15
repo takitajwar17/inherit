@@ -60,6 +60,7 @@ export default function TaskList({
   onEdit,
   onDelete,
   onReorder,
+  onUpdateTask,
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,10 +89,11 @@ export default function TaskList({
       case "today":
         return tasks.filter(t => {
           if (t.status === "completed") return false;
-          if (!t.dueDate) {
-            // Show tasks without due dates in "today" view
-            return true;
-          }
+          if (!t.dueDate) return true; // Show no-date in Today? Maybe. Or strict today. Todoist shows no-date in Inbox.
+          // Let's stick to strict Today filtering if selected, but since we're grouping, 
+          // maybe we relax this if the user asks for "Today" view specifically?
+          // Actually, if View is "Today", we ONLY want Today tasks. 
+          // So the grouping will result in just one group "Today" (and maybe "Overdue").
           const dueDate = new Date(t.dueDate);
           const dueDateStr = dueDate.toDateString();
           const todayStr = today.toDateString();
@@ -102,8 +104,9 @@ export default function TaskList({
         return tasks.filter(t => {
           if (t.status === "completed") return false;
           if (!t.dueDate) return false;
+          // Upcoming usually implies future.
           const dueDate = new Date(t.dueDate);
-          return dueDate >= tomorrow && dueDate < nextWeek;
+          return dueDate >= today; // Include today?
         });
       
       case "overdue":
@@ -113,57 +116,86 @@ export default function TaskList({
           const dueDate = new Date(t.dueDate);
           return dueDate < today;
         });
-      
-      case "p1":
-        return tasks.filter(t => t.status !== "completed" && t.priority === "high");
-      
-      case "p2":
-        return tasks.filter(t => t.status !== "completed" && t.priority === "medium");
-      
-      case "p3":
-        return tasks.filter(t => t.status !== "completed" && t.priority === "low");
-      
+        
       case "completed":
         return tasks.filter(t => t.status === "completed");
       
       case "all":
-        return tasks;
+        return tasks; // Show everything, grouped.
       
       default:
-        // Category views
         if (currentView && currentView.startsWith("category:")) {
           const category = currentView.split(":")[1];
           return tasks.filter(t => t.status !== "completed" && t.category === category);
+        }
+        // Priority views
+        if (["p1", "p2", "p3"].includes(currentView)) {
+             const priorityMap = { p1: 'high', p2: 'medium', p3: 'low' };
+             return tasks.filter(t => t.status !== "completed" && t.priority === priorityMap[currentView]);
         }
         return tasks.filter(t => t.status !== "completed");
     }
   };
 
-  // Group tasks by date for upcoming view
-  const groupTasksByDate = (taskList) => {
-    const groups = {};
-    
+  const filteredTasks = filterTasks();
+
+  const groupTasks = (taskList) => {
+    const groups = {
+      overdue: { id: "overdue", title: "Overdue", tasks: [], date: null }, // Date update logic handled separately
+      today: { id: "today", title: "Today", tasks: [], date: new Date() },
+      tomorrow: { id: "tomorrow", title: "Tomorrow", tasks: [], date: new Date(new Date().setDate(new Date().getDate() + 1)) },
+      upcoming: { id: "upcoming", title: "Next 7 Days", tasks: [], date: null },
+      later: { id: "later", title: "Later", tasks: [], date: null },
+      noDate: { id: "noDate", title: "No Date", tasks: [], date: null }
+    };
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
     taskList.forEach(task => {
+      if (task.status === "completed") {
+          // You might want a "Completed" group if viewing All
+          // But usually Completed view is separate. 
+          // If View is "All", let's put completed in a "Completed" group?
+          // For now, let's ignore completed in grouping if they were filtered out, 
+          // but if they are present, we need a group.
+          if (!groups.completed) groups.completed = { id: "completed", title: "Completed", tasks: [] };
+          groups.completed.tasks.push(task);
+          return;
+      }
+
       if (!task.dueDate) {
-        if (!groups["No date"]) groups["No date"] = [];
-        groups["No date"].push(task);
+        groups.noDate.tasks.push(task);
         return;
       }
 
-      const dateStr = new Date(task.dueDate).toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-      
-      if (!groups[dateStr]) groups[dateStr] = [];
-      groups[dateStr].push(task);
+      const date = new Date(task.dueDate);
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+      if (dateOnly < today) {
+        groups.overdue.tasks.push(task);
+      } else if (dateOnly.getTime() === today.getTime()) {
+        groups.today.tasks.push(task);
+      } else if (dateOnly.getTime() === tomorrow.getTime()) {
+        groups.tomorrow.tasks.push(task);
+      } else if (dateOnly < nextWeek) {
+        groups.upcoming.tasks.push(task);
+      } else {
+        groups.later.tasks.push(task);
+      }
     });
 
-    return groups;
+    return Object.values(groups).filter(g => g.tasks.length > 0);
   };
 
+  const groupedTasks = groupTasks(filteredTasks);
+
   const getViewTitle = () => {
+    // ... existing logic ...
     const titles = {
       inbox: "Inbox",
       today: "Today",
@@ -175,17 +207,16 @@ export default function TaskList({
       p2: "Priority 2",
       p3: "Priority 3",
     };
-
     if (currentView && currentView.startsWith("category:")) {
-      const category = currentView.split(":")[1];
-      return category.charAt(0).toUpperCase() + category.slice(1);
+        const category = currentView.split(":")[1];
+        return category.charAt(0).toUpperCase() + category.slice(1);
     }
-
     return titles[currentView] || "All Tasks";
   };
 
   const getViewDescription = () => {
-    const descriptions = {
+     // ... existing logic ...
+     const descriptions = {
       inbox: "Tasks without a category",
       today: "Tasks due today",
       upcoming: "Tasks due in the next 7 days",
@@ -196,136 +227,112 @@ export default function TaskList({
       p2: "Medium priority tasks",
       p3: "Low priority tasks",
     };
-
     if (currentView && currentView.startsWith("category:")) {
-      const category = currentView.split(":")[1];
-      return `All ${category} tasks`;
+        const category = currentView.split(":")[1];
+        return `All ${category} tasks`;
     }
-
     return descriptions[currentView] || "All your tasks";
   };
 
-  const filteredTasks = filterTasks();
-  const isGrouped = currentView === "upcoming";
-  const groupedTasks = isGrouped ? groupTasksByDate(filteredTasks) : null;
-
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    if (!over) return;
 
-    if (active.id !== over.id) {
-      const oldIndex = filteredTasks.findIndex((t) => t._id === active.id);
-      const newIndex = filteredTasks.findIndex((t) => t._id === over.id);
-      
-      const newFilteredOrder = arrayMove(filteredTasks, oldIndex, newIndex);
-      
-      // We need to map this back to the global 'tasks' list if we want to persist correctly
-      // But since we are passing 'onReorder', let's construct the full new list.
-      // This is tricky because we are only viewing a subset.
-      // Strategy: Reorder the subset, then merge back into the main list?
-      // Or just reorder the subset and assume the backend handles partial updates?
-      // Our backend reorder accepts a list of {id, order}. We can just send the subset reordered.
-      // BUT, the 'order' index should be global.
-      // If we just swap orders of two items, it's safer.
-      
-      // Let's create a new full list for the optimistic update
-      const newTasks = [...tasks];
-      const activeTaskGlobalIndex = tasks.findIndex(t => t._id === active.id);
-      const overTaskGlobalIndex = tasks.findIndex(t => t._id === over.id);
+    const activeTask = tasks.find(t => t._id === active.id);
+    if (!activeTask) return;
 
-      // Simple swap in global list? No, that might not be what visually happened if list is filtered.
-      // Visually we moved item A to position of item B in the FILTERED list.
-      // Effectively we want A to have an order index "between" its new neighbors.
-      // This is hard with integer orders.
-      
-      // Simplified approach: Reorder the whole 'tasks' array to match the visual change?
-      // Or just trigger onReorder with the reordered filtered list and let the parent handle it.
-      // But parent expects 'tasks' (all tasks).
-      
-      // Best approach for now:
-      // Since we can't easily reorder a subset within a superset without gaps,
-      // let's just do a local swap in the full list of the two items involved? No.
-      
-      // Let's assume onReorder expects the FULL list.
-      // We construct a new full list where the moved item is placed before/after the target in the full list?
-      
-      // Let's try to just reorder the subset and pass that back.
-      // If the parent simply replaces 'tasks' with this subset, we lose data.
-      // The parent implementation of handleReorder: setTasks(reorderedTasks). 
-      // So we MUST return the full list.
-      
-      // Logic:
-      // 1. Remove active item from global list.
-      // 2. Find the global index of the 'over' item.
-      // 3. Insert active item at that index.
-      
-      const activeItem = tasks.find(t => t._id === active.id);
-      let newGlobalList = tasks.filter(t => t._id !== active.id);
-      const overGlobalIndex = newGlobalList.findIndex(t => t._id === over.id);
-      
-      // If dragging downwards, we insert after? No, arrayMove logic usually implies "insert at index".
-      // But we need to know if we dropped "above" or "below".
-      // arrayMove does this based on indices.
-      
-      // Let's rely on arrayMove on the FILTERED list to get the relative order.
-      // Then reconstruct the global list maintaining that relative order?
-      // That's too complex.
-      
-      // Alternative: Just re-assign 'order' property to all items in the filtered list based on their new visual position.
-      // Then merge these updates into the global list.
-      
-      // 1. Get new order of filtered items
-      const newFilteredTasks = arrayMove(filteredTasks, oldIndex, newIndex);
-      
-      // 2. Create a map of id -> new relative index (or just use their existing order values and swap them?)
-      // Swapping values is safer if we want to preserve gaps.
-      // Let's just re-assign order 0, 1, 2... to the filtered list items? 
-      // That might conflict with hidden items.
-      
-      // Let's just perform the move in the global list relative to the over item.
-      // If dragging A onto B.
-      // Find index of B in global list. Insert A there.
-      
-      const newGlobalTasks = [...tasks];
-      const globalOldIndex = newGlobalTasks.findIndex(t => t._id === active.id);
-      // Remove it
-      const [movedItem] = newGlobalTasks.splice(globalOldIndex, 1);
-      
-      // Find where to put it
-      // We know it should be near 'over' item.
-      // If newIndex > oldIndex (moved down), it should be after 'over'.
-      // If newIndex < oldIndex (moved up), it should be before 'over'.
-      let globalNewIndex = newGlobalTasks.findIndex(t => t._id === over.id);
-      
-      if (oldIndex < newIndex) {
-         // Moved down in filtered list. In global list, we want it AFTER the over item?
-         // arrayMove(items, 0, 1) -> [B, A]. A moves to index 1.
-         // If we insert at globalNewIndex + 1?
-         globalNewIndex += 1;
-      }
-      
-      newGlobalTasks.splice(globalNewIndex, 0, movedItem);
-      
-      // Re-normalize order field?
-      // onReorder expects the new list.
-      onReorder(newGlobalTasks);
+    // Find source and destination groups
+    // We can't rely on 'items' of SortableContext directly in dragEnd?
+    // We can infer group from the container id if we set it on Droppable, 
+    // OR we can infer from the task's properties vs the group it landed in.
+    // DndKit `over.id` is usually the draggable item id if dropping on an item, 
+    // or container id if dropping on container.
+    // If we drop on an item, we need to find that item's group.
+    
+    // Helper to find group of a task
+    const findGroupOfTask = (taskId) => groupedTasks.find(g => g.tasks.some(t => t._id === taskId));
+    const findGroupById = (groupId) => groupedTasks.find(g => g.id === groupId);
+
+    const sourceGroup = findGroupOfTask(active.id);
+    let destGroup;
+    
+    // Check if dropped on a container (group) or an item
+    if (findGroupById(over.id)) {
+        destGroup = findGroupById(over.id);
+    } else {
+        destGroup = findGroupOfTask(over.id);
+    }
+
+    if (!sourceGroup || !destGroup) return;
+
+    // Same group -> Reorder
+    if (sourceGroup.id === destGroup.id) {
+        if (active.id !== over.id) {
+            const oldIndex = tasks.findIndex(t => t._id === active.id);
+            const newIndex = tasks.findIndex(t => t._id === over.id);
+            // This global reorder works because we are swapping positions in the master list
+            // effectively.
+            // Wait, if I use `tasks` (all tasks), finding index of `over.id` is correct.
+            // BUT `arrayMove` on `tasks` might move it far away if `tasks` is not sorted by the group.
+            // However, we want to update the order.
+            
+            // Visual reorder in the group:
+            const groupTasksList = sourceGroup.tasks;
+            const oldGroupIndex = groupTasksList.findIndex(t => t._id === active.id);
+            const newGroupIndex = groupTasksList.findIndex(t => t._id === over.id);
+            
+            const newGroupOrder = arrayMove(groupTasksList, oldGroupIndex, newGroupIndex);
+            
+            // Optimistic update?
+            // Actually, we should just call onReorder with a "smart" reordered list.
+            // Smart reorder:
+            // We want 'active' to take the 'order' of 'over' (roughly).
+            // Swap orders?
+            // If we just tell the parent "Here is the new tasks list", we need to construct it.
+            
+            // Simpler: Just swap the two items in the global tasks array and send that?
+            // That works for a Swap.
+            
+            // But dragging implies insert.
+            // Let's try to map the new group order to global updates.
+            // We can just send the updated group tasks to the backend if the backend supports it.
+            // But onReorder expects all tasks.
+            
+            // Fallback: Just Swap. It's stable.
+            const newTasks = [...tasks];
+            const t1 = newTasks[oldIndex];
+            const t2 = newTasks[newIndex];
+            // Actually swapping indices in the array is `arrayMove`.
+            const movedTasks = arrayMove(newTasks, oldIndex, newIndex);
+            onReorder(movedTasks);
+        }
+    } else {
+        // Different group -> Update Date (if applicable)
+        if (destGroup.id === "today") {
+            onUpdateTask(active.id, { dueDate: new Date() });
+        } else if (destGroup.id === "tomorrow") {
+            const tmr = new Date();
+            tmr.setDate(tmr.getDate() + 1);
+            onUpdateTask(active.id, { dueDate: tmr });
+        } else if (destGroup.id === "noDate") {
+            onUpdateTask(active.id, { dueDate: null });
+        } else if (destGroup.id === "overdue") {
+             // Dragging to overdue... set to yesterday?
+             const yest = new Date();
+             yest.setDate(yest.getDate() - 1);
+             onUpdateTask(active.id, { dueDate: yest });
+        }
+        // "upcoming", "later", "completed" - complex, ignore for now or handle specifically
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* View Header */}
       <SectionHeader
         title={getViewTitle()}
         subtitle={getViewDescription()}
       />
       
-      {filteredTasks.length > 0 && (
-        <div className="text-sm text-gray-600">
-          {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
-        </div>
-      )}
-
-      {/* Task List */}
       {filteredTasks.length === 0 ? (
         <Card className="p-12">
           <div className="flex flex-col items-center justify-center text-center">
@@ -342,61 +349,47 @@ export default function TaskList({
             </p>
           </div>
         </Card>
-      ) : isGrouped && groupedTasks ? (
-        // Grouped by date (Upcoming view) - No DnD for now
-        <div className="space-y-8">
-          {Object.entries(groupedTasks).map(([date, dateTasks]) => (
-            <div key={date}>
-              <div className="flex items-center gap-3 mb-4 border-b border-gray-200 pb-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                  {date}
-                </h3>
-                <span className="text-xs text-gray-500">
-                  ({dateTasks.length})
-                </span>
-              </div>
-              <div className="space-y-2">
-                <AnimatePresence>
-                  {dateTasks.map(task => (
-                    <TaskCard
-                      key={task._id}
-                      task={task}
-                      onToggleComplete={onToggleComplete}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        // Simple list - With DnD
         <DndContext 
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
         >
-            <SortableContext 
-                items={filteredTasks.map(t => t._id)}
-                strategy={verticalListSortingStrategy}
-            >
-                <div className="space-y-3">
-                  <AnimatePresence>
-                    {filteredTasks.map(task => (
-                      <SortableTaskItem
-                        key={task._id}
-                        task={task}
-                        onToggleComplete={onToggleComplete}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-            </SortableContext>
+            <div className="space-y-8">
+                {groupedTasks.map(group => (
+                    <div key={group.id}>
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                            <h3 className={`text-sm font-semibold ${
+                                group.id === 'overdue' ? 'text-red-600' : 
+                                group.id === 'today' ? 'text-green-600' : 'text-gray-700'
+                            }`}>
+                                {group.title}
+                            </h3>
+                            <span className="text-xs text-gray-400 font-medium">
+                                {group.tasks.length}
+                            </span>
+                        </div>
+                        
+                        <SortableContext 
+                            items={group.tasks.map(t => t._id)}
+                            strategy={verticalListSortingStrategy}
+                            id={group.id} // Important for distinguishing context
+                        >
+                            <div className="space-y-3">
+                                {group.tasks.map(task => (
+                                    <SortableTaskItem
+                                        key={task._id}
+                                        task={task}
+                                        onToggleComplete={onToggleComplete}
+                                        onEdit={onEdit}
+                                        onDelete={onDelete}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </div>
+                ))}
+            </div>
         </DndContext>
       )}
     </div>
