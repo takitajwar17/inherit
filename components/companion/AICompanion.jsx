@@ -23,6 +23,7 @@ import {
   MicOff,
   Volume2,
   VolumeX,
+  AudioWaveform,
   Languages,
   Loader2,
   Bot,
@@ -200,7 +201,14 @@ function MarkdownMessage({ content, className = "" }) {
 /**
  * Voice Mode Component - ChatGPT-style full-screen voice interface
  */
-function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
+function VoiceMode({
+  isOpen,
+  onClose,
+  language,
+  onSendMessage,
+  isLoading,
+  ttsProvider = "browser",
+}) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
@@ -209,6 +217,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
 
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
+  const audioRef = useRef(null); // For Deepgram audio
   const autoSendTimeoutRef = useRef(null);
   const finalizedTextRef = useRef(""); // Track finalized text separately
 
@@ -334,12 +343,9 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
     }
   };
 
-  const speakResponse = (text) => {
-    if (!synthRef.current) return;
-
+  const speakResponse = async (text) => {
     setStatus("speaking");
     setIsSpeaking(true);
-    synthRef.current.cancel();
 
     // Clean text for speech - remove markdown and emojis
     const cleanText = text
@@ -359,55 +365,107 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
       .replace(/\s+/g, " ") // Multiple spaces to single
       .trim();
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+    if (ttsProvider === "deepgram") {
+      try {
+        const res = await fetch("/api/tts/deepgram", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleanText, language }),
+        });
 
-    // Set language and try to find the best voice
-    const targetLang = language === "bn" ? "bn" : "en";
-    utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+        if (!res.ok) throw new Error("TTS request failed");
 
-    // Try to find a suitable voice
-    const voices = synthRef.current.getVoices();
-    const matchingVoice =
-      voices.find((v) => v.lang.startsWith(targetLang)) ||
-      voices.find((v) => v.lang.includes(targetLang)) ||
-      voices.find((v) =>
-        language === "bn" ? v.lang.includes("hi") : v.lang.includes("en")
-      ); // Hindi as fallback for Bengali
+        const arrayBuffer = await res.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
 
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          setIsSpeaking(false);
+          setStatus("listening");
+          audioRef.current = null;
+          startListening();
+        };
+
+        audio.onerror = () => {
+          console.error("Audio playback error");
+          URL.revokeObjectURL(url);
+          setIsSpeaking(false);
+          setStatus("idle");
+          audioRef.current = null;
+        };
+
+        await audio.play();
+      } catch (e) {
+        console.error("Deepgram TTS error:", e);
+        setIsSpeaking(false);
+        setStatus("idle");
+      }
+    } else {
+      if (!synthRef.current) return;
+      synthRef.current.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      // Set language and try to find the best voice
+      const targetLang = language === "bn" ? "bn" : "en";
+      utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+
+      // Try to find a suitable voice
+      const voices = synthRef.current.getVoices();
+      const matchingVoice =
+        voices.find((v) => v.lang.startsWith(targetLang)) ||
+        voices.find((v) => v.lang.includes(targetLang)) ||
+        voices.find((v) =>
+          language === "bn" ? v.lang.includes("hi") : v.lang.includes("en")
+        ); // Hindi as fallback for Bengali
+
+      if (matchingVoice) {
+        utterance.voice = matchingVoice;
+      }
+
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setStatus("listening");
+        // Resume listening after speaking
+        startListening();
+      };
+
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event);
+        setIsSpeaking(false);
+        setStatus("idle");
+      };
+
+      synthRef.current.speak(utterance);
     }
-
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setStatus("listening");
-      // Resume listening after speaking
-      startListening();
-    };
-
-    utterance.onerror = (event) => {
-      console.error("Speech synthesis error:", event);
-      setIsSpeaking(false);
-      setStatus("idle");
-    };
-
-    synthRef.current.speak(utterance);
   };
 
   // Stop speech but keep response visible
   const stopSpeech = () => {
     synthRef.current?.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     setIsSpeaking(false);
     setStatus("idle");
   };
 
   const handleClose = () => {
     stopListening();
-    synthRef.current?.cancel();
-    setStatus("idle");
+    stopSpeech();
     setTranscript("");
     setAiResponse("");
     onClose();
@@ -726,6 +784,7 @@ export default function AICompanion() {
   const [useStreaming, setUseStreaming] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [voiceModeOpen, setVoiceModeOpen] = useState(false);
+  const [ttsProvider, setTtsProvider] = useState("browser"); // "browser" or "deepgram"
 
   // Think state
   const [thinkState, setThinkState] = useState(null);
@@ -736,6 +795,7 @@ export default function AICompanion() {
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
+  const audioRef = useRef(null);
   const conversationModeRef = useRef(false);
   const autoSendTimeoutRef = useRef(null);
   const lastTranscriptRef = useRef("");
@@ -902,9 +962,8 @@ export default function AICompanion() {
 
   // Speak response and restart listening in conversation mode
   const speakText = useCallback(
-    (text) => {
-      if (!synthRef.current || !voiceEnabled) return;
-      synthRef.current.cancel();
+    async (text) => {
+      if (!voiceEnabled) return;
 
       // Strip markdown for speech
       const cleanText = text
@@ -915,28 +974,92 @@ export default function AICompanion() {
         .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Links
         .replace(/\n/g, ". "); // Newlines
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = language === "bn" ? "bn-BD" : "en-US";
-      utterance.rate = 1.0;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        // Restart listening in conversation mode
-        if (conversationModeRef.current && recognitionRef.current) {
-          try {
-            lastTranscriptRef.current = "";
-            recognitionRef.current.start();
-            setIsListening(true);
-          } catch (e) {
-            // Already started
-          }
-        }
-      };
-      utterance.onerror = () => setIsSpeaking(false);
+      setIsSpeaking(true);
 
-      synthRef.current.speak(utterance);
+      if (ttsProvider === "deepgram") {
+        try {
+          // Stop any playing audio
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+          }
+          // Stop browser synth if any
+          if (synthRef.current) synthRef.current.cancel();
+
+          const res = await fetch("/api/tts/deepgram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: cleanText, language }),
+          });
+
+          if (!res.ok) throw new Error("TTS request failed");
+
+          const arrayBuffer = await res.arrayBuffer();
+          const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+          const url = URL.createObjectURL(blob);
+
+          const audio = new Audio(url);
+          audioRef.current = audio;
+
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            setIsSpeaking(false);
+            audioRef.current = null;
+            // Restart listening in conversation mode
+            if (conversationModeRef.current && recognitionRef.current) {
+              try {
+                lastTranscriptRef.current = "";
+                recognitionRef.current.start();
+                setIsListening(true);
+              } catch (e) {
+                // Already started
+              }
+            }
+          };
+
+          audio.onerror = () => {
+            setIsSpeaking(false);
+            audioRef.current = null;
+            URL.revokeObjectURL(url);
+          };
+
+          await audio.play();
+        } catch (e) {
+          console.error("Deepgram TTS error:", e);
+          setIsSpeaking(false);
+        }
+      } else {
+        if (!synthRef.current) return;
+        synthRef.current.cancel();
+        // Stop audio ref if any
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+        utterance.rate = 1.0;
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          // Restart listening in conversation mode
+          if (conversationModeRef.current && recognitionRef.current) {
+            try {
+              lastTranscriptRef.current = "";
+              recognitionRef.current.start();
+              setIsListening(true);
+            } catch (e) {
+              // Already started
+            }
+          }
+        };
+        utterance.onerror = () => setIsSpeaking(false);
+
+        synthRef.current.speak(utterance);
+      }
     },
-    [language, voiceEnabled]
+    [language, voiceEnabled, ttsProvider]
   );
 
   // Send message with streaming
@@ -1245,6 +1368,7 @@ export default function AICompanion() {
             language={language}
             onSendMessage={sendMessageForVoice}
             isLoading={isLoading}
+            ttsProvider={ttsProvider}
           />
         )}
       </AnimatePresence>
@@ -1325,6 +1449,27 @@ export default function AICompanion() {
                   <Zap
                     className={`w-4 h-4 ${
                       useStreaming ? "text-yellow-300" : "text-white/60"
+                    }`}
+                  />
+                </button>
+                <button
+                  onClick={() =>
+                    setTtsProvider((prev) =>
+                      prev === "browser" ? "deepgram" : "browser"
+                    )
+                  }
+                  className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+                  title={
+                    ttsProvider === "browser"
+                      ? "Switch to Deepgram TTS"
+                      : "Switch to Browser TTS"
+                  }
+                >
+                  <AudioWaveform
+                    className={`w-4 h-4 ${
+                      ttsProvider === "deepgram"
+                        ? "text-green-400"
+                        : "text-white/60"
                     }`}
                   />
                 </button>
