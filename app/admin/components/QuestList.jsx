@@ -78,8 +78,13 @@ export default function QuestList({ onStatsUpdate }) {
       }
       
       const data = await response.json();
-      setQuests(data);
-      updateStats(data);
+      
+      if (data.success) {
+        setQuests(data.data);
+        updateStats(data.data);
+      } else {
+        setError(data.error?.message || "Failed to load quests");
+      }
     } catch (error) {
       console.error("Error fetching quests:", error);
       setError("Failed to load quests. Please try again.");

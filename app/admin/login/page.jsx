@@ -84,7 +84,7 @@ export default function AdminLogin() {
           expires: 1, // 1 day (matches JWT expiration)
         };
         
-        Cookies.set("adminToken", data.token, cookieOptions);
+        Cookies.set("adminToken", data.data.token, cookieOptions);
         
         // Clear sensitive data from memory
         setCredentials({ username: "", password: "" });

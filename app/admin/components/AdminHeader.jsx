@@ -14,10 +14,11 @@ import Cookies from "js-cookie";
  */
 export default function AdminHeader() {
   const router = useRouter();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(null);
 
-  // Update the clock every second
+  // Update the clock every second, starting only on client mount
   useEffect(() => {
+    setCurrentTime(new Date()); // Set initial time on mount
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -59,8 +60,13 @@ export default function AdminHeader() {
           {/* Right side - User Info and Actions */}
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex flex-col items-end">
-              <div className="text-sm text-gray-500">
-                {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
+              <div className="text-sm text-gray-500 h-5">
+                {currentTime ? (
+                  `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`
+                ) : (
+                  // Placeholder to prevent layout shift or empty string
+                  <span className="opacity-0">Loading...</span> 
+                )}
               </div>
               <div className="text-sm font-medium text-gray-900">
                 Admin User
