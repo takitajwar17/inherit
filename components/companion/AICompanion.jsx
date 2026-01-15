@@ -210,6 +210,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
   const autoSendTimeoutRef = useRef(null);
+  const finalizedTextRef = useRef(""); // Track finalized text separately
 
   // Initialize speech recognition
   useEffect(() => {
@@ -223,27 +224,24 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
       recognitionRef.current.lang = language === "bn" ? "bn-BD" : "en-US";
 
       recognitionRef.current.onresult = (event) => {
-        let finalTranscript = "";
         let interimTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const text = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += text;
+            // Add to finalized text (won't change)
+            finalizedTextRef.current += text + " ";
           } else {
+            // Interim results (may change)
             interimTranscript += text;
           }
         }
 
-        setTranscript((prev) => {
-          if (finalTranscript) {
-            return (prev + " " + finalTranscript).trim();
-          }
-          return prev + interimTranscript;
-        });
+        // Display finalized + current interim
+        setTranscript((finalizedTextRef.current + interimTranscript).trim());
 
-        // Auto-send after 2 seconds of silence
-        if (finalTranscript) {
+        // Auto-send after 2 seconds of silence (only when we have finalized text)
+        if (finalizedTextRef.current.trim()) {
           if (autoSendTimeoutRef.current) {
             clearTimeout(autoSendTimeoutRef.current);
           }
@@ -292,6 +290,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
   const startListening = () => {
     if (recognitionRef.current) {
       try {
+        finalizedTextRef.current = ""; // Reset finalized text
         recognitionRef.current.start();
         setIsListening(true);
         setStatus("listening");
@@ -557,14 +556,14 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
       )}
 
       {/* AI Response display */}
-      {aiResponse && status === "speaking" && (
+      {aiResponse && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 max-w-lg mx-auto px-6"
+          className="mt-4 max-w-2xl mx-auto px-6 max-h-[40vh] overflow-y-auto"
         >
           <div className="bg-violet-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm border border-violet-500/30">
-            <p className="text-gray-200 text-center text-sm line-clamp-3">
+            <p className="text-gray-200 text-center text-sm whitespace-pre-wrap">
               {aiResponse}
             </p>
           </div>
