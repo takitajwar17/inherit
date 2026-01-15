@@ -103,6 +103,12 @@ export default function TasksPage() {
 
   // Update task
   const handleUpdateTask = async (taskId, updates) => {
+    // Optimistic update
+    const previousTasks = [...tasks];
+    setTasks((prev) =>
+      prev.map((t) => (t._id === taskId ? { ...t, ...updates } : t))
+    );
+
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: "PUT",
@@ -112,12 +118,19 @@ export default function TasksPage() {
 
       const data = await response.json();
       if (data.success) {
+        // Sync with server data (optional, but good for consistency)
         setTasks((prev) =>
           prev.map((t) => (t._id === taskId ? data.data.task : t))
         );
         setEditingTask(null);
+      } else {
+        // Revert on failure (server returned success: false)
+        setTasks(previousTasks);
+        console.error("Failed to update task:", data.error);
       }
     } catch (error) {
+      // Revert on network error
+      setTasks(previousTasks);
       console.error("Failed to update task:", error);
     }
   };

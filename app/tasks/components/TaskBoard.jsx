@@ -7,7 +7,7 @@
  */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import TaskCard from "./TaskCard";
 import { Plus, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -114,13 +114,24 @@ export default function TaskBoard({
   onQuickAdd,
   onUpdateTaskStatus,
 }) {
+  const [tasksState, setTasksState] = useState(tasks);
   const [activeId, setActiveId] = useState(null);
+
+  // Sync internal state with props
+  useEffect(() => {
+    setTasksState(tasks);
+  }, [tasks]);
+
   const activeTask = useMemo(() => {
-    return tasks.find(task => task._id === activeId);
-  }, [activeId, tasks]);
+    return tasksState.find(task => task._id === activeId);
+  }, [activeId, tasksState]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -135,7 +146,7 @@ export default function TaskBoard({
         color: "bg-blue-500",
         bgColor: "bg-blue-50",
         borderColor: "border-blue-200",
-        tasks: tasks.filter(
+        tasks: tasksState.filter(
           (t) => !t.status || t.status === "pending" || (t.status !== "completed" && t.status !== "in_progress")
         ),
       },
@@ -145,7 +156,7 @@ export default function TaskBoard({
         color: "bg-purple-500",
         bgColor: "bg-purple-50",
         borderColor: "border-purple-200",
-        tasks: tasks.filter((t) => t.status === "in_progress"),
+        tasks: tasksState.filter((t) => t.status === "in_progress"),
       },
       {
         id: "completed",
@@ -153,37 +164,99 @@ export default function TaskBoard({
         color: "bg-green-500",
         bgColor: "bg-green-50",
         borderColor: "border-green-200",
-        tasks: tasks.filter((t) => t.status === "completed"),
+        tasks: tasksState.filter((t) => t.status === "completed"),
       },
     ];
-  }, [tasks]);
+  }, [tasksState]);
+
+  const findContainer = (id) => {
+    if (["pending", "in_progress", "completed"].includes(id)) {
+      return id;
+    }
+    const task = tasksState.find(t => t._id === id);
+    if (task) {
+        if (task.status === "in_progress") return "in_progress";
+        if (task.status === "completed") return "completed";
+        return "pending";
+    }
+    return null;
+  };
 
   const handleDragStart = (event) => {
     setActiveId(event.active.id);
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragOver = (event) => {
     const { active, over } = event;
-    setActiveId(null);
-
+    
     if (!over) return;
 
     const activeId = active.id;
     const overId = over.id;
 
-    // Find which column the task is being dropped into
-    let newStatus = null;
-    if (overId === "pending") {
-      newStatus = "pending";
-    } else if (overId === "in_progress") {
-      newStatus = "in_progress";
-    } else if (overId === "completed") {
-      newStatus = "completed";
+    // Find the containers
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (
+      !activeContainer ||
+      !overContainer ||
+      activeContainer === overContainer
+    ) {
+      return;
     }
 
-    if (newStatus && onUpdateTaskStatus) {
-      onUpdateTaskStatus(activeId, newStatus);
+    setTasksState((prev) => {
+      const activeItems = prev.filter(t => findContainer(t._id) === activeContainer);
+      const overItems = prev.filter(t => findContainer(t._id) === overContainer);
+      
+      const activeIndex = activeItems.findIndex((t) => t._id === activeId);
+      const overIndex = overItems.findIndex((t) => t._id === overId);
+
+      let newIndex;
+      if (overId === overContainer) {
+        // We're over the column container itself
+        newIndex = overItems.length + 1;
+      } else {
+        const isBelowOverItem =
+          over &&
+          active.rect.current.translated &&
+          active.rect.current.translated.top >
+            over.rect.top + over.rect.height;
+
+        const modifier = isBelowOverItem ? 1 : 0;
+        newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length + 1;
+      }
+
+      return prev.map(t => {
+        if (t._id === activeId) {
+            return { ...t, status: overContainer };
+        }
+        return t;
+      });
+    });
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    const activeId = active.id;
+    const overId = over.id;
+
+    const activeContainer = findContainer(activeId);
+    const overContainer = findContainer(overId);
+
+    if (
+        activeContainer &&
+        overContainer &&
+        activeContainer !== overContainer
+    ) {
+        // Visual state is already updated by DragOver, just fire the API/Parent update
+        if (onUpdateTaskStatus) {
+            onUpdateTaskStatus(activeId, overContainer);
+        }
     }
+
+    setActiveId(null);
   };
 
   return (
@@ -191,6 +264,7 @@ export default function TaskBoard({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex-1 overflow-x-auto">
