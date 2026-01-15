@@ -341,18 +341,45 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
     setIsSpeaking(true);
     synthRef.current.cancel();
 
-    // Clean markdown for speech
+    // Clean text for speech - remove markdown and emojis
     const cleanText = text
-      .replace(/\*\*(.*?)\*\*/g, "$1")
-      .replace(/\*(.*?)\*/g, "$1")
-      .replace(/`(.*?)`/g, "$1")
-      .replace(/#{1,6}\s/g, "")
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/\n/g, ". ");
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Bold
+      .replace(/\*(.*?)\*/g, "$1") // Italic
+      .replace(/`(.*?)`/g, "$1") // Inline code
+      .replace(/```[\s\S]*?```/g, "") // Code blocks
+      .replace(/#{1,6}\s/g, "") // Headers
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Links
+      .replace(/[-*+]\s/g, "") // List markers
+      .replace(/\n+/g, ". ") // Newlines to pauses
+      // Remove all emojis
+      .replace(
+        /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]/gu,
+        ""
+      )
+      .replace(/\s+/g, " ") // Multiple spaces to single
+      .trim();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Set language and try to find the best voice
+    const targetLang = language === "bn" ? "bn" : "en";
     utterance.lang = language === "bn" ? "bn-BD" : "en-US";
+
+    // Try to find a suitable voice
+    const voices = synthRef.current.getVoices();
+    const matchingVoice =
+      voices.find((v) => v.lang.startsWith(targetLang)) ||
+      voices.find((v) => v.lang.includes(targetLang)) ||
+      voices.find((v) =>
+        language === "bn" ? v.lang.includes("hi") : v.lang.includes("en")
+      ); // Hindi as fallback for Bengali
+
+    if (matchingVoice) {
+      utterance.voice = matchingVoice;
+    }
+
     utterance.rate = 1.0;
+    utterance.pitch = 1.0;
 
     utterance.onend = () => {
       setIsSpeaking(false);
@@ -361,7 +388,8 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
       startListening();
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event);
       setIsSpeaking(false);
       setStatus("idle");
     };
@@ -953,58 +981,62 @@ export default function AICompanion() {
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        let currentEventType = null;
 
         for (const line of lines) {
-          if (line.startsWith("event: ")) {
-            const eventType = line.slice(7);
-            const dataLine = lines[lines.indexOf(line) + 1];
+          const trimmedLine = line.trim();
 
-            if (dataLine?.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(dataLine.slice(6));
+          if (trimmedLine.startsWith("event:")) {
+            currentEventType = trimmedLine.slice(6).trim();
+          } else if (trimmedLine.startsWith("data:") && currentEventType) {
+            try {
+              const data = JSON.parse(trimmedLine.slice(5).trim());
 
-                switch (eventType) {
-                  case "status":
-                    setThinkState({
-                      status: data.type,
-                      agent: currentAgent || "router",
-                    });
-                    break;
+              switch (currentEventType) {
+                case "status":
+                  setThinkState({
+                    status: data.type,
+                    agent: currentAgent || "router",
+                  });
+                  break;
 
-                  case "agent_start":
-                    currentAgent = data.agent;
-                    setActiveAgent(data.agent);
-                    setThinkState({ status: "thinking", agent: data.agent });
-                    break;
+                case "agent_start":
+                  currentAgent = data.agent;
+                  setActiveAgent(data.agent);
+                  setThinkState({ status: "thinking", agent: data.agent });
+                  break;
 
-                  case "content_delta":
-                    fullContent += data.content;
-                    setStreamingContent(fullContent);
-                    break;
+                case "content_delta":
+                  fullContent += data.content;
+                  setStreamingContent(fullContent);
+                  break;
 
-                  case "tool_call":
-                    actions.push(data);
-                    if (data.action === "render_roadmap" && data.roadmap) {
-                      roadmapData = data.roadmap;
-                    }
-                    if (data.action === "navigate") {
-                      handleAction(data);
-                    }
-                    break;
+                case "tool_call":
+                  actions.push(data);
+                  if (data.action === "render_roadmap" && data.roadmap) {
+                    roadmapData = data.roadmap;
+                  }
+                  if (data.action === "navigate") {
+                    handleAction(data);
+                  }
+                  break;
 
-                  case "done":
-                    setConversationId(data.conversationId);
-                    setThinkState(null);
-                    break;
+                case "done":
+                  setConversationId(data.conversationId);
+                  setThinkState(null);
+                  break;
 
-                  case "error":
-                    throw new Error(data.message);
-                }
-              } catch (e) {
-                // JSON parse error, skip
+                case "error":
+                  throw new Error(data.message);
               }
+            } catch (e) {
+              // JSON parse error, skip
             }
+            currentEventType = null; // Reset after processing
+          } else if (trimmedLine === "") {
+            currentEventType = null; // Empty line resets event
           }
         }
       }
