@@ -17,12 +17,14 @@ import {
   List,
   Calendar as CalendarIcon,
   BarChart3,
+  LayoutGrid,
 } from "lucide-react";
 
 // Components
 import TaskSidebar from "./components/TaskSidebar";
 import QuickAdd from "./components/QuickAdd";
 import TaskList from "./components/TaskList";
+import TaskBoard from "./components/TaskBoard";
 import CalendarView from "./components/CalendarView";
 import TaskDetail from "./components/TaskDetail";
 import ProductivityStats from "./components/ProductivityStats";
@@ -41,7 +43,7 @@ export default function TasksPage() {
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
     if (!isSignedIn) return;
-    
+
     try {
       const response = await fetch("/api/tasks");
       const data = await response.json();
@@ -169,28 +171,45 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900 text-white overflow-hidden">
-      {/* Top Bar */}
-      <div className="flex-shrink-0 h-16 border-b border-gray-800 flex items-center px-4 gap-4">
+    <div className="h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white overflow-hidden selection:bg-primary/30 selection:text-white">
+      {/* Background Mesh (Optional) */}
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+      {/* Top Bar - Glass Header */}
+      <div className="relative z-10 flex-shrink-0 h-16 border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center px-4 gap-4">
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="p-2 hover:bg-gray-800 rounded-lg transition-colors lg:hidden"
         >
-          {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          {sidebarCollapsed ? (
+            <Menu className="w-5 h-5" />
+          ) : (
+            <X className="w-5 h-5" />
+          )}
         </button>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/5 backdrop-blur-sm">
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2 rounded-lg transition-all duration-300 ${
               viewMode === "list"
-                ? "bg-violet-600 text-white"
-                : "text-gray-400 hover:text-white"
+                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
             }`}
             title="List view"
           >
             <List className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("board")}
+            className={`p-2 rounded-lg transition-all duration-300 ${
+              viewMode === "board"
+                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+            title="Kanban Board"
+          >
+            <LayoutGrid className="w-5 h-5" />
           </button>
           <button
             onClick={() => setViewMode("calendar")}
@@ -218,12 +237,12 @@ export default function TasksPage() {
 
         <div className="flex-1" />
 
-        {/* Quick Add Button */}
+        {/* Quick Add Button - Neon Glow */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowQuickAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary hover:opacity-90 rounded-xl transition-all font-medium shadow-lg shadow-primary/25"
         >
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">Add Task</span>
@@ -250,7 +269,7 @@ export default function TasksPage() {
         {/* Main Content Area */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
           </div>
         ) : viewMode === "list" ? (
           <TaskList
@@ -259,6 +278,14 @@ export default function TasksPage() {
             onToggleComplete={toggleComplete}
             onEdit={setEditingTask}
             onDelete={handleDeleteTask}
+          />
+        ) : viewMode === "board" ? (
+          <TaskBoard
+            tasks={tasks}
+            onToggleComplete={toggleComplete}
+            onEdit={setEditingTask}
+            onDelete={handleDeleteTask}
+            onQuickAdd={() => setShowQuickAdd(true)}
           />
         ) : viewMode === "calendar" ? (
           <CalendarView
@@ -296,7 +323,10 @@ export default function TasksPage() {
 
       {/* Edit Task Modal (reuse QuickAdd with prefilled data) */}
       {editingTask && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setEditingTask(null)}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setEditingTask(null)}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -319,7 +349,9 @@ export default function TasksPage() {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Title</label>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Title
+                </label>
                 <input
                   type="text"
                   name="title"

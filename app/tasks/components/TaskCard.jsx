@@ -2,7 +2,7 @@
 
 /**
  * TaskCard Component
- * 
+ *
  * Todoist-style task card with subtasks, clean design, and hover actions
  */
 
@@ -22,7 +22,11 @@ import { useState } from "react";
 
 const priorityConfig = {
   high: { color: "text-red-400", borderColor: "border-red-400", label: "P1" },
-  medium: { color: "text-yellow-400", borderColor: "border-yellow-400", label: "P2" },
+  medium: {
+    color: "text-yellow-400",
+    borderColor: "border-yellow-400",
+    label: "P2",
+  },
   low: { color: "text-blue-400", borderColor: "border-blue-400", label: "P3" },
 };
 
@@ -48,17 +52,29 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const dateObj = new Date(date);
-    
+
     if (dateObj.toDateString() === now.toDateString()) {
-      return { text: 'Today', color: 'text-green-400' };
+      return { text: "Today", color: "text-green-400" };
     } else if (dateObj.toDateString() === tomorrow.toDateString()) {
-      return { text: 'Tomorrow', color: 'text-yellow-400' };
+      return { text: "Tomorrow", color: "text-yellow-400" };
     } else if (dateObj < now) {
-      return { text: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), color: 'text-red-400' };
+      return {
+        text: dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        color: "text-red-400",
+      };
     } else {
-      return { text: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), color: 'text-gray-400' };
+      return {
+        text: dateObj.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        color: "text-gray-400",
+      };
     }
   };
 
@@ -75,12 +91,12 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
         setIsHovered(false);
         setShowActions(false);
       }}
-      className={`group relative bg-white dark:bg-gray-800 rounded-lg border transition-all ${
+      className={`group relative rounded-2xl border transition-all duration-300 backdrop-blur-md ${
         isCompleted
-          ? "border-gray-200 dark:border-gray-700 opacity-60"
+          ? "bg-black/20 border-white/5 opacity-50"
           : isOverdue
-          ? "border-red-300 dark:border-red-900"
-          : "border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700"
+          ? "bg-red-900/10 border-red-500/30 hover:bg-red-900/20"
+          : "bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
       }`}
     >
       <div className="p-4">
@@ -88,15 +104,17 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
           {/* Checkbox */}
           <button
             onClick={() => onToggleComplete(task)}
-            className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+            className={`flex-shrink-0 mt-0.5 w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center transition-all duration-300 ${
               isCompleted
-                ? "bg-green-500 border-green-500"
+                ? "bg-secondary border-secondary shadow-[0_0_15px_rgba(6,182,212,0.5)]"
                 : task.priority === "high"
-                ? "border-red-400 hover:border-red-500"
-                : "border-gray-400 hover:border-violet-500"
+                ? "border-red-400 hover:border-red-500 hover:bg-red-500/10"
+                : "border-gray-500 hover:border-secondary hover:bg-secondary/10"
             }`}
           >
-            {isCompleted && <CheckCircle2 className="w-3 h-3 text-white" />}
+            {isCompleted && (
+              <CheckCircle2 className="w-4 h-4 text-black font-bold" />
+            )}
           </button>
 
           {/* Content */}
@@ -114,7 +132,11 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
 
               {/* Priority Flag (inline) */}
               {task.priority && task.priority !== "medium" && !isCompleted && (
-                <Flag className={`w-4 h-4 flex-shrink-0 ${priorityConfig[task.priority]?.color}`} />
+                <Flag
+                  className={`w-4 h-4 flex-shrink-0 ${
+                    priorityConfig[task.priority]?.color
+                  }`}
+                />
               )}
             </div>
 
@@ -137,7 +159,11 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
 
               {/* Category */}
               {task.category && task.category !== "other" && (
-                <span className={`flex items-center gap-1 ${categoryConfig[task.category]?.color}`}>
+                <span
+                  className={`flex items-center gap-1 ${
+                    categoryConfig[task.category]?.color
+                  }`}
+                >
                   <Hash className="w-3 h-3" />
                   {categoryConfig[task.category]?.label}
                 </span>
@@ -147,14 +173,21 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
               {task.createdAt && (
                 <span className="flex items-center gap-1 text-gray-500">
                   <Clock className="w-3 h-3" />
-                  {new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {new Date(task.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </span>
               )}
             </div>
           </div>
 
           {/* Actions (show on hover) */}
-          <div className={`flex items-center gap-1 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+          <div
+            className={`flex items-center gap-1 transition-opacity ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+          >
             <button
               onClick={() => onEdit(task)}
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
@@ -212,4 +245,3 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
     </motion.div>
   );
 }
-
