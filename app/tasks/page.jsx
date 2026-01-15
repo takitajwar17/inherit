@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader, PageContainer } from "@/components/shared";
@@ -245,28 +245,56 @@ export default function TasksPage() {
       />
       
       {/* Task Controls */}
-      <Card className="p-4 mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <Card className="p-3 mb-6 w-fit">
+        <div className="flex items-center gap-4">
+          {/* View Mode Toggle & Filter */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 transition-all duration-300">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                  viewMode === "list"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+                }`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+                {viewMode === "list" && (
+                  <span className="text-xs font-medium pr-1">List</span>
+                )}
+              </button>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-all duration-200 ${
-                viewMode === "list"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-              title="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
+              <AnimatePresence>
+                {viewMode === "list" && (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0, x: -10 }}
+                    animate={{ width: "auto", opacity: 1, x: 0 }}
+                    exit={{ width: 0, opacity: 0, x: -10 }}
+                    className="overflow-hidden flex items-center border-l border-gray-300 ml-1 pl-1"
+                  >
+                    <select
+                      value={currentView}
+                      onChange={(e) => setCurrentView(e.target.value)}
+                      className="bg-transparent border-none text-gray-900 text-xs font-semibold focus:outline-none focus:ring-0 cursor-pointer pr-6 py-1"
+                    >
+                      <option value="today">Today</option>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="completed">Completed</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="all">All Tasks</option>
+                    </select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button
               onClick={() => setViewMode("board")}
-              className={`p-2 rounded-md transition-all duration-200 ${
+              className={`p-2 rounded-lg transition-all duration-200 ${
                 viewMode === "board"
                   ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
               }`}
               title="Kanban Board"
             >
@@ -274,10 +302,10 @@ export default function TasksPage() {
             </button>
             <button
               onClick={() => setViewMode("calendar")}
-              className={`p-2 rounded-md transition-all duration-200 ${
+              className={`p-2 rounded-lg transition-all duration-200 ${
                 viewMode === "calendar"
                   ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
               }`}
               title="Calendar view"
             >
@@ -285,10 +313,10 @@ export default function TasksPage() {
             </button>
             <button
               onClick={() => setViewMode("stats")}
-              className={`p-2 rounded-md transition-all duration-200 ${
+              className={`p-2 rounded-lg transition-all duration-200 ${
                 viewMode === "stats"
                   ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
               }`}
               title="Statistics"
             >
@@ -296,22 +324,9 @@ export default function TasksPage() {
             </button>
           </div>
 
-          {/* Task Filter Selector */}
-          <select
-            value={currentView}
-            onChange={(e) => setCurrentView(e.target.value)}
-            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="today">Today</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="overdue">Overdue</option>
-            <option value="all">All Tasks</option>
-          </select>
-
           {/* Keyboard Hint */}
-          <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-            <kbd className="px-2 py-1 bg-gray-100 text-gray-600 rounded border border-gray-300">⌘K</kbd>
+          <div className="hidden md:flex items-center gap-2 text-[10px] text-gray-400 border-l border-gray-200 pl-4">
+            <kbd className="px-1.5 py-0.5 bg-white text-gray-500 rounded border border-gray-200 shadow-sm">⌘K</kbd>
             <span>Quick add</span>
           </div>
         </div>
