@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { Editor } from "@monaco-editor/react";
 import { executeCode } from "@/app/api/Piston/api";
@@ -36,14 +36,21 @@ const getFileExtension = (lang) => {
 
 const RoomPage = () => {
   const { roomId } = useParams();
+  const searchParams = useSearchParams();
+  const initialLang = searchParams.get("lang") || "javascript";
+  
   const { userId } = useAuth();
   const { user } = useUser();
   const [collaborators, setCollaborators] = useState([]);
-  const [code, setCode] = useState(CODE_SNIPPETS['javascript']);
+  
+  // Initialize with the requested language or default to javascript
+  const [language, setLanguage] = useState(initialLang);
+  const [code, setCode] = useState(CODE_SNIPPETS[initialLang] || CODE_SNIPPETS['javascript']);
+  const [fileName, setFileName] = useState(`main.${getFileExtension(initialLang)}`);
+
   const [lastUpdateFromServer, setLastUpdateFromServer] = useState(null);
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
-  const [language, setLanguage] = useState("javascript");
   const [output, setOutput] = useState([]);
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,7 +59,6 @@ const RoomPage = () => {
   const [wordCount, setWordCount] = useState(0);
   const [executionTime, setExecutionTime] = useState(null);
   const [executionTimestamp, setExecutionTimestamp] = useState(null);
-  const [fileName, setFileName] = useState(`main.${getFileExtension('javascript')}`);
   const [isRunning, setIsRunning] = useState(false);
   const [showOutput, setShowOutput] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState({ code: false, link: false });
