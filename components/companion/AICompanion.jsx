@@ -397,6 +397,13 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
     synthRef.current.speak(utterance);
   };
 
+  // Stop speech but keep response visible
+  const stopSpeech = () => {
+    synthRef.current?.cancel();
+    setIsSpeaking(false);
+    setStatus("idle");
+  };
+
   const handleClose = () => {
     stopListening();
     synthRef.current?.cancel();
@@ -583,7 +590,7 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
         </motion.div>
       )}
 
-      {/* AI Response display */}
+      {/* AI Response display with Markdown */}
       {aiResponse && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -591,10 +598,18 @@ function VoiceMode({ isOpen, onClose, language, onSendMessage, isLoading }) {
           className="mt-4 max-w-2xl mx-auto px-6 max-h-[40vh] overflow-y-auto"
         >
           <div className="bg-violet-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm border border-violet-500/30">
-            <p className="text-gray-200 text-center text-sm whitespace-pre-wrap">
-              {aiResponse}
-            </p>
+            <MarkdownMessage content={aiResponse} className="text-sm" />
           </div>
+          {/* Stop Speech Button */}
+          {status === "speaking" && (
+            <button
+              onClick={stopSpeech}
+              className="mt-3 mx-auto flex items-center gap-2 px-4 py-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-full text-white text-sm transition-colors"
+            >
+              <VolumeX className="w-4 h-4" />
+              {language === "bn" ? "স্পিচ বন্ধ করুন" : "Stop speaking"}
+            </button>
+          )}
         </motion.div>
       )}
 
