@@ -9,6 +9,7 @@ import ClientLayout from "./components/ClientLayout";
 import "./globals.css";
 import AccessibilityFloatingIcon from "./components/AccessibilityFloatingIcon";
 import { RootErrorBoundary } from "@/components/error";
+import AICompanion from "@/components/companion/AICompanion";
 
 const kanit = Kanit({
   subsets: ["latin"],
@@ -32,11 +33,11 @@ export const metadata = {
 
 /**
  * RootLayout - Root layout component for the entire application
- * 
+ *
  * @description
  * Wraps the entire app with ClerkProvider for authentication,
  * ClientLayout for sidebar/header management, and global components.
- * 
+ *
  * Note: The <main> tag is in ClientLayout to avoid duplicate main tags.
  */
 export default function RootLayout({ children }) {
@@ -61,10 +62,9 @@ export default function RootLayout({ children }) {
           {/* RootErrorBoundary protects the entire app from critical errors */}
           <RootErrorBoundary>
             {/* ClientLayout manages header, sidebar, and main content area */}
-            <ClientLayout>
-              {children}
-            </ClientLayout>
+            <ClientLayout>{children}</ClientLayout>
             <AccessibilityFloatingIcon />
+            <AICompanion />
             <ToastContainer />
             <Analytics />
             <SpeedInsights />
