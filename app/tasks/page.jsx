@@ -14,12 +14,18 @@ import {
   Loader2,
   Menu,
   X,
+  List,
+  Calendar as CalendarIcon,
+  BarChart3,
 } from "lucide-react";
 
 // Components
 import TaskSidebar from "./components/TaskSidebar";
 import QuickAdd from "./components/QuickAdd";
 import TaskList from "./components/TaskList";
+import CalendarView from "./components/CalendarView";
+import TaskDetail from "./components/TaskDetail";
+import ProductivityStats from "./components/ProductivityStats";
 
 export default function TasksPage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -29,6 +35,8 @@ export default function TasksPage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState("list"); // 'list', 'calendar', 'stats'
+  const [selectedTask, setSelectedTask] = useState(null);
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
@@ -171,6 +179,43 @@ export default function TasksPage() {
           {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
         </button>
 
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded transition-colors ${
+              viewMode === "list"
+                ? "bg-violet-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            title="List view"
+          >
+            <List className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("calendar")}
+            className={`p-2 rounded transition-colors ${
+              viewMode === "calendar"
+                ? "bg-violet-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            title="Calendar view"
+          >
+            <CalendarIcon className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("stats")}
+            className={`p-2 rounded transition-colors ${
+              viewMode === "stats"
+                ? "bg-violet-600 text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+            title="Statistics"
+          >
+            <BarChart3 className="w-5 h-5" />
+          </button>
+        </div>
+
         <div className="flex-1" />
 
         {/* Quick Add Button */}
@@ -202,12 +247,12 @@ export default function TasksPage() {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
 
-        {/* Task List */}
+        {/* Main Content Area */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
           </div>
-        ) : (
+        ) : viewMode === "list" ? (
           <TaskList
             tasks={tasks}
             currentView={currentView}
@@ -215,6 +260,17 @@ export default function TasksPage() {
             onEdit={setEditingTask}
             onDelete={handleDeleteTask}
           />
+        ) : viewMode === "calendar" ? (
+          <CalendarView
+            tasks={tasks}
+            onDateSelect={(date) => {
+              // Filter tasks by selected date
+              console.log("Selected date:", date);
+            }}
+            onTaskClick={(task) => setSelectedTask(task)}
+          />
+        ) : (
+          <ProductivityStats tasks={tasks} />
         )}
       </div>
 
@@ -224,6 +280,19 @@ export default function TasksPage() {
         onClose={() => setShowQuickAdd(false)}
         onAdd={handleCreateTask}
       />
+
+      {/* Task Detail Panel */}
+      {selectedTask && (
+        <TaskDetail
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={(updates) => {
+            handleUpdateTask(selectedTask._id, updates);
+            setSelectedTask(null);
+          }}
+          onDelete={handleDeleteTask}
+        />
+      )}
 
       {/* Edit Task Modal (reuse QuickAdd with prefilled data) */}
       {editingTask && (
