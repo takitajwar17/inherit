@@ -77,7 +77,7 @@ function DroppableColumn({ column, children }) {
   return (
     <Card 
       ref={setNodeRef}
-      className={`w-80 flex flex-col h-full ${column.bgColor} ${column.borderColor} ${
+      className={`w-full flex flex-col h-full ${column.bgColor} ${column.borderColor} ${
         isOver ? 'ring-2 ring-primary ring-opacity-50' : ''
       }`}>
       <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white/50">
@@ -280,12 +280,13 @@ export default function TaskBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-6 min-w-max h-full">
+      <div className="flex-1 h-full">
+        <div className="flex gap-6 h-full">
           {columns.map((column) => (
             <div
               key={column.id}
               data-column={column.id}
+              className="flex-1 min-w-0"
             >
               <DroppableColumn column={column}>
                 <SortableContext
@@ -316,14 +317,6 @@ export default function TaskBoard({
               </DroppableColumn>
             </div>
           ))}
-
-          {/* Add Column Button (Visual only for now) */}
-          <Card className="w-12 h-full border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-500 cursor-pointer">
-            <Plus size={24} />
-            <span className="vertical-text text-xs uppercase tracking-widest font-semibold opacity-60">
-              Add Section
-            </span>
-          </Card>
         </div>
       </div>
 
