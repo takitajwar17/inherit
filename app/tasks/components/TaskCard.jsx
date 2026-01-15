@@ -44,7 +44,6 @@ const categoryConfig = {
 };
 
 export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
-  const [showActions, setShowActions] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const isCompleted = task?.status === "completed";
@@ -100,24 +99,25 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setShowActions(false);
-      }}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Card
         className={cn(
-          "transition-all duration-200 hover:shadow-md",
+          "transition-all duration-200 hover:shadow-md cursor-pointer",
           isCompleted && "opacity-60",
           isOverdue && "border-red-200 bg-red-50/30",
           isHovered && "shadow-lg"
         )}
+        onClick={() => onEdit(task)}
       >
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Checkbox */}
           <button
-            onClick={() => onToggleComplete(task)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleComplete(task);
+            }}
             className={cn(
               "flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200",
               isCompleted
@@ -197,64 +197,8 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
               )}
             </div>
           </div>
-
-          {/* Actions (show on hover) */}
-          <div
-            className={`flex items-center gap-1 transition-opacity ${
-              isHovered ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(task)}
-              className="h-8 w-8 p-0"
-              title="Edit task"
-            >
-              <Edit3 className="w-4 h-4 text-gray-500" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowActions(!showActions)}
-              className="h-8 w-8 p-0"
-              title="More actions"
-            >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
-            </Button>
-          </div>
         </div>
       </div>
-
-      {/* Actions Menu */}
-      {showActions && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10"
-        >
-          <button
-            onClick={() => {
-              onEdit(task);
-              setShowActions(false);
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
-          >
-            <Edit3 className="w-4 h-4" />
-            Edit task
-          </button>
-          <button
-            onClick={() => {
-              onDelete(task._id);
-              setShowActions(false);
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete task
-          </button>
-        </motion.div>
-      )}
 
         {/* Overdue Badge */}
         {isOverdue && (

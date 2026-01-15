@@ -37,8 +37,8 @@ const categoryConfig = {
   other: { color: "text-gray-400", label: "Other" },
 };
 
-export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
-  const [isEditing, setIsEditing] = useState(false);
+export default function TaskDetail({ task, onClose, onUpdate, onDelete, initialEditMode = false }) {
+  const [isEditing, setIsEditing] = useState(initialEditMode);
   const [editedTask, setEditedTask] = useState(task);
   const [subtasks, setSubtasks] = useState(task.subtasks || []);
   const [newSubtask, setNewSubtask] = useState("");
@@ -100,17 +100,17 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden border border-gray-700 flex flex-col"
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden border border-gray-200 flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-4 flex-1">
             <button
               onClick={() => onUpdate({ ...task, status: task.status === "completed" ? "pending" : "completed" })}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                 task.status === "completed"
                   ? "bg-green-500 border-green-500"
-                  : "border-gray-300 hover:border-primary"
+                  : "border-gray-300 hover:border-violet-500"
               }`}
             >
               {task.status === "completed" && <Check className="w-4 h-4 text-white" />}
@@ -121,13 +121,17 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                 type="text"
                 value={editedTask.title}
                 onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
-                className="flex-1 bg-gray-700 text-white text-xl font-bold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="flex-1 bg-gray-50 text-gray-900 text-xl font-bold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 border border-gray-200"
                 autoFocus
               />
             ) : (
-              <h2 className={`text-xl font-bold flex-1 ${
-                task.status === "completed" ? "text-gray-500 line-through" : "text-white"
-              }`}>
+              <h2 
+                onClick={() => setIsEditing(true)}
+                className={`text-xl font-bold flex-1 cursor-pointer hover:text-violet-600 transition-colors ${
+                  task.status === "completed" ? "text-gray-500 line-through" : "text-gray-900"
+                }`}
+                title="Click to edit"
+              >
                 {task.title}
               </h2>
             )}
@@ -138,13 +142,13 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
               <>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-400" />
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors text-white font-medium"
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors text-white font-medium shadow-sm"
                 >
                   Save
                 </button>
@@ -152,29 +156,22 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
             ) : (
               <>
                 <button
-                  onClick={() => setIsEditing(true)}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Edit task"
-                >
-                  <Edit3 className="w-5 h-5 text-gray-400" />
-                </button>
-                <button
                   onClick={() => {
                     if (confirm("Delete this task?")) {
                       onDelete(task._id);
                       onClose();
                     }
                   }}
-                  className="p-2 hover:bg-red-900/20 rounded-lg transition-colors"
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete task"
                 >
-                  <Trash2 className="w-5 h-5 text-red-400" />
+                  <Trash2 className="w-5 h-5 text-red-500" />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-400" />
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </>
             )}
@@ -184,11 +181,11 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
         {/* Progress Bar */}
         {subtasks.length > 0 && (
           <div className="px-6 pt-4">
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+            <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
               <span>Progress</span>
               <span>{getCompletionPercentage()}%</span>
             </div>
-            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${getCompletionPercentage()}%` }}
@@ -199,13 +196,13 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-4 px-6 pt-4 border-b border-gray-700">
+        <div className="flex gap-4 px-6 pt-4 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("details")}
             className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "details"
-                ? "border-violet-500 text-white"
-                : "border-transparent text-gray-400 hover:text-white"
+                ? "border-violet-500 text-violet-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             Details
@@ -214,8 +211,8 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
             onClick={() => setActiveTab("activity")}
             className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === "activity"
-                ? "border-violet-500 text-white"
-                : "border-transparent text-gray-400 hover:text-white"
+                ? "border-violet-500 text-violet-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             Activity
@@ -223,7 +220,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30">
           <AnimatePresence mode="wait">
             {activeTab === "details" ? (
               <motion.div
@@ -245,10 +242,10 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                           type="date"
                           value={editedTask.dueDate ? new Date(editedTask.dueDate).toISOString().split('T')[0] : ''}
                           onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
-                          className="bg-gray-700 text-white text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="bg-white border border-gray-300 text-gray-900 text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
                         />
                       ) : (
-                        <div className="text-sm text-white">{formatDate(task.dueDate)}</div>
+                        <div className="text-sm text-gray-900">{formatDate(task.dueDate)}</div>
                       )}
                     </div>
                   </div>
@@ -262,7 +259,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                         <select
                           value={editedTask.priority}
                           onChange={(e) => setEditedTask({ ...editedTask, priority: e.target.value })}
-                          className="bg-gray-700 text-white text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="bg-white border border-gray-300 text-gray-900 text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
                         >
                           <option value="high">High</option>
                           <option value="medium">Medium</option>
@@ -285,7 +282,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                         <select
                           value={editedTask.category}
                           onChange={(e) => setEditedTask({ ...editedTask, category: e.target.value })}
-                          className="bg-gray-700 text-white text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          className="bg-white border border-gray-300 text-gray-900 text-sm px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
                         >
                           {Object.entries(categoryConfig).map(([key, val]) => (
                             <option key={key} value={key}>{val.label}</option>
@@ -304,7 +301,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                     <Clock className="w-5 h-5 text-gray-400 mt-0.5" />
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Created</div>
-                      <div className="text-sm text-white">
+                      <div className="text-sm text-gray-900">
                         {new Date(task.createdAt).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -319,17 +316,17 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-400">Description</span>
+                    <span className="text-sm font-medium text-gray-500">Description</span>
                   </div>
                   {isEditing ? (
                     <textarea
                       value={editedTask.description || ''}
                       onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
                       placeholder="Add a description..."
-                      className="w-full bg-gray-700 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[100px] resize-none"
+                      className="w-full bg-white border border-gray-300 text-gray-900 text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[100px] resize-none"
                     />
                   ) : (
-                    <div className="text-sm text-gray-300 bg-gray-900 rounded-lg p-3">
+                    <div className="text-sm text-gray-600 bg-white border border-gray-200 rounded-lg p-3">
                       {task.description || "No description"}
                     </div>
                   )}
@@ -340,7 +337,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-400">
+                      <span className="text-sm font-medium text-gray-500">
                         Subtasks ({subtasks.filter(st => st.completed).length}/{subtasks.length})
                       </span>
                     </div>
@@ -350,14 +347,14 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                     {subtasks.map((subtask) => (
                       <div
                         key={subtask.id}
-                        className="flex items-center gap-3 bg-gray-900 rounded-lg p-3 group"
+                        className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-3 group hover:border-gray-300 transition-colors"
                       >
                         <button
                           onClick={() => toggleSubtask(subtask.id)}
                           className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
                             subtask.completed
                               ? "bg-green-500 border-green-500"
-                              : "border-gray-400 hover:border-violet-500"
+                              : "border-gray-300 hover:border-violet-500"
                           }`}
                         >
                           {subtask.completed && <Check className="w-3 h-3 text-white" />}
@@ -365,15 +362,15 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                         <span
                           className={`flex-1 text-sm ${
                             subtask.completed
-                              ? "text-gray-500 line-through"
-                              : "text-white"
+                              ? "text-gray-400 line-through"
+                              : "text-gray-900"
                           }`}
                         >
                           {subtask.title}
                         </span>
                         <button
                           onClick={() => deleteSubtask(subtask.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-900/20 rounded transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded transition-all"
                         >
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
@@ -388,11 +385,11 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                         onChange={(e) => setNewSubtask(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && addSubtask()}
                         placeholder="Add a subtask..."
-                        className="flex-1 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
                       />
                       <button
                         onClick={addSubtask}
-                        className="p-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors"
+                        className="p-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors shadow-sm"
                       >
                         <Plus className="w-4 h-4 text-white" />
                       </button>
@@ -404,13 +401,13 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-400">Notes</span>
+                    <span className="text-sm font-medium text-gray-500">Notes</span>
                   </div>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add notes..."
-                    className="w-full bg-gray-900 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[100px] resize-none"
+                    className="w-full bg-white border border-gray-300 text-gray-900 text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[100px] resize-none"
                   />
                 </div>
               </motion.div>
@@ -423,14 +420,14 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
               >
                 <div className="flex items-center gap-2 mb-4">
                   <Activity className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-400">Activity Log</span>
+                  <span className="text-sm font-medium text-gray-500">Activity Log</span>
                 </div>
                 
                 <div className="space-y-3">
                   <div className="flex gap-3 text-sm">
                     <div className="w-2 h-2 rounded-full bg-violet-500 mt-2"></div>
                     <div>
-                      <div className="text-white">Task created</div>
+                      <div className="text-gray-900">Task created</div>
                       <div className="text-gray-500 text-xs">
                         {new Date(task.createdAt).toLocaleString()}
                       </div>
@@ -441,7 +438,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
                     <div className="flex gap-3 text-sm">
                       <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
                       <div>
-                        <div className="text-white">Task completed</div>
+                        <div className="text-gray-900">Task completed</div>
                         <div className="text-gray-500 text-xs">
                           {task.completedAt ? new Date(task.completedAt).toLocaleString() : 'Recently'}
                         </div>

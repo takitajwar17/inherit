@@ -36,9 +36,9 @@ export default function TasksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState("today");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list', 'calendar', 'stats'
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
@@ -122,7 +122,11 @@ export default function TasksPage() {
         setTasks((prev) =>
           prev.map((t) => (t._id === taskId ? data.data.task : t))
         );
-        setEditingTask(null);
+        // We don't need to close anything here, TaskDetail handles its own edit state
+        // or we close it if needed. For now, keep it open or let user close.
+        // Actually, if we are in "editingTask" mode (legacy), we closed it.
+        // But TaskDetail has a save button that just calls onUpdate.
+        // It stays open. This is better UX.
       } else {
         // Revert on failure (server returned success: false)
         setTasks(previousTasks);
@@ -146,10 +150,23 @@ export default function TasksPage() {
 
       if (response.ok) {
         setTasks((prev) => prev.filter((t) => t._id !== taskId));
+        setSelectedTask(null); // Close modal if open
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
     }
+  };
+
+  // Helper to open task in edit mode
+  const handleEditTask = (task) => {
+    setSelectedTask(task);
+    setIsEditMode(true);
+  };
+
+  // Helper to open task in view mode
+  const handleViewTask = (task) => {
+    setSelectedTask(task);
+    setIsEditMode(false);
   };
 
   // Reorder tasks
@@ -310,7 +327,7 @@ export default function TasksPage() {
           tasks={tasks}
           currentView={currentView}
           onToggleComplete={toggleComplete}
-          onEdit={setEditingTask}
+          onEdit={handleViewTask}
           onDelete={handleDeleteTask}
           onReorder={handleReorder}
         />
@@ -318,7 +335,7 @@ export default function TasksPage() {
         <TaskBoard
           tasks={tasks}
           onToggleComplete={toggleComplete}
-          onEdit={setEditingTask}
+          onEdit={handleViewTask}
           onDelete={handleDeleteTask}
           onQuickAdd={() => setShowQuickAdd(true)}
           onUpdateTaskStatus={(taskId, newStatus) => handleUpdateTask(taskId, { status: newStatus })}
@@ -331,7 +348,7 @@ export default function TasksPage() {
             // Filter tasks by selected date
             console.log("Selected date:", date);
           }}
-          onTaskClick={(task) => setSelectedTask(task)}
+          onTaskClick={handleViewTask}
         />
       ) : (
         <ProductivityStats tasks={tasks} />
@@ -344,141 +361,22 @@ export default function TasksPage() {
         onAdd={handleCreateTask}
       />
 
-      {/* Task Detail Panel */}
+      {/* Task Detail Panel (Unified View/Edit Modal) */}
       {selectedTask && (
         <TaskDetail
+          key={selectedTask._id + (isEditMode ? '-edit' : '-view')}
           task={selectedTask}
+          initialEditMode={isEditMode}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => {
             handleUpdateTask(selectedTask._id, updates);
-            setSelectedTask(null);
+            // We keep the modal open to let user continue viewing/editing
+            // or close it if they want. 
+            // If it was a status toggle from header, it stays open.
+            // If it was "Save" from edit mode, TaskDetail handles switching back to view mode internally.
           }}
           onDelete={handleDeleteTask}
         />
-      )}
-
-      {/* Edit Task Modal (reuse QuickAdd with prefilled data) */}
-      {editingTask && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setEditingTask(null)}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-700"
-          >
-            <h2 className="text-xl font-bold text-white mb-4">Edit Task</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                handleUpdateTask(editingTask._id, {
-                  title: formData.get("title"),
-                  description: formData.get("description"),
-                  category: formData.get("category"),
-                  priority: formData.get("priority"),
-                  dueDate: formData.get("dueDate") || null,
-                });
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  defaultValue={editingTask.title}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  defaultValue={editingTask.description}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500 h-24 resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    Category
-                  </label>
-                  <select
-                    name="category"
-                    defaultValue={editingTask.category}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  >
-                    <option value="study">Study</option>
-                    <option value="assignment">Assignment</option>
-                    <option value="project">Project</option>
-                    <option value="revision">Revision</option>
-                    <option value="exam">Exam</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    name="priority"
-                    defaultValue={editingTask.priority}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  name="dueDate"
-                  defaultValue={
-                    editingTask.dueDate
-                      ? new Date(editingTask.dueDate)
-                          .toISOString()
-                          .split("T")[0]
-                      : ""
-                  }
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setEditingTask(null)}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors"
-                >
-                  Update
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
       )}
     </PageContainer>
   );
