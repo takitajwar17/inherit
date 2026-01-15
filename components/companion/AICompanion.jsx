@@ -11,7 +11,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -666,7 +666,7 @@ function ThinkStateIndicator({ status, agent }) {
 /**
  * Roadmap Preview Component
  */
-function RoadmapPreview({ roadmap, onNavigate }) {
+function RoadmapPreview({ roadmap }) {
   if (!roadmap) return null;
 
   return (
@@ -699,12 +699,12 @@ function RoadmapPreview({ roadmap, onNavigate }) {
         )}
       </div>
       {roadmap.id && (
-        <button
-          onClick={() => onNavigate(`/roadmaps/${roadmap.id}`)}
-          className="mt-2 w-full py-1.5 text-xs bg-violet-600 hover:bg-violet-700 rounded transition-colors text-white"
+        <a
+          href={`/roadmaps/${roadmap.id}`}
+          className="mt-2 w-full py-1.5 text-xs bg-violet-600 hover:bg-violet-700 rounded transition-colors text-white block text-center"
         >
           View Full Roadmap
-        </button>
+        </a>
       )}
     </motion.div>
   );
@@ -713,7 +713,6 @@ function RoadmapPreview({ roadmap, onNavigate }) {
 export default function AICompanion() {
   const { isSignedIn, isLoaded } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -859,25 +858,6 @@ export default function AICompanion() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, isExpanded]);
-
-  // Handle navigation action from agent
-  const handleNavigation = useCallback(
-    (route) => {
-      router.push(route);
-      // Keep chat open but show navigation message
-    },
-    [router]
-  );
-
-  // Handle actions from tool calls
-  const handleAction = useCallback(
-    (action) => {
-      if (action.action === "navigate" && action.route) {
-        handleNavigation(action.route);
-      }
-    },
-    [handleNavigation]
-  );
 
   // Toggle voice input (single or conversation mode)
   const toggleVoiceInput = useCallback(
@@ -1404,21 +1384,6 @@ export default function AICompanion() {
                       ? "হ্যালো! আমি আপনার এআই লার্নিং সহকারী। কিভাবে সাহায্য করতে পারি?"
                       : "Hello! I'm your AI learning companion. How can I help you today?"}
                   </p>
-                  <div className="mt-4 flex flex-wrap justify-center gap-2">
-                    {[
-                      "Show my progress",
-                      "Create a roadmap",
-                      "Go to tasks",
-                    ].map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => setInput(suggestion)}
-                        className="text-xs px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-full text-gray-300 transition-colors"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               )}
 
@@ -1475,12 +1440,7 @@ export default function AICompanion() {
                       </div>
 
                       {/* Roadmap Preview */}
-                      {msg.roadmap && (
-                        <RoadmapPreview
-                          roadmap={msg.roadmap}
-                          onNavigate={handleNavigation}
-                        />
-                      )}
+                      {msg.roadmap && <RoadmapPreview roadmap={msg.roadmap} />}
                     </div>
                     {msg.role === "user" && (
                       <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
@@ -1616,11 +1576,6 @@ export default function AICompanion() {
                   <Send className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-2">
-                {language === "bn"
-                  ? "ডাবল-ক্লিক করুন কথোপকথন মোডের জন্য"
-                  : "Double-click mic for conversation mode"}
-              </p>
             </form>
           </motion.div>
         )}
