@@ -279,6 +279,7 @@ export default function TasksPage() {
           onEdit={setEditingTask}
           onDelete={handleDeleteTask}
           onQuickAdd={() => setShowQuickAdd(true)}
+          onUpdateTaskStatus={(taskId, newStatus) => handleUpdateTask(taskId, { status: newStatus })}
         />
       ) : viewMode === "calendar" ? (
         <CalendarView
