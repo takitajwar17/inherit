@@ -3,19 +3,20 @@
 /**
  * ProductivityStats Component
  * 
- * Displays productivity metrics, streaks, and completion trends
+ * Displays meaningful productivity metrics and insights
  */
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
-  Flame,
-  CheckCircle2,
-  Target,
+  Activity,
+  Zap,
   Calendar,
   Award,
   BarChart3,
+  Target,
+  ArrowUpRight,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { SectionHeader } from "@/components/shared";
@@ -24,366 +25,225 @@ export default function ProductivityStats({ tasks }) {
   const stats = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const thisWeekStart = new Date(today);
-    thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
-    const lastWeekStart = new Date(thisWeekStart);
-    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-
-    // Total tasks
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === "completed").length;
-    const pendingTasks = tasks.filter(t => t.status !== "completed").length;
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    // Today's tasks
-    const todayTasks = tasks.filter(t => {
-      if (!t.dueDate) return false;
-      const dueDate = new Date(t.dueDate);
-      return dueDate.toDateString() === today.toDateString();
-    });
-    const todayCompleted = todayTasks.filter(t => t.status === "completed").length;
-    const todayPending = todayTasks.length - todayCompleted;
-
-    // This week - use updatedAt or createdAt as fallback
-    const thisWeekTasks = tasks.filter(t => {
-      if (t.status !== "completed") return false;
-      const completedDate = t.completedAt 
-        ? new Date(t.completedAt) 
-        : t.updatedAt 
-        ? new Date(t.updatedAt) 
-        : new Date(t.createdAt);
-      return completedDate >= thisWeekStart;
-    });
-
-    // Last week
-    const lastWeekTasks = tasks.filter(t => {
-      if (t.status !== "completed") return false;
-      const completedDate = t.completedAt 
-        ? new Date(t.completedAt) 
-        : t.updatedAt 
-        ? new Date(t.updatedAt) 
-        : new Date(t.createdAt);
-      return completedDate >= lastWeekStart && completedDate < thisWeekStart;
-    });
-
-    // Calculate streak
-    let currentStreak = 0;
-    let checkDate = new Date(today);
     
-    while (currentStreak < 365) {
-      const dayTasks = tasks.filter(t => {
-        if (t.status !== "completed") return false;
-        const completedDate = t.completedAt 
-          ? new Date(t.completedAt) 
-          : t.updatedAt 
-          ? new Date(t.updatedAt) 
-          : new Date(t.createdAt);
-        return completedDate.toDateString() === checkDate.toDateString();
-      });
-      
-      if (dayTasks.length > 0) {
-        currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else if (currentStreak > 0) {
-        break;
-      } else {
-        break;
-      }
-    }
-
-    // Category breakdown
-    const categoryBreakdown = {};
-    tasks.forEach(t => {
-      if (t.status === "completed") {
-        categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + 1;
-      }
-    });
-
-    // Priority breakdown
-    const priorityBreakdown = {
-      high: tasks.filter(t => t.status === "completed" && t.priority === "high").length,
-      medium: tasks.filter(t => t.status === "completed" && t.priority === "medium").length,
-      low: tasks.filter(t => t.status === "completed" && t.priority === "low").length,
+    const toDateStr = (d) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
 
-    // 7-day completion trend
-    const last7Days = [];
+    let tasksLast7Days = 0;
+    const last7DaysMap = {};
+    
     for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dayTasks = tasks.filter(t => {
-        if (t.status !== "completed") return false;
-        const completedDate = t.completedAt 
-          ? new Date(t.completedAt) 
-          : t.updatedAt 
-          ? new Date(t.updatedAt) 
-          : new Date(t.createdAt);
-        return completedDate.toDateString() === date.toDateString();
-      });
-      last7Days.push({
-        date: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        count: dayTasks.length,
-      });
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        last7DaysMap[toDateStr(d)] = 0;
     }
 
-    // Weekly comparison
-    const weeklyChange = lastWeekTasks.length > 0
-      ? Math.round(((thisWeekTasks.length - lastWeekTasks.length) / lastWeekTasks.length) * 100)
-      : 0;
+    tasks.forEach(t => {
+        if (t.status === 'completed') {
+            const rawDate = t.completedAt || t.updatedAt || t.createdAt;
+            if (rawDate) {
+                const dStr = toDateStr(new Date(rawDate));
+                if (last7DaysMap.hasOwnProperty(dStr)) {
+                    last7DaysMap[dStr]++;
+                    tasksLast7Days++;
+                }
+            }
+        }
+    });
+
+    const velocity = (tasksLast7Days / 7).toFixed(1);
+
+    const dayCounts = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+    tasks.forEach(t => {
+        if (t.status === 'completed') {
+            const rawDate = t.completedAt || t.updatedAt || t.createdAt;
+            if (rawDate) {
+                const day = new Date(rawDate).getDay();
+                dayCounts[day]++;
+            }
+        }
+    });
+    const bestDayIndex = Object.keys(dayCounts).reduce((a, b) => dayCounts[a] > dayCounts[b] ? a : b);
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const mostProductiveDay = dayCounts[bestDayIndex] > 0 ? dayNames[bestDayIndex] : "N/A";
+
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
+    
+    let createdThisWeek = 0;
+    let completedThisWeek = 0;
+
+    tasks.forEach(t => {
+        const createdDate = new Date(t.createdAt);
+        if (createdDate >= thisWeekStart) createdThisWeek++;
+        
+        if (t.status === 'completed') {
+             const completedDate = new Date(t.completedAt || t.updatedAt || t.createdAt);
+             if (completedDate >= thisWeekStart) completedThisWeek++;
+        }
+    });
+
+    const flowScore = createdThisWeek > 0 
+        ? Math.round((completedThisWeek / (completedThisWeek + createdThisWeek)) * 100)
+        : completedThisWeek > 0 ? 100 : 0; 
+        
+    const categories = {};
+    tasks.forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + 1;
+    });
+
+    const categoryDisplayNames = {
+        study: 'Learning',
+        assignment: 'Assignments',
+        project: 'Projects',
+        revision: 'Revision',
+        exam: 'Exams',
+        other: 'Miscellaneous'
+    };
+
+    const topCategoryKey = Object.keys(categories).reduce((a, b) => categories[a] > categories[b] ? a : b, 'other');
+    const topCategoryName = categoryDisplayNames[topCategoryKey] || topCategoryKey;
+    const topCategoryCount = categories[topCategoryKey] || 0;
+    const totalCount = tasks.length;
+    const focusPercentage = totalCount > 0 ? Math.round((topCategoryCount / totalCount) * 100) : 0;
+
+    const sortedChartData = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dStr = toDateStr(d);
+        sortedChartData.push({
+            date: d.toLocaleDateString('en-US', { weekday: 'short' }),
+            count: last7DaysMap[dStr]
+        });
+    }
 
     return {
-      totalTasks,
-      completedTasks,
-      pendingTasks,
-      completionRate,
-      todayCompleted,
-      todayPending,
-      thisWeekCount: thisWeekTasks.length,
-      weeklyChange,
-      currentStreak,
-      categoryBreakdown,
-      priorityBreakdown,
-      last7Days,
+        velocity,
+        mostProductiveDay,
+        flowScore,
+        topCategory: topCategoryName,
+        focusPercentage,
+        chartData: sortedChartData,
+        totalCompleted: tasks.filter(t => t.status === 'completed').length
     };
   }, [tasks]);
 
-  const maxDayCount = Math.max(...stats.last7Days.map(d => d.count), 1);
+  const maxChartValue = Math.max(...stats.chartData.map(d => d.count), 5);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-8">
       <SectionHeader
-        title="Productivity Stats"
-        subtitle="Track your progress and streaks"
+        title="Weekly Report"
+        subtitle="Insights based on your recent activity"
       />
 
-      {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Completion Rate */}
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
-            <div className="flex items-center justify-between mb-3">
-              <Target className="w-8 h-8 text-violet-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.completionRate}%</span>
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Velocity</p>
+                    <h3 className="text-3xl font-bold text-gray-900 mt-1">{stats.velocity}</h3>
+                </div>
+                <div className="p-2 bg-blue-50 rounded-lg">
+                    <Zap className="w-5 h-5 text-blue-600" />
+                </div>
             </div>
-            <div className="text-gray-900 font-medium">Completion Rate</div>
-            <div className="text-gray-600 text-sm mt-1">
-              {stats.completedTasks} of {stats.totalTasks} tasks
-            </div>
-          </Card>
-        </motion.div>
+            <p className="text-xs text-gray-400 mt-4">Tasks per day (7-day avg)</p>
+        </Card>
 
-        {/* Current Streak */}
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="p-4 bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
-            <div className="flex items-center justify-between mb-3">
-              <Flame className="w-8 h-8 text-orange-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.currentStreak}</span>
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Peak Day</p>
+                    <h3 className="text-xl font-bold text-gray-900 mt-1">{stats.mostProductiveDay}</h3>
+                </div>
+                <div className="p-2 bg-green-50 rounded-lg">
+                    <Calendar className="w-5 h-5 text-green-600" />
+                </div>
             </div>
-            <div className="text-gray-900 font-medium">Day Streak</div>
-            <div className="text-gray-600 text-sm mt-1">
-              {stats.currentStreak > 0 ? "Keep it up! 🔥" : "Start your streak today"}
-            </div>
-          </Card>
-        </motion.div>
+            <p className="text-xs text-gray-400 mt-4">Your most active day</p>
+        </Card>
 
-        {/* Today's Progress */}
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-            <div className="flex items-center justify-between mb-3">
-              <Calendar className="w-8 h-8 text-green-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.todayCompleted}</span>
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Top Focus</p>
+                    <h3 className="text-xl font-bold text-gray-900 mt-1">{stats.topCategory}</h3>
+                </div>
+                <div className="p-2 bg-purple-50 rounded-lg">
+                    <Target className="w-5 h-5 text-purple-600" />
+                </div>
             </div>
-            <div className="text-gray-900 font-medium">Completed Today</div>
-            <div className="text-gray-600 text-sm mt-1">
-              {stats.todayPending > 0 ? `${stats.todayPending} remaining` : "All done! ✨"}
-            </div>
-          </Card>
-        </motion.div>
+            <p className="text-xs text-gray-400 mt-4">{stats.focusPercentage}% of your workload</p>
+        </Card>
 
-        {/* This Week */}
-        <motion.div whileHover={{ scale: 1.02 }}>
-          <Card className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-8 h-8 text-blue-600" />
-              <span className="text-3xl font-bold text-gray-900">{stats.thisWeekCount}</span>
+        <Card className="p-5 bg-white border border-gray-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Flow Score</p>
+                    <h3 className="text-3xl font-bold text-gray-900 mt-1">{stats.flowScore}</h3>
+                </div>
+                <div className="p-2 bg-orange-50 rounded-lg">
+                    <Activity className="w-5 h-5 text-orange-600" />
+                </div>
             </div>
-            <div className="text-gray-900 font-medium">This Week</div>
-            <div className="text-gray-600 text-sm mt-1 flex items-center gap-1">
-              {stats.weeklyChange > 0 ? (
-                <>
-                  <TrendingUp className="w-3 h-3" />
-                  +{stats.weeklyChange}% from last week
-                </>
-              ) : stats.weeklyChange < 0 ? (
-                <>
-                  {stats.weeklyChange}% from last week
-                </>
-              ) : (
-                "Same as last week"
-              )}
-            </div>
-          </Card>
-        </motion.div>
+            <p className="text-xs text-gray-400 mt-4">Weekly completion ratio</p>
+        </Card>
       </div>
 
-      {/* 7-Day Trend Chart */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <BarChart3 className="w-5 h-5 text-violet-600" />
-          <h3 className="text-lg font-semibold text-gray-900">7-Day Completion Trend</h3>
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+            <div>
+                <h3 className="text-lg font-bold text-gray-900">Consistency</h3>
+                <p className="text-sm text-gray-500">Task completions over the last 7 days</p>
+            </div>
+            <BarChart3 className="w-5 h-5 text-gray-400" />
         </div>
         
-        <div className="flex items-end justify-between gap-2 h-40">
-          {stats.last7Days.map((day, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(day.count / maxDayCount) * 100}%` }}
-                transition={{ delay: index * 0.1 }}
-                className="w-full bg-gradient-to-t from-violet-500 to-purple-400 rounded-t-lg min-h-[4px] relative group cursor-pointer"
-              >
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  {day.count} tasks
+        <div className="flex items-end justify-between gap-4 h-48">
+            {stats.chartData.map((day, index) => (
+                <div key={index} className="flex-1 flex flex-col items-center gap-3 h-full group">
+                    <div className="relative w-full flex-1 flex items-end bg-gray-50 rounded-t-lg overflow-hidden">
+                        <div
+                            style={{ height: `${(day.count / maxChartValue) * 100}%` }}
+                            className="w-full bg-violet-600 opacity-90 group-hover:opacity-100 transition-all duration-500 ease-out rounded-t-lg min-h-[4px]"
+                        ></div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity pb-2 pointer-events-none">
+                            <div className="bg-gray-900 text-white text-xs py-1 px-2 rounded shadow-lg whitespace-nowrap">
+                                {day.count} tasks
+                            </div>
+                        </div>
+                    </div>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{day.date}</span>
                 </div>
-              </motion.div>
-              <span className="text-xs text-gray-600">{day.date}</span>
-            </div>
-          ))}
+            ))}
         </div>
       </Card>
 
-      {/* Category & Priority Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Category Breakdown */}
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Award className="w-5 h-5 text-violet-600" />
-            <h3 className="text-lg font-semibold text-gray-900">By Category</h3>
-          </div>
-          
-          <div className="space-y-3">
-            {Object.entries(stats.categoryBreakdown).map(([category, count]) => {
-              const percentage = stats.completedTasks > 0 
-                ? Math.round((count / stats.completedTasks) * 100) 
-                : 0;
-              
-              return (
-                <div key={category}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-gray-600 capitalize">{category}</span>
-                    <span className="text-gray-900 font-medium">{count} tasks</span>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${percentage}%` }}
-                      className="h-full bg-violet-500"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            
-            {Object.keys(stats.categoryBreakdown).length === 0 && (
-              <div className="text-center text-gray-500 py-4">
-                No completed tasks yet
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* Priority Breakdown */}
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircle2 className="w-5 h-5 text-violet-600" />
-            <h3 className="text-lg font-semibold text-gray-900">By Priority</h3>
-          </div>
-          
-          <div className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-red-600">High Priority</span>
-                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.high} tasks</span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: stats.completedTasks > 0
-                      ? `${(stats.priorityBreakdown.high / stats.completedTasks) * 100}%`
-                      : '0%'
-                  }}
-                  className="h-full bg-red-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-yellow-600">Medium Priority</span>
-                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.medium} tasks</span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: stats.completedTasks > 0
-                      ? `${(stats.priorityBreakdown.medium / stats.completedTasks) * 100}%`
-                      : '0%'
-                  }}
-                  className="h-full bg-yellow-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-blue-600">Low Priority</span>
-                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.low} tasks</span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{
-                    width: stats.completedTasks > 0
-                      ? `${(stats.priorityBreakdown.low / stats.completedTasks) * 100}%`
-                      : '0%'
-                  }}
-                  className="h-full bg-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 flex items-start gap-4">
+        <div className="p-3 bg-white border border-gray-200 rounded-full shadow-sm">
+            <ArrowUpRight className="w-6 h-6 text-gray-900" />
+        </div>
+        <div>
+            <h4 className="text-base font-bold text-gray-900 mb-1">Weekly Insight</h4>
+            <p className="text-sm text-gray-600 leading-relaxed">
+                {stats.totalCompleted > 0 ? (
+                    <>
+                        You are averaging <span className="font-semibold text-gray-900">{stats.velocity} tasks</span> per day this week. 
+                        Your activity peaks on <span className="font-semibold text-gray-900">{stats.mostProductiveDay}s</span>. 
+                        Most of your energy is currently directed towards <span className="font-semibold text-gray-900">{stats.topCategory.toLowerCase()}</span>.
+                    </>
+                ) : (
+                    "Complete some tasks to generate personalized insights about your working habits."
+                )}
+            </p>
+        </div>
       </div>
-
-      {/* Motivational Message */}
-      {stats.completedTasks > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card className="p-6 text-center bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200">
-            <div className="text-2xl mb-2">
-              {stats.currentStreak >= 7 ? "🔥" : stats.completionRate >= 80 ? "🌟" : "💪"}
-            </div>
-            <div className="text-lg font-semibold text-gray-900 mb-1">
-              {stats.currentStreak >= 7
-                ? "Amazing streak! Keep the momentum going!"
-                : stats.completionRate >= 80
-                ? "Excellent completion rate! You're crushing it!"
-                : stats.completedTasks >= 5
-                ? "Great progress! Keep up the good work!"
-                : "You've got this! Stay focused!"}
-            </div>
-            <div className="text-sm text-gray-600">
-              You've completed {stats.completedTasks} task{stats.completedTasks !== 1 ? 's' : ''} so far
-            </div>
-          </Card>
-        </motion.div>
-      )}
     </div>
   );
 }
-

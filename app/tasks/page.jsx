@@ -40,6 +40,7 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [showStats, setShowStats] = useState(false);
 
   // Fetch tasks
   const fetchTasks = useCallback(async () => {
@@ -74,14 +75,15 @@ export default function TasksPage() {
         setShowQuickAdd(true);
       }
       // Escape to close quick add
-      if (e.key === "Escape" && showQuickAdd) {
-        setShowQuickAdd(false);
+      if (e.key === "Escape") {
+        if (showQuickAdd) setShowQuickAdd(false);
+        if (showStats) setShowStats(false);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showQuickAdd]);
+  }, [showQuickAdd, showStats]);
 
   // Create task
   const handleCreateTask = async (taskData) => {
@@ -321,18 +323,16 @@ export default function TasksPage() {
             >
               <CalendarIcon className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => setViewMode("stats")}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                viewMode === "stats"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
-              }`}
-              title="Statistics"
-            >
-              <BarChart3 className="w-4 h-4" />
-            </button>
           </div>
+
+          {/* Stats Toggle (Standalone) */}
+          <button
+            onClick={() => setShowStats(true)}
+            className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-violet-600 hover:border-violet-200 transition-all shadow-sm group"
+            title="View Statistics"
+          >
+            <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+          </button>
 
           {/* Keyboard Hint */}
           <div className="hidden md:flex items-center gap-2 text-[10px] text-gray-400 border-l border-gray-200 pl-4">
@@ -367,7 +367,7 @@ export default function TasksPage() {
           onUpdateTaskStatus={(taskId, newStatus) => handleUpdateTask(taskId, { status: newStatus })}
           onReorder={handleReorder}
         />
-      ) : viewMode === "calendar" ? (
+      ) : (
         <CalendarView
           tasks={tasks}
           onDateSelect={(date) => {
@@ -376,9 +376,34 @@ export default function TasksPage() {
           }}
           onTaskClick={handleViewTask}
         />
-      ) : (
-        <ProductivityStats tasks={tasks} />
       )}
+
+      {/* Stats Modal */}
+      <AnimatePresence>
+        {showStats && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowStats(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-50 rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border border-gray-200 shadow-2xl relative"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setShowStats(false)}
+                className="absolute top-4 right-4 p-2 bg-white rounded-full text-gray-400 hover:text-gray-900 shadow-sm z-10"
+              >
+                <Plus className="w-5 h-5 rotate-45" />
+              </button>
+              
+              <div className="p-6">
+                <ProductivityStats tasks={tasks} />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Quick Add Modal */}
       <QuickAdd
