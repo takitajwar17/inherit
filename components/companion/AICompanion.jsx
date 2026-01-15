@@ -87,7 +87,7 @@ const agentConfig = {
 };
 
 // Public routes where companion should be hidden
-const PUBLIC_ROUTES = ["/", "/sign-in", "/sign-up"];
+const PUBLIC_ROUTES = ["/", "/sign-in", "/sign-up", "/watch-demo"];
 
 /**
  * Markdown Message Component
@@ -800,11 +800,6 @@ export default function AICompanion() {
   const autoSendTimeoutRef = useRef(null);
   const lastTranscriptRef = useRef("");
 
-  // Don't render on public routes or when not authenticated
-  if (!isLoaded) return null;
-  if (!isSignedIn) return null;
-  if (PUBLIC_ROUTES.includes(pathname)) return null;
-
   // Initialize speech recognition with continuous mode support
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
@@ -1356,6 +1351,11 @@ export default function AICompanion() {
       return errorMsg;
     }
   };
+
+  // Don't render on public routes or when not authenticated
+  if (!isLoaded || !isSignedIn || PUBLIC_ROUTES.includes(pathname)) {
+    return null;
+  }
 
   return (
     <>
