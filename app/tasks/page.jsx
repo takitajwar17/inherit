@@ -45,7 +45,7 @@ export default function TasksPage() {
     if (!isSignedIn) return;
 
     try {
-      const response = await fetch("/api/tasks");
+      const response = await fetch(`/api/tasks?t=${Date.now()}`);
       const data = await response.json();
 
       if (data.success) {
@@ -149,6 +149,34 @@ export default function TasksPage() {
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
+    }
+  };
+
+  // Reorder tasks
+  const handleReorder = async (reorderedTasks) => {
+    // Optimistic update
+    setTasks(reorderedTasks);
+
+    try {
+      // Prepare payload: array of { _id, order }
+      const tasksWithOrder = reorderedTasks.map((t, index) => ({
+        _id: t._id,
+        order: index,
+      }));
+
+      const response = await fetch("/api/tasks/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasks: tasksWithOrder }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save order");
+      }
+    } catch (error) {
+      console.error("Failed to reorder tasks:", error);
+      // We could revert here, but for reordering it might be jarring.
+      // A toast notification might be better.
     }
   };
 
@@ -284,6 +312,7 @@ export default function TasksPage() {
           onToggleComplete={toggleComplete}
           onEdit={setEditingTask}
           onDelete={handleDeleteTask}
+          onReorder={handleReorder}
         />
       ) : viewMode === "board" ? (
         <TaskBoard
@@ -293,6 +322,7 @@ export default function TasksPage() {
           onDelete={handleDeleteTask}
           onQuickAdd={() => setShowQuickAdd(true)}
           onUpdateTaskStatus={(taskId, newStatus) => handleUpdateTask(taskId, { status: newStatus })}
+          onReorder={handleReorder}
         />
       ) : viewMode === "calendar" ? (
         <CalendarView

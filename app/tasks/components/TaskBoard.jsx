@@ -113,6 +113,7 @@ export default function TaskBoard({
   onDelete,
   onQuickAdd,
   onUpdateTaskStatus,
+  onReorder,
 }) {
   const [tasksState, setTasksState] = useState(tasks);
   const [activeId, setActiveId] = useState(null);
@@ -253,6 +254,18 @@ export default function TaskBoard({
         // Visual state is already updated by DragOver, just fire the API/Parent update
         if (onUpdateTaskStatus) {
             onUpdateTaskStatus(activeId, overContainer);
+        }
+    } else if (activeContainer === overContainer && activeId !== overId) {
+        // Reordering within the same column
+        const oldIndex = tasksState.findIndex((t) => t._id === activeId);
+        const newIndex = tasksState.findIndex((t) => t._id === overId);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newTasks = arrayMove(tasksState, oldIndex, newIndex);
+            setTasksState(newTasks);
+            if (onReorder) {
+                onReorder(newTasks);
+            }
         }
     }
 

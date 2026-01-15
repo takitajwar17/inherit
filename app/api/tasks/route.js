@@ -48,7 +48,7 @@ export async function GET(request) {
     if (priority) filter.priority = priority;
 
     const tasks = await Task.find(filter)
-      .sort({ dueDate: 1, priority: -1, createdAt: -1 })
+      .sort({ order: 1, dueDate: 1, priority: -1, createdAt: -1 })
       .limit(Math.min(limit, 100));
 
     return successResponse({ tasks });
@@ -84,6 +84,10 @@ export async function POST(request) {
 
     await connect();
 
+    // Get the highest order to append the new task to the end
+    const lastTask = await Task.findOne({ clerkId: userId }).sort({ order: -1 });
+    const newOrder = lastTask && lastTask.order !== undefined ? lastTask.order + 1 : 0;
+
     const task = new Task({
       clerkId: userId,
       title: title.trim(),
@@ -92,6 +96,7 @@ export async function POST(request) {
       priority: priority || "medium",
       dueDate: dueDate ? new Date(dueDate) : null,
       tags: tags || [],
+      order: newOrder,
     });
 
     await task.save();
