@@ -1,6 +1,7 @@
 # Inherit - Comprehensive Technical Documentation
 
 ## Table of Contents
+
 1. [Project Overview](#1-project-overview)
 2. [Tech Stack](#2-tech-stack)
 3. [Project Structure](#3-project-structure)
@@ -26,6 +27,7 @@
 **Inherit** is an AI-powered personalized coding education platform built with Next.js 14. Named after Aristotle's ancient school (Lyceum), it combines traditional learning principles with modern technology to provide an immersive and structured learning experience for aspiring developers.
 
 ### Core Features
+
 - **Learning Platform**: Curated video tutorials from top programming channels (freeCodeCamp, Telusko)
 - **AI-Powered Roadmaps**: Custom learning path generation based on user goals
 - **Quest System**: Time-based coding challenges with AI-powered evaluation
@@ -34,6 +36,7 @@
 - **Dashboard**: Progress tracking, learning streaks, and statistics
 
 ### Mission
+
 Bridge the digital divide by making coding education accessible, collaborative, and empowering for everyone, particularly focusing on Bangladesh's tech industry growth.
 
 ---
@@ -41,6 +44,7 @@ Bridge the digital divide by making coding education accessible, collaborative, 
 ## 2. Tech Stack
 
 ### Frontend
+
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Next.js | 14.x | React framework with App Router |
@@ -51,6 +55,7 @@ Bridge the digital divide by making coding education accessible, collaborative, 
 | React Icons | 5.5.0 | Icon library |
 
 ### UI Component Libraries
+
 | Library | Purpose |
 |---------|---------|
 | Radix UI | Accessible primitives (Dialog, Select, Tabs, Progress) |
@@ -60,6 +65,7 @@ Bridge the digital divide by making coding education accessible, collaborative, 
 | Lucide React | Icon set |
 
 ### Backend
+
 | Technology | Purpose |
 |------------|---------|
 | Next.js API Routes | Backend API endpoints |
@@ -67,36 +73,42 @@ Bridge the digital divide by making coding education accessible, collaborative, 
 | Mongoose | ODM for MongoDB |
 
 ### Authentication
+
 | Service | Purpose |
 |---------|---------|
 | Clerk | User authentication & management |
 | svix | Webhook verification |
 
 ### Real-time Features
+
 | Service | Purpose |
 |---------|---------|
 | Pusher | Real-time WebSocket connections |
 | Pusher.js | Client-side Pusher SDK |
 
 ### AI Services
+
 | Service | Purpose |
 |---------|---------|
 | Groq AI | LLM for code reviews, quest evaluation, roadmap generation |
 | Model: llama-3.3-70b-versatile | Primary AI model |
 
 ### External APIs
+
 | Service | Purpose |
 |---------|---------|
 | YouTube Data API v3 | Video search and metadata |
 | Piston API | Code execution engine |
 
 ### Analytics & Monitoring
+
 | Service | Purpose |
 |---------|---------|
 | Vercel Analytics | Usage analytics |
 | Vercel Speed Insights | Performance monitoring |
 
 ### Additional Libraries
+
 | Library | Purpose |
 |---------|---------|
 | axios | HTTP client |
@@ -138,7 +150,7 @@ inherit/
 │   ├── components/               # App-level components
 │   │   ├── dev-discuss/          # Discussion components
 │   │   ├── playground/           # Playground components
-│   │   ├── AccessibilityFloatingIcon.jsx
+
 │   │   ├── ClientLayout.jsx      # Conditional layout wrapper
 │   │   ├── fun-loaders.jsx       # Loading animations
 │   │   ├── Header.jsx            # Main navigation header
@@ -313,11 +325,13 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 #### Clerk Configuration (`layout.jsx`)
+
 - Uses `ClerkProvider` wrapping the entire application
 - Light theme base appearance
 - Redirects configured via environment variables
 
 #### Webhook Handler (`/api/webhooks/clerk/route.js`)
+
 - Verifies webhook signatures using svix
 - Handles events:
   - `user.created`: Creates new user in MongoDB
@@ -325,7 +339,9 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
   - `user.deleted`: Removes user from MongoDB
 
 #### Middleware (`middleware.js`)
+
 **Public Routes:**
+
 - `/` (home)
 - `/sign-in`
 - `/sign-up`
@@ -333,6 +349,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 - `/api/voice-routing`
 
 **Ignored Routes:**
+
 - `/api/webhooks/*`
 
 ### Admin Authentication
@@ -364,6 +381,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 **Admin Routes Protected:**
+
 - `/admin/*` - Pages
 - `/api/admin/*` - API endpoints
 
@@ -372,6 +390,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ## 6. Database Architecture
 
 ### MongoDB Connection (`lib/mongodb/mongoose.js`)
+
 - Singleton pattern prevents multiple connections
 - Database name: `Inherit`
 - Uses `strictQuery: true`
@@ -379,6 +398,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ### Data Models
 
 #### User Model (`lib/models/userModel.js`)
+
 ```javascript
 {
   clerkId: String (required, unique),     // Clerk's user ID
@@ -392,6 +412,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 #### Quest Model (`lib/models/questModel.js`)
+
 ```javascript
 {
   name: String (required),
@@ -416,6 +437,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 #### Attempt Model (`lib/models/attemptModel.js`)
+
 ```javascript
 {
   userId: String (required),              // Clerk user ID
@@ -443,6 +465,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 #### Question Model (`lib/models/questionModel.js`)
+
 ```javascript
 {
   title: String (required),
@@ -471,6 +494,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
 
 #### Roadmap Model (`lib/models/roadmapModel.js`)
+
 ```javascript
 {
   title: String (required),
@@ -572,6 +596,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ## 8. Pages & Routing
 
 ### Public Pages
+
 | Route | Component | Description |
 |-------|-----------|-------------|
 | `/` | `LandingPage` | Marketing landing page |
@@ -579,6 +604,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 | `/sign-up` | Clerk | User registration |
 
 ### Protected Pages (Clerk Auth)
+
 | Route | Component | Description |
 |-------|-----------|-------------|
 | `/dashboard` | `Dashboard` | User statistics & progress |
@@ -598,6 +624,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 | `/faq/contact` | Contact page | Support contact |
 
 ### Admin Pages
+
 | Route | Component | Auth | Description |
 |-------|-----------|------|-------------|
 | `/admin/login` | `AdminLogin` | None | Admin login form |
@@ -606,6 +633,7 @@ NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ### Route Configuration
 
 **Layout Structure:**
+
 ```
 RootLayout (ClerkProvider)
   └── ClientLayout (conditional header/sidebar)
@@ -616,6 +644,7 @@ RootLayout (ClerkProvider)
 ```
 
 **ClientLayout Logic:**
+
 - No layout on landing page (`/`)
 - No sidebar on `/sign-in`, `/sign-up`, `/admin/*`
 - Admin pages use separate `AdminLayout`
@@ -627,17 +656,20 @@ RootLayout (ClerkProvider)
 ### Core Layout Components
 
 #### `ClientLayout.jsx`
+
 - Determines which layout elements to render based on route
 - Manages sidebar state (open/closed)
 - Dynamically imports `TourGuide` (no SSR)
 - Responsive sidebar behavior (auto-collapse on mobile)
 
 #### `Header.jsx`
+
 - Fixed navigation bar with logo
 - Clerk `UserButton` for authentication
 - Links to home on logo click
 
 #### `Sidebar.jsx`
+
 - Collapsible navigation sidebar
 - Sections: Dashboard, Learning, Interactive, Achievements, Help
 - Tooltip on collapsed state
@@ -646,6 +678,7 @@ RootLayout (ClerkProvider)
 ### Learn Feature Components
 
 #### `CodeWorkspace.jsx` (Main Editor)
+
 - Monaco Editor integration
 - Multi-language support (JS, Python, Java, C++, C#, PHP)
 - Features:
@@ -658,11 +691,13 @@ RootLayout (ClerkProvider)
   - Word count
 
 #### `VideoPlayer.jsx`
+
 - YouTube embed iframe
 - Responsive sizing
 - No related videos (`rel=0`)
 
 #### Editor Sub-components
+
 - `EditorHeader.jsx`: Language selector, file name, action buttons
 - `EditorFooter.jsx`: Status bar (language, cursor, word count)
 - `OutputPanel.jsx`: Code execution results
@@ -672,17 +707,20 @@ RootLayout (ClerkProvider)
 ### Quest Feature Components
 
 #### `QuestCard.jsx` (in QuestsPage)
+
 - Displays quest info (name, level, time, questions)
 - Status badge (upcoming/active/past)
 - Timeline display (start/end times)
 - Action button for active quests
 
 #### `LeaderboardCard.jsx`
+
 - Top 10 users by total score
 - Shows rank, username, points, quests completed
 - Highlights current user
 
 #### Loaders (`fun-loaders.jsx`)
+
 - `QuestPageLoader`: Loading quests animation
 - `QuestAttemptLoader`: Loading attempt animation
 - `QuestResultsLoader`: Processing results animation
@@ -703,6 +741,7 @@ RootLayout (ClerkProvider)
 ### Playground Components
 
 #### `CollaboratorAvatars.jsx`
+
 - Displays active users in room
 - Avatar circles with initials
 - Overflow counter for 3+ users
@@ -723,17 +762,11 @@ RootLayout (ClerkProvider)
 ### Special Components
 
 #### `TourGuide.jsx`
+
 - Uses `react-joyride` for onboarding
 - Different tours for guests vs. signed-in users
 - Persists tour completion in localStorage
 - Highlights sidebar navigation items
-
-#### `AccessibilityFloatingIcon.jsx`
-- Floating action button (bottom-right)
-- Voice command support (Web Speech API)
-- Text command input
-- Routes to pages via AI interpretation
-- Video search via voice ("teach me React")
 
 ---
 
@@ -779,6 +812,7 @@ getRoadmapById(id)
 ```
 
 **Roadmap Generation Flow:**
+
 1. Validate topic relevance (CS/IT only)
 2. Generate roadmap steps via Groq AI
 3. For each step, search YouTube for tutorials
@@ -799,6 +833,7 @@ submitQuestAttempt(attemptId, answers)
 ```
 
 **AI Evaluation Criteria:**
+
 1. Correctness of solution
 2. Code quality and best practices
 3. Efficiency and optimization
@@ -814,6 +849,7 @@ generateReview(code, retries = 3)
 ```
 
 **Review Structure:**
+
 ```javascript
 {
   suggestions: [{
@@ -845,6 +881,7 @@ generateReview(code, retries = 3)
 ### Pusher Configuration
 
 **Server (`lib/pusher.js`):**
+
 ```javascript
 new Pusher({
   appId: process.env.PUSHER_APP_ID,
@@ -856,6 +893,7 @@ new Pusher({
 ```
 
 **Client (`lib/pusher-client.js`):**
+
 ```javascript
 new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
   cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
@@ -909,6 +947,7 @@ new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
 ```
 
 ### Room Management
+
 - Rooms stored in memory (`roomCollaborators` Map)
 - 7-character uppercase room codes (UUID-based)
 - Auto-cleanup when all users leave
@@ -922,6 +961,7 @@ new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
 **Endpoint:** `https://emkc.org/api/v2/piston`
 
 **Supported Languages:**
+
 ```javascript
 const LANGUAGE_VERSIONS = {
   python: "3.10.0",
@@ -935,6 +975,7 @@ const LANGUAGE_VERSIONS = {
 ```
 
 **Request Format:**
+
 ```javascript
 {
   language: "python",
@@ -946,6 +987,7 @@ const LANGUAGE_VERSIONS = {
 ```
 
 **Response Format:**
+
 ```javascript
 {
   run: {
@@ -996,6 +1038,7 @@ const LANGUAGE_VERSIONS = {
 **Model:** `llama-3.3-70b-versatile`
 
 **Client Initialization:**
+
 ```javascript
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -1005,22 +1048,26 @@ const groq = new Groq({
 ### AI Use Cases
 
 #### 1. Code Review (`lib/actions/codeReview.js`)
+
 - **Temperature:** 0.5
 - **Max Tokens:** 1500
 - **Output:** JSON with suggestions, issues, improvements
 
 #### 2. Quest Answer Evaluation (`lib/actions/quest.js`)
+
 - **Temperature:** 0.3
 - **Max Tokens:** 1000
 - **Output:** Score, correctness, feedback, improvements
 
 #### 3. Question AI Answers (`lib/actions/question.js`)
+
 - **Temperature:** 0.5
 - **Max Tokens:** 800
 - **Persona:** "15 years experience in CS/IT"
 - Refuses non-CS/IT questions
 
 #### 4. Roadmap Generation (`lib/actions/roadmap.js`)
+
 - **Validation Step:**
   - Temperature: 0.1
   - Validates topic is CS/IT related
@@ -1030,6 +1077,7 @@ const groq = new Groq({
   - Output: JSON with learning steps
 
 #### 5. Voice Command Routing (`api/voice-routing/route.js`)
+
 - **Temperature:** 0.5
 - **Max Tokens:** 100
 - **Response Format:** JSON object
@@ -1038,6 +1086,7 @@ const groq = new Groq({
 ### AI Response Handling
 
 All AI integrations include:
+
 1. JSON response validation
 2. Markdown code block stripping
 3. Retry logic (typically 3 attempts)
@@ -1060,11 +1109,13 @@ All AI integrations include:
 ### Admin Dashboard Features
 
 **Statistics Display:**
+
 - Total Quests
 - Active Quests
 - Upcoming Quests
 
 **Quest Management:**
+
 - View all quests (sorted by creation date)
 - Create new quests
 - Edit existing quests
@@ -1073,6 +1124,7 @@ All AI integrations include:
 ### Quest Form (`QuestForm.jsx`)
 
 **Quest Fields:**
+
 - Name
 - Time Limit (minutes)
 - Level (beginner/intermediate/advanced)
@@ -1081,6 +1133,7 @@ All AI integrations include:
 - Active status (checkbox)
 
 **Question Fields:**
+
 - Type (short/coding)
 - Title
 - Description
@@ -1109,11 +1162,13 @@ getQuestStatus(quest) {
 ### Design System
 
 **Typography:**
+
 - Primary Font: Kanit (Google Fonts)
 - Weights: 100-900
 - Fallback: Inter, system fonts
 
 **Color Scheme (CSS Variables):**
+
 ```css
 --background: 0 0% 100%;
 --foreground: 240 10% 3.9%;
@@ -1127,18 +1182,21 @@ getQuestStatus(quest) {
 ```
 
 **Dark Mode:**
+
 - Supported via CSS variables
 - Toggle via `dark` class on root
 
 ### Animation Features
 
 **Framer Motion Usage:**
+
 - Page transitions
 - Loading animations
 - Card hover effects
 - Quest skeletons
 
 **CSS Animations:**
+
 - `fadeIn`: Toast notifications
 - `shimmer`: Loading skeletons
 - `gradient`: Progress bars
@@ -1147,11 +1205,13 @@ getQuestStatus(quest) {
 ### Responsive Design
 
 **Breakpoints:**
+
 - Mobile: < 768px (Sidebar collapses)
 - Tablet: 768px - 1024px
 - Desktop: > 1024px (Full sidebar)
 
 **Sidebar Behavior:**
+
 - Desktop: Expanded (56px collapsed / 224px expanded)
 - Mobile: Collapsed by default
 - Toggle button for manual control
@@ -1159,6 +1219,7 @@ getQuestStatus(quest) {
 ### Loading States
 
 **Skeleton Loaders:**
+
 - Dashboard cards
 - Quest list
 - Roadmap cards
@@ -1166,6 +1227,7 @@ getQuestStatus(quest) {
 - Video grid
 
 **Animated Loaders:**
+
 - Spinning circles
 - Emoji animations (🎯, 📊, 📋)
 - Progress dots
@@ -1174,10 +1236,12 @@ getQuestStatus(quest) {
 ### Sound Effects
 
 **Files:**
+
 - `/public/sounds/complete.mp3`: Step completion
 - `/public/sounds/success.mp3`: Roadmap completion
 
 **Usage:**
+
 - `useSound` hook from `use-sound` package
 - Triggered on roadmap step completion
 
@@ -1192,10 +1256,12 @@ getQuestStatus(quest) {
 ### Onboarding Tour
 
 **Guest Tour (1 step):**
+
 - Welcome message
 - Points to "Get Started" button
 
 **User Tour (7 steps):**
+
 1. Welcome back message
 2. Dashboard highlight
 3. Roadmaps highlight
@@ -1232,44 +1298,48 @@ getQuestStatus(quest) {
 #### 🔴 Critical Issues
 
 1. **Hardcoded Admin Credentials**
+
    ```javascript
    // middleware.js
    if (username !== "admin" || password !== "admin123")
    ```
+
    **Fix:** Move to environment variables, use proper hashing
 
 2. **Exposed API Keys**
+
    ```javascript
    // Client-side YouTube API key
    NEXT_PUBLIC_YOUTUBE_API_KEY
    ```
+
    **Fix:** Proxy through server-side API route
 
 #### 🟡 Medium Priority
 
-3. **No Rate Limiting:**
+1. **No Rate Limiting:**
    - AI endpoints could be abused
    - **Fix:** Implement rate limiting middleware
 
-4. **Missing Input Sanitization:**
+2. **Missing Input Sanitization:**
    - XSS potential in question descriptions
    - **Fix:** Sanitize HTML/markdown input
 
-5. **No CORS Configuration:**
+3. **No CORS Configuration:**
    - API routes accessible from any origin
    - **Fix:** Configure allowed origins
 
 #### 🟢 Recommendations
 
-6. **Add Request Logging:**
+1. **Add Request Logging:**
    - Track API usage patterns
    - Detect abuse early
 
-7. **Implement Content Security Policy:**
+2. **Implement Content Security Policy:**
    - Restrict resource loading
    - Prevent XSS attacks
 
-8. **Add Session Timeout:**
+3. **Add Session Timeout:**
    - Admin sessions don't expire
    - Implement session expiry
 
@@ -1412,40 +1482,6 @@ getQuestStatus(quest) {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Voice Command Flow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    VOICE COMMAND FLOW                            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  AccessibilityFloatingIcon (bottom-right)                        │
-│    │                                                             │
-│    │ Click microphone                                            │
-│    ▼                                                             │
-│  Web Speech API (webkitSpeechRecognition)                        │
-│    │                                                             │
-│    │ "teach me React"                                            │
-│    ▼                                                             │
-│  POST /api/voice-routing                                         │
-│    │                                                             │
-│    ├─── Groq AI interprets command                               │
-│    │                                                             │
-│    ├─── If navigation: return { route: "/dashboard" }            │
-│    │                                                             │
-│    └─── If learning: return { action: "learn", topic: "React" }  │
-│           │                                                      │
-│           ▼                                                      │
-│    Call /api/video-search with topic                             │
-│           │                                                      │
-│           ▼                                                      │
-│    Return { route: "/learn/{videoId}" }                          │
-│                                                                  │
-│  router.push(route)                                              │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ---
 
 ## Appendix A: npm Scripts
@@ -1503,4 +1539,3 @@ npm run lint     # Run ESLint
 *Documentation generated: January 2026*
 *Version: 1.0*
 *Codebase analyzed: inherit @ latest*
-

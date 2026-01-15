@@ -63,7 +63,6 @@ export default function RootLayout({ children }) {
           <RootErrorBoundary>
             {/* ClientLayout manages header, sidebar, and main content area */}
             <ClientLayout>{children}</ClientLayout>
-
             <AICompanion />
             <ToastContainer />
             <Analytics />
