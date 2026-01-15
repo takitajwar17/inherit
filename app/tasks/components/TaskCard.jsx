@@ -90,7 +90,9 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
     }
   };
 
-  const dateInfo = task.dueDate ? formatDate(task.dueDate) : null;
+  const dateInfo = task.dueDate 
+    ? formatDate(task.dueDate) 
+    : { text: "Today", color: "text-green-400" }; // Default to Today if no date
 
   return (
     <motion.div

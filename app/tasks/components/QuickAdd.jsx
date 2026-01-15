@@ -132,10 +132,15 @@ export default function QuickAdd({ onAdd, isOpen, onClose }) {
                 <span className="text-gray-600">Parsed as:</span>
                 <span className="text-gray-900 font-medium">{parsedData.title}</span>
                 
-                {parsedData.dueDate && (
+                {parsedData.dueDate ? (
                   <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 border border-green-200">
                     <Calendar className="w-3 h-3" />
                     {formatDate(parsedData.dueDate)}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 text-gray-600 border border-gray-200" title="Tasks default to Today">
+                    <Calendar className="w-3 h-3" />
+                    Today
                   </span>
                 )}
                 

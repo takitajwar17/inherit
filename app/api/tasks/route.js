@@ -94,7 +94,7 @@ export async function POST(request) {
       description: description?.trim() || "",
       category: category || "other",
       priority: priority || "medium",
-      dueDate: dueDate ? new Date(dueDate) : null,
+      dueDate: dueDate ? new Date(dueDate) : new Date(),
       tags: tags || [],
       order: newOrder,
     });

@@ -141,12 +141,11 @@ export default function TaskList({
 
   const groupTasks = (taskList) => {
     const groups = {
-      overdue: { id: "overdue", title: "Overdue", tasks: [], date: null }, // Date update logic handled separately
+      overdue: { id: "overdue", title: "Overdue", tasks: [], date: null },
       today: { id: "today", title: "Today", tasks: [], date: new Date() },
       tomorrow: { id: "tomorrow", title: "Tomorrow", tasks: [], date: new Date(new Date().setDate(new Date().getDate() + 1)) },
       upcoming: { id: "upcoming", title: "Next 7 Days", tasks: [], date: null },
       later: { id: "later", title: "Later", tasks: [], date: null },
-      noDate: { id: "noDate", title: "No Date", tasks: [], date: null }
     };
 
     const now = new Date();
@@ -158,18 +157,14 @@ export default function TaskList({
 
     taskList.forEach(task => {
       if (task.status === "completed") {
-          // You might want a "Completed" group if viewing All
-          // But usually Completed view is separate. 
-          // If View is "All", let's put completed in a "Completed" group?
-          // For now, let's ignore completed in grouping if they were filtered out, 
-          // but if they are present, we need a group.
           if (!groups.completed) groups.completed = { id: "completed", title: "Completed", tasks: [] };
           groups.completed.tasks.push(task);
           return;
       }
 
+      // Treat no date as Today
       if (!task.dueDate) {
-        groups.noDate.tasks.push(task);
+        groups.today.tasks.push(task);
         return;
       }
 
