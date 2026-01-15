@@ -21,7 +21,26 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
   const calendarData = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
+
+    if (view === "week") {
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const days = [];
+      const current = new Date(startOfWeek);
+      while (current <= endOfWeek) {
+        days.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+      return { days, firstDay: startOfWeek, lastDay: endOfWeek };
+    }
     
+    // Month View Logic
     // First day of month
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -44,15 +63,27 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
     }
     
     return { days, firstDay, lastDay };
-  }, [currentDate]);
+  }, [currentDate, view]);
 
   // Get tasks for a specific date
   const getTasksForDate = (date) => {
-    const dateStr = date.toDateString();
+    // Calendar date is local time 00:00:00
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     return tasks.filter(task => {
       if (!task?.dueDate) return false;
       try {
-        return new Date(task.dueDate).toDateString() === dateStr;
+        // Task due date is UTC 00:00:00 (usually)
+        const taskDate = new Date(task.dueDate);
+        const taskYear = taskDate.getUTCFullYear();
+        const taskMonth = String(taskDate.getUTCMonth() + 1).padStart(2, '0');
+        const taskDay = String(taskDate.getUTCDate()).padStart(2, '0');
+        const taskDateStr = `${taskYear}-${taskMonth}-${taskDay}`;
+        
+        return taskDateStr === dateStr;
       } catch (error) {
         console.warn('Invalid date format for task:', task);
         return false;
@@ -168,14 +199,14 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
       </Card>
 
       {/* Calendar Grid */}
-      <Card className="flex-1">
-        <div className="p-4">
+      <Card className="flex-1 overflow-hidden border-0 shadow-sm">
+        <div className="bg-gray-200 p-px">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
+          <div className="grid grid-cols-7 gap-px mb-px bg-gray-200">
             {dayNames.map(day => (
               <div
                 key={day}
-                className="text-center text-xs font-semibold text-gray-600 uppercase py-2 border-b border-gray-200"
+                className="text-center text-[10px] font-semibold text-gray-500 uppercase py-1.5 bg-gray-50"
               >
                 {day}
               </div>
@@ -183,109 +214,104 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
           </div>
 
           {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-7 gap-px bg-gray-200">
             {calendarData.days.map((date, index) => {
               const dayTasks = getTasksForDate(date);
               const isTodayDate = isToday(date);
               const isCurrentMonthDate = isCurrentMonth(date);
-              const completedCount = dayTasks.filter(t => t.status === "completed").length;
-              const pendingCount = dayTasks.filter(t => t.status !== "completed").length;
-              const hasOverdue = dayTasks.some(t => {
-                return t.status !== "completed" && new Date(t.dueDate) < new Date();
+              
+              // Sort: High priority first, then incomplete, then completed
+              const sortedTasks = [...dayTasks].sort((a, b) => {
+                const priorityMap = { high: 0, medium: 1, low: 2 };
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+                return (priorityMap[a.priority] || 2) - (priorityMap[b.priority] || 2);
               });
 
+              // Increase limit for week view
+              const taskLimit = view === 'week' ? 15 : 3;
+
               return (
-                <motion.div
+                <div
                   key={index}
-                  whileHover={{ scale: 1.02 }}
                   onClick={() => onDateSelect && onDateSelect(date)}
                   className={cn(
-                    "min-h-[100px] p-3 rounded-lg border cursor-pointer transition-all",
-                    isTodayDate
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                      : isCurrentMonthDate
-                      ? "border-gray-200 hover:border-gray-300 bg-white hover:shadow-md"
-                      : "border-gray-100 bg-gray-50/50 opacity-50 hover:opacity-75"
+                    "p-1 bg-white hover:bg-gray-50 cursor-pointer transition-colors relative group",
+                    view === 'week' ? "min-h-[400px]" : "min-h-[80px]",
+                    !isCurrentMonthDate && "bg-gray-50/30 text-gray-400"
                   )}
-              >
-                {/* Date Number */}
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className={cn(
-                      "text-sm font-medium",
-                      isTodayDate
-                        ? "text-primary font-bold"
-                        : isCurrentMonthDate
-                        ? "text-gray-900"
-                        : "text-gray-400"
-                    )}
-                  >
-                    {date.getDate()}
-                  </span>
-                  {dayTasks.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      {pendingCount > 0 && (
-                        <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded-full font-medium",
-                          hasOverdue
-                            ? "bg-red-50 text-red-600 border border-red-200"
-                            : "bg-blue-50 text-blue-600 border border-blue-200"
-                        )}>
-                          {pendingCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Task Indicators */}
-                <div className="space-y-1">
-                  {dayTasks.slice(0, 3).map((task, i) => (
-                    <div
-                      key={i}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTaskClick && onTaskClick(task);
-                      }}
+                >
+                  {/* Date Number */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span
                       className={cn(
-                        "text-xs p-2 rounded cursor-pointer hover:shadow-sm transition-shadow",
-                        task.status === "completed"
-                          ? "bg-gray-100 text-gray-500 line-through"
-                          : task.priority === "high"
-                          ? "bg-red-50 text-red-700 border border-red-200"
-                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                        "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
+                        isTodayDate
+                          ? "bg-primary text-white"
+                          : isCurrentMonthDate
+                          ? "text-gray-700 group-hover:bg-gray-100"
+                          : "text-gray-400"
                       )}
                     >
-                      {task.title}
-                    </div>
-                  ))}
-                  {dayTasks.length > 3 && (
-                    <div className="text-xs text-gray-600 text-center py-1">
-                      +{dayTasks.length - 3} more
-                    </div>
-                  )}
+                      {date.getDate()}
+                    </span>
+                  </div>
+
+                  {/* Task Indicators */}
+                  <div className="space-y-0.5">
+                    {sortedTasks.slice(0, taskLimit).map((task, i) => (
+                      <div
+                        key={i}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTaskClick && onTaskClick(task);
+                        }}
+                        className={cn(
+                          "text-[10px] px-1 py-0.5 rounded-sm truncate transition-opacity flex items-center gap-1",
+                          task.status === "completed"
+                            ? "bg-gray-100 text-gray-400 line-through"
+                            : task.priority === "high"
+                            ? "bg-red-50 text-red-700 border-l-2 border-red-500"
+                            : task.priority === "medium"
+                            ? "bg-yellow-50 text-yellow-700 border-l-2 border-yellow-500"
+                            : "bg-blue-50 text-blue-700 border-l-2 border-blue-500"
+                        )}
+                        title={task.title}
+                      >
+                         {task.title}
+                      </div>
+                    ))}
+                    {sortedTasks.length > taskLimit && (
+                      <div className="text-[10px] text-gray-400 pl-1 font-medium">
+                        +{sortedTasks.length - taskLimit} more
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </motion.div>
-            );
-          })}
+              );
+            })}
           </div>
         </div>
       </Card>
 
       {/* Legend */}
-      <Card className="p-4">
-        <div className="flex items-center gap-6 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30"></div>
-            <span className="text-gray-600">Today</span>
+      <Card className="p-3">
+        <div className="flex items-center gap-6 text-[10px] text-gray-500 justify-center">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-1.5 bg-red-50 border-l-2 border-red-500"></div>
+            <span>High Priority</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-red-50 border border-red-200"></div>
-            <span className="text-gray-600">High Priority / Overdue</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-1.5 bg-yellow-50 border-l-2 border-yellow-500"></div>
+            <span>Medium Priority</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-gray-100 border border-gray-200"></div>
-            <span className="text-gray-600">Completed</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-1.5 bg-blue-50 border-l-2 border-blue-500"></div>
+            <span>Low Priority</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-1.5 bg-gray-100 text-gray-400 line-through decoration-gray-400">abc</div>
+            <span>Completed</span>
           </div>
         </div>
       </Card>

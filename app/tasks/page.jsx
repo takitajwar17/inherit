@@ -45,7 +45,7 @@ export default function TasksPage() {
     if (!isSignedIn) return;
 
     try {
-      const response = await fetch(`/api/tasks?t=${Date.now()}`);
+      const response = await fetch(`/api/tasks?limit=1000&t=${Date.now()}`);
       const data = await response.json();
 
       if (data.success) {
