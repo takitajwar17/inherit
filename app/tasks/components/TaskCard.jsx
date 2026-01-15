@@ -18,7 +18,7 @@ import {
   Trash2,
   Clock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -48,8 +48,17 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
   const [isHovered, setIsHovered] = useState(false);
 
   const isCompleted = task?.status === "completed";
-  const isOverdue =
-    task?.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
+  
+  // Calculate overdue status based on date only (ignoring time)
+  const isOverdue = useMemo(() => {
+    if (!task?.dueDate || isCompleted) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(task.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    // Overdue if strictly before today
+    return dueDate < today;
+  }, [task?.dueDate, isCompleted]);
 
   const formatDate = (date) => {
     if (!date) return null;
