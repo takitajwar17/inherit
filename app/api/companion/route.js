@@ -7,10 +7,11 @@
  * Routes messages through the agent orchestrator.
  */
 
-import { auth, clerkClient } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs";
 import { connect } from "@/lib/mongodb/mongoose";
 import Conversation from "@/lib/models/conversationModel";
 import { getInitializedOrchestrator } from "@/lib/agents";
+import { buildUserContext, formatContextForAgent } from "@/lib/context/userContext";
 import logger from "@/lib/logger";
 import { withRateLimit } from "@/lib/ratelimit/middleware";
 import { aiLimiter } from "@/lib/ratelimit/limiters";
@@ -30,7 +31,14 @@ async function handlePost(request) {
   const requestId = generateRequestId();
 
   try {
+    // Get authenticated user - sync auth() from @clerk/nextjs
     const { userId } = auth();
+
+    logger.info("Companion API - Auth check", {
+      requestId,
+      hasUserId: !!userId,
+      userId: userId,
+    });
 
     // Require authentication for companion
     if (!userId) {
@@ -49,18 +57,8 @@ async function handlePost(request) {
       throw new ValidationError("Message is required");
     }
 
-    // Get user details for personalized responses
-    let userName = "there";
-    try {
-      const user = await clerkClient.users.getUser(userId);
-      userName = user.firstName || user.username || "there";
-    } catch (error) {
-      logger.warn("Failed to fetch user details", { userId, error: error.message });
-    }
-
-    logger.debug("AI Companion request", {
+    logger.debug("AI Companion request started", {
       userId,
-      userName,
       conversationId,
       language,
       messageLength: message.length,
@@ -68,6 +66,24 @@ async function handlePost(request) {
     });
 
     await connect();
+
+    // Build comprehensive user context
+    logger.debug("Building user context", { userId });
+    const userContext = await buildUserContext(userId);
+    
+    logger.info("User context built", {
+      userId,
+      userName: userContext.user.name,
+      email: userContext.user.email,
+      tasksTotal: userContext.tasks.total,
+      tasksPending: userContext.tasks.pending,
+      tasksOverdue: userContext.tasks.overdue,
+      roadmapsTotal: userContext.roadmaps.total,
+      roadmapsInProgress: userContext.roadmaps.inProgress,
+      questsTotal: userContext.quests.total,
+      currentRoadmap: userContext.roadmaps.current?.title || 'none',
+      currentQuest: userContext.quests.current?.name || 'none',
+    });
 
     // Get or create conversation
     let conversation;
@@ -90,17 +106,51 @@ async function handlePost(request) {
     // Get conversation history
     const history = conversation?.getRecentMessages(10) || [];
 
-    // Process through orchestrator
-    logger.debug("Starting orchestrator processing", { userId, userName, requestId });
-    const orchestrator = getInitializedOrchestrator();
-    
-    const result = await orchestrator.processMessage(message, {
+    // Process through orchestrator with comprehensive context
+    const agentContext = {
       history,
       language,
       clerkId: userId,
-      userName,
+      
+      // User profile
+      userName: userContext.user.name,
+      userFirstName: userContext.user.firstName,
+      userLastName: userContext.user.lastName,
+      userEmail: userContext.user.email,
+      userUsername: userContext.user.username,
+      
+      // Complete user context
+      userContext: userContext,
+      
+      // Formatted context summary for agents
+      contextSummary: formatContextForAgent(userContext),
+      
+      // Legacy context support (use correct property names)
+      currentRoadmap: userContext.roadmaps.currentRoadmap,
+      currentQuest: userContext.quests.currentQuest,
+      
       ...context,
+    };
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/2196eccc-e8fe-4ec3-87bd-0060f37d358f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/companion/route.js:agentContext',message:'agentContext prepared',data:{hasClerkId:!!agentContext.clerkId,contextKeys:Object.keys(agentContext),hasUserContext:!!agentContext.userContext,hasUserName:!!agentContext.userName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+
+    logger.debug("Starting orchestrator processing", { 
+      userId, 
+      userName: userContext.user.name,
+      clerkId: userId,
+      hasUserContext: !!agentContext.userContext,
+      hasUserName: !!agentContext.userName,
+      userNameValue: agentContext.userName,
+      contextKeys: Object.keys(agentContext),
+      requestId 
     });
+    
+    const orchestrator = getInitializedOrchestrator();
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/2196eccc-e8fe-4ec3-87bd-0060f37d358f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/companion/route.js:beforeProcessMessage',message:'calling orchestrator.processMessage',data:{hasClerkId:!!agentContext.clerkId,contextKeyCount:Object.keys(agentContext).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    const result = await orchestrator.processMessage(message, agentContext);
 
     logger.debug("Orchestrator completed", {
       agent: result.routedTo,
@@ -161,7 +211,8 @@ async function handleGet(request) {
   const requestId = generateRequestId();
 
   try {
-    const { userId } = auth();
+    const authResult = await auth();
+    const userId = authResult?.userId;
 
     if (!userId) {
       return errorResponse(
@@ -221,9 +272,9 @@ async function handleGet(request) {
 
 // Export with rate limiting
 export const POST = withRateLimit(aiLimiter, handlePost, {
-  getIdentifier: (req) => {
-    const { userId } = auth();
-    return getUserIdentifier(req, userId);
+  getIdentifier: async (req) => {
+    const authResult = await auth();
+    return getUserIdentifier(req, authResult?.userId);
   },
 });
 
