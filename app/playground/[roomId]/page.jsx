@@ -79,38 +79,40 @@ const RoomPage = () => {
   useEffect(() => {
     if (!roomId || !userId) return;
 
-    const channel = pusherClient.subscribe(`room-${roomId}`);
+    // Use presence channel
+    const channelName = `presence-room-${roomId}`;
+    const channel = pusherClient.subscribe(channelName);
     
-    // Join room
-    const joinRoom = async () => {
-      try {
-        const response = await fetch('/api/socket', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            roomId,
-            userId,
-            username: getDisplayName(user),
-            event: 'join-room',
-          }),
+    // Handle subscription success (get initial members)
+    channel.bind('pusher:subscription_succeeded', (members) => {
+      const activeMembers = [];
+      members.each((member) => {
+        activeMembers.push({
+          userId: member.id,
+          username: member.info.username,
         });
-        if (!response.ok) {
-          // Failed to join room
-        }
-      } catch (error) {
-        // Error joining room
-      }
-    };
-    
-    joinRoom();
-
-    channel.bind('collaboratorsUpdate', (data) => {
-      if (Array.isArray(data)) {
-        const sortedCollaborators = [...data].sort((a, b) => b.timestamp - a.timestamp);
-        setCollaborators(sortedCollaborators);
-      }
+      });
+      setCollaborators(activeMembers);
     });
 
+    // Handle new member joining
+    channel.bind('pusher:member_added', (member) => {
+      setCollaborators((prev) => {
+        // Prevent duplicates
+        if (prev.some(m => m.userId === member.id)) return prev;
+        return [...prev, {
+          userId: member.id,
+          username: member.info.username,
+        }];
+      });
+    });
+
+    // Handle member leaving
+    channel.bind('pusher:member_removed', (member) => {
+      setCollaborators((prev) => prev.filter((c) => c.userId !== member.id));
+    });
+
+    // Handle code updates
     channel.bind('codeUpdate', (data) => {
       if (data && data.userId !== userId) {
         setLastUpdateFromServer(data.data);
@@ -119,19 +121,8 @@ const RoomPage = () => {
     });
 
     return () => {
-      fetch('/api/socket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId,
-          userId,
-          username: getDisplayName(user),
-          event: 'leave-room',
-        }),
-      }).catch(() => {});
-
       channel.unbind_all();
-      pusherClient.unsubscribe(`room-${roomId}`);
+      pusherClient.unsubscribe(channelName);
     };
   }, [roomId, userId, user]);
 
