@@ -55,11 +55,10 @@ export default function ClientLayout({ children }) {
   const normalizedPath = pathname.replace(/\/+$/, "");
   const isHomePage = normalizedPath === "" || normalizedPath === "/";
 
-  // Define paths where Sidebar should not be rendered
-  const excludedPaths = ["/sign-in", "/sign-up"];
+  // Define paths where Sidebar and Header should not be rendered
+  const excludedPaths = ["/sign-in", "/sign-up", "/watch-demo", "/not-found"];
   const isExcludedPath =
-    excludedPaths.includes(normalizedPath) ||
-    pathname === "/not-found" ||
+    excludedPaths.some(path => normalizedPath.startsWith(path)) ||
     pathname.startsWith("/admin");
 
   const shouldRenderSidebar = !isHomePage && !isExcludedPath;
@@ -94,7 +93,7 @@ export default function ClientLayout({ children }) {
   return (
     <QueryProvider>
       {/* Conditionally render Header */}
-      {!isHomePage && <Header />}
+      {!isHomePage && !isExcludedPath && <Header />}
 
       {/* Conditionally render Sidebar */}
       {shouldRenderSidebar && <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />}
@@ -103,8 +102,8 @@ export default function ClientLayout({ children }) {
       <main
         className={cn(
           "w-full transition-all duration-300",
-          !isHomePage && "pt-20",  // Top padding for header
-          getContentPadding()       // Left padding for sidebar
+          !isHomePage && !isExcludedPath && "pt-20",  // Top padding only if header is rendered
+          getContentPadding()                         // Left padding for sidebar
         )}
       >
         <div className="flex items-start justify-center min-h-screen w-full">

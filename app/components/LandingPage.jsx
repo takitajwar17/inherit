@@ -163,6 +163,13 @@ const LandingPage = () => {
                   SDGs
                 </Link>
                 <Link
+                  href="/watch-demo"
+                  className="text-lg text-gray-600 hover:text-gray-900"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Watch Demo
+                </Link>
+                <Link
                   href={isSignedIn ? "/dashboard" : "/sign-in"}
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -334,6 +341,11 @@ const LandingPage = () => {
                   <li>
                     <Link href="/features" className="hover:text-white text-lg">
                       Features
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/watch-demo" className="hover:text-white text-lg">
+                      Watch Demo
                     </Link>
                   </li>
                   <li>
