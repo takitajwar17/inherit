@@ -21,6 +21,7 @@ import {
   generateRequestId,
   parseJsonBody,
 } from "@/lib/errors/apiResponse";
+import { ValidationError } from "@/lib/errors";
 
 /**
  * POST /api/companion - Send message to AI companion
@@ -36,7 +37,7 @@ async function handlePost(request) {
     const { message, conversationId, language = "en", context = {} } = body;
 
     if (!message || typeof message !== "string") {
-      return errorResponse({ message: "Message is required" }, requestId, 400);
+      throw new ValidationError("Message is required");
     }
 
     logger.debug("AI Companion request", {
@@ -71,12 +72,20 @@ async function handlePost(request) {
     const history = conversation?.getRecentMessages(10) || [];
 
     // Process through orchestrator
+    logger.debug("Starting orchestrator processing", { userId, requestId });
     const orchestrator = getInitializedOrchestrator();
+    
     const result = await orchestrator.processMessage(message, {
       history,
       language,
       clerkId: userId,
       ...context,
+    });
+
+    logger.debug("Orchestrator completed", {
+      agent: result.routedTo,
+      confidence: result.routing?.confidence,
+      requestId,
     });
 
     // Save conversation if authenticated
@@ -118,6 +127,7 @@ async function handlePost(request) {
   } catch (error) {
     logger.error("AI Companion error", {
       error: error.message,
+      stack: error.stack,
       requestId,
     });
     return errorResponse(error, requestId);

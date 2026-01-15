@@ -163,44 +163,63 @@ export default function AICompanion() {
 
       const data = await response.json();
 
-      if (data.success) {
-        const assistantMessage = {
-          role: "assistant",
-          content: data.data.response,
-          agent: data.data.agent,
-          timestamp: new Date().toISOString(),
-        };
+      // Handle HTTP errors
+      if (!response.ok) {
+        const errorMsg = data.error?.message || "Request failed";
+        throw new Error(errorMsg);
+      }
 
-        setMessages((prev) => [...prev, assistantMessage]);
-        setConversationId(data.data.conversationId);
+      // Validate response structure
+      if (!data.success) {
+        const errorMsg = data.error?.message || "Unknown error";
+        throw new Error(errorMsg);
+      }
 
-        // Speak response if voice enabled
-        if (voiceEnabled) {
-          speakText(data.data.response);
-        }
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              language === "bn"
-                ? "দুঃখিত, একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।"
-                : "Sorry, something went wrong. Please try again.",
-            error: true,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+      if (!data.data || typeof data.data.response !== "string") {
+        throw new Error("Invalid response format from server");
+      }
+
+      const assistantMessage = {
+        role: "assistant",
+        content: data.data.response,
+        agent: data.data.agent,
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setConversationId(data.data.conversationId);
+
+      // Speak response if voice enabled
+      if (voiceEnabled) {
+        speakText(data.data.response);
       }
     } catch (error) {
+      console.error("Chat error:", error);
+      
+      // Determine error message
+      let errorContent;
+      if (error.message.includes("GOOGLE_API_KEY")) {
+        errorContent =
+          language === "bn"
+            ? "API কনফিগারেশন সমস্যা। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।"
+            : "API configuration error. Please contact the administrator.";
+      } else if (error.message.includes("RATE_LIMIT")) {
+        errorContent =
+          language === "bn"
+            ? "অনেক বেশি অনুরোধ। অনুগ্রহ করে একটু পরে চেষ্টা করুন।"
+            : "Too many requests. Please try again in a moment.";
+      } else {
+        errorContent =
+          language === "bn"
+            ? `ত্রুটি: ${error.message}`
+            : `Error: ${error.message}`;
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            language === "bn"
-              ? "সংযোগ সমস্যা। আবার চেষ্টা করুন।"
-              : "Connection error. Please try again.",
+          content: errorContent,
           error: true,
           timestamp: new Date().toISOString(),
         },

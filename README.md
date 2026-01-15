@@ -146,8 +146,12 @@ WEBHOOK_SECRET=your_webhook_secret
 MONGODB_URI=your_mongodb_uri
 
 # AI Services
+# Google Gemini (REQUIRED for AI Companion chat)
+# Get your key from: https://aistudio.google.com/app/apikey
+GOOGLE_API_KEY=your_google_gemini_api_key
+
+# Groq AI (for roadmap generation)
 GROQ_API_KEY=your_groq_api_key
-PLAGIARISM_CHECK_API_KEY=your_plagiarism_check_api_key
 
 # URLs
 NEXT_PUBLIC_SOCKET_SERVER_URL=http://localhost:3000
@@ -163,7 +167,9 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 NEXT_PUBLIC_YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
-You can find an example in the `.env.example` file. Make sure to replace all placeholder values with your actual API keys and credentials.
+   **⚠️ IMPORTANT:** The `GOOGLE_API_KEY` is **required** for the AI Companion chat to work. Get your free API key from https://aistudio.google.com/app/apikey
+
+You can find a complete example in the `.env.example` file. Make sure to replace all placeholder values with your actual API keys and credentials.
 
 4. **Run the development server**
 
