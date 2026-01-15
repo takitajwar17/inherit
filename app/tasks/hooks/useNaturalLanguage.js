@@ -5,8 +5,10 @@
  * and extracts structured task data
  */
 
+import { useCallback } from 'react';
+
 export function useNaturalLanguage() {
-  const parseTaskInput = (input) => {
+  const parseTaskInput = useCallback((input) => {
     if (!input || typeof input !== 'string') {
       return { title: '', category: 'other', priority: 'medium', dueDate: null };
     }
@@ -144,9 +146,9 @@ export function useNaturalLanguage() {
     }
 
     return result;
-  };
+  }, []);
 
-  const getSuggestions = (input) => {
+  const getSuggestions = useCallback((input) => {
     if (!input) return [];
 
     const suggestions = [];
@@ -181,7 +183,7 @@ export function useNaturalLanguage() {
     }
 
     return suggestions.slice(0, 6);
-  };
+  }, []);
 
   return {
     parseTaskInput,

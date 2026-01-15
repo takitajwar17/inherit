@@ -12,8 +12,6 @@ import { motion } from "framer-motion";
 import {
   Plus,
   Loader2,
-  Menu,
-  X,
   List,
   Calendar as CalendarIcon,
   BarChart3,
@@ -36,7 +34,6 @@ export default function TasksPage() {
   const [currentView, setCurrentView] = useState("today");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // 'list', 'calendar', 'stats'
   const [selectedTask, setSelectedTask] = useState(null);
 
@@ -171,21 +168,9 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white overflow-hidden selection:bg-primary/30 selection:text-white">
-      {/* Background Mesh (Optional) */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
-      {/* Top Bar - Glass Header */}
-      <div className="relative z-10 flex-shrink-0 h-16 border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center px-4 gap-4">
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors lg:hidden"
-        >
-          {sidebarCollapsed ? (
-            <Menu className="w-5 h-5" />
-          ) : (
-            <X className="w-5 h-5" />
-          )}
-        </button>
+    <div className="p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white min-h-screen">
+      {/* Top Bar - Task Controls */}
+      <div className="border-b border-white/5 bg-black/20 backdrop-blur-md rounded-lg flex items-center px-4 py-4 gap-4 mb-6">
 
         {/* View Mode Toggle */}
         <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/5 backdrop-blur-sm">
@@ -235,6 +220,21 @@ export default function TasksPage() {
           </button>
         </div>
 
+        {/* Mobile Current View Selector (replaces TaskSidebar on mobile) */}
+        <div className="xl:hidden">
+          <select
+            value={currentView}
+            onChange={(e) => setCurrentView(e.target.value)}
+            className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="today">Today</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="completed">Completed</option>
+            <option value="overdue">Overdue</option>
+            <option value="all">All Tasks</option>
+          </select>
+        </div>
+
         <div className="flex-1" />
 
         {/* Quick Add Button - Neon Glow */}
@@ -256,49 +256,53 @@ export default function TasksPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <TaskSidebar
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          tasks={tasks}
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+      <div className="flex gap-6">
+        {/* Task Sidebar - Only show on desktop as a secondary sidebar */}
+        <div className="hidden xl:block">
+          <TaskSidebar
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            tasks={tasks}
+            isCollapsed={false}
+            onToggleCollapse={() => {}}
+          />
+        </div>
 
         {/* Main Content Area */}
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          </div>
-        ) : viewMode === "list" ? (
-          <TaskList
-            tasks={tasks}
-            currentView={currentView}
-            onToggleComplete={toggleComplete}
-            onEdit={setEditingTask}
-            onDelete={handleDeleteTask}
-          />
-        ) : viewMode === "board" ? (
-          <TaskBoard
-            tasks={tasks}
-            onToggleComplete={toggleComplete}
-            onEdit={setEditingTask}
-            onDelete={handleDeleteTask}
-            onQuickAdd={() => setShowQuickAdd(true)}
-          />
-        ) : viewMode === "calendar" ? (
-          <CalendarView
-            tasks={tasks}
-            onDateSelect={(date) => {
-              // Filter tasks by selected date
-              console.log("Selected date:", date);
-            }}
-            onTaskClick={(task) => setSelectedTask(task)}
-          />
-        ) : (
-          <ProductivityStats tasks={tasks} />
-        )}
+        <div className="flex-1 min-h-[600px]">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+          ) : viewMode === "list" ? (
+            <TaskList
+              tasks={tasks}
+              currentView={currentView}
+              onToggleComplete={toggleComplete}
+              onEdit={setEditingTask}
+              onDelete={handleDeleteTask}
+            />
+          ) : viewMode === "board" ? (
+            <TaskBoard
+              tasks={tasks}
+              onToggleComplete={toggleComplete}
+              onEdit={setEditingTask}
+              onDelete={handleDeleteTask}
+              onQuickAdd={() => setShowQuickAdd(true)}
+            />
+          ) : viewMode === "calendar" ? (
+            <CalendarView
+              tasks={tasks}
+              onDateSelect={(date) => {
+                // Filter tasks by selected date
+                console.log("Selected date:", date);
+              }}
+              onTaskClick={(task) => setSelectedTask(task)}
+            />
+          ) : (
+            <ProductivityStats tasks={tasks} />
+          )}
+        </div>
       </div>
 
       {/* Quick Add Modal */}
