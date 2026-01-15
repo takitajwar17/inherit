@@ -168,9 +168,9 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white min-h-screen">
+    <div className="h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white overflow-hidden selection:bg-primary/30 selection:text-white">
       {/* Top Bar - Task Controls */}
-      <div className="border-b border-white/5 bg-black/20 backdrop-blur-md rounded-lg flex items-center px-4 py-4 gap-4 mb-6">
+      <div className="relative z-10 flex-shrink-0 h-16 border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center px-4 gap-4">
 
         {/* View Mode Toggle */}
         <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/5 backdrop-blur-sm">
@@ -256,7 +256,7 @@ export default function TasksPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex gap-6">
+      <div className="flex-1 flex overflow-hidden">
         {/* Task Sidebar - Only show on desktop as a secondary sidebar */}
         <div className="hidden xl:block">
           <TaskSidebar
@@ -269,7 +269,7 @@ export default function TasksPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 min-h-[600px]">
+        <div className="flex-1">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-10 h-10 text-primary animate-spin" />
