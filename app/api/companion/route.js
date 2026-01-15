@@ -7,7 +7,7 @@
  * Routes messages through the agent orchestrator.
  */
 
-import { auth } from "@clerk/nextjs";
+import { auth, clerkClient } from "@clerk/nextjs";
 import { connect } from "@/lib/mongodb/mongoose";
 import Conversation from "@/lib/models/conversationModel";
 import { getInitializedOrchestrator } from "@/lib/agents";
@@ -32,6 +32,15 @@ async function handlePost(request) {
   try {
     const { userId } = auth();
 
+    // Require authentication for companion
+    if (!userId) {
+      return errorResponse(
+        { message: "Authentication required. Please log in to use the AI companion." },
+        requestId,
+        401
+      );
+    }
+
     // Parse request body
     const body = await parseJsonBody(request);
     const { message, conversationId, language = "en", context = {} } = body;
@@ -40,8 +49,18 @@ async function handlePost(request) {
       throw new ValidationError("Message is required");
     }
 
+    // Get user details for personalized responses
+    let userName = "there";
+    try {
+      const user = await clerkClient.users.getUser(userId);
+      userName = user.firstName || user.username || "there";
+    } catch (error) {
+      logger.warn("Failed to fetch user details", { userId, error: error.message });
+    }
+
     logger.debug("AI Companion request", {
       userId,
+      userName,
       conversationId,
       language,
       messageLength: message.length,
@@ -72,13 +91,14 @@ async function handlePost(request) {
     const history = conversation?.getRecentMessages(10) || [];
 
     // Process through orchestrator
-    logger.debug("Starting orchestrator processing", { userId, requestId });
+    logger.debug("Starting orchestrator processing", { userId, userName, requestId });
     const orchestrator = getInitializedOrchestrator();
     
     const result = await orchestrator.processMessage(message, {
       history,
       language,
       clerkId: userId,
+      userName,
       ...context,
     });
 

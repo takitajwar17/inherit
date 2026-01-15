@@ -5,9 +5,12 @@
  *
  * Floating chat interface for the multi-agent AI companion.
  * Supports text and voice input in Bengali and English.
+ * Only available for authenticated users.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle,
@@ -33,7 +36,12 @@ const agentIcons = {
   general: "💬",
 };
 
+// Public routes where companion should be hidden
+const PUBLIC_ROUTES = ["/", "/sign-in", "/sign-up"];
+
 export default function AICompanion() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -48,6 +56,19 @@ export default function AICompanion() {
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
+
+  // Don't render companion on public routes or when not authenticated
+  if (!isLoaded) {
+    return null; // Loading auth state
+  }
+
+  if (!isSignedIn) {
+    return null; // Not authenticated
+  }
+
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    return null; // On public route
+  }
 
   // Initialize speech recognition
   useEffect(() => {
@@ -195,6 +216,24 @@ export default function AICompanion() {
       }
     } catch (error) {
       console.error("Chat error:", error);
+      
+      // Check if authentication error
+      if (error.message && error.message.includes("Authentication required")) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content:
+              language === "bn"
+                ? "দুঃখিত, AI সহকারী ব্যবহার করতে আপনাকে লগইন করতে হবে। অনুগ্রহ করে লগইন করুন।"
+                : "Sorry, you need to be logged in to use the AI companion. Please sign in to continue.",
+            timestamp: new Date().toISOString(),
+            error: true,
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
       
       // Determine error message
       let errorContent;
