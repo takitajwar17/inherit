@@ -9,6 +9,9 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -94,122 +97,135 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-white">
-            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </h2>
-          <button
-            onClick={goToToday}
-            className="px-3 py-1 text-sm bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors text-white"
-          >
-            Today
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* View Toggle */}
-          <div className="flex bg-gray-800 rounded-lg p-1">
-            <button
-              onClick={() => setView("month")}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
-                view === "month"
-                  ? "bg-violet-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h2>
+            <Button
+              onClick={goToToday}
+              variant="outline"
+              size="sm"
             >
-              Month
-            </button>
-            <button
-              onClick={() => setView("week")}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
-                view === "week"
-                  ? "bg-violet-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              Week
-            </button>
+              Today
+            </Button>
           </div>
 
-          {/* Navigation */}
-          <button
-            onClick={goToPrevious}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-400" />
-          </button>
-          <button
-            onClick={goToNext}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setView("month")}
+                className={cn(
+                  "px-3 py-1 text-sm rounded transition-colors",
+                  view === "month"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                Month
+              </button>
+              <button
+                onClick={() => setView("week")}
+                className={cn(
+                  "px-3 py-1 text-sm rounded transition-colors",
+                  view === "week"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                Week
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <Button
+              onClick={goToPrevious}
+              variant="ghost"
+              size="sm"
+              className="p-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={goToNext}
+              variant="ghost"
+              size="sm"
+              className="p-2"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Calendar Grid */}
-      <div className="flex-1 overflow-auto p-4">
-        {/* Day Headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {dayNames.map(day => (
-            <div
-              key={day}
-              className="text-center text-xs font-semibold text-gray-500 uppercase py-2"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
+      <Card className="flex-1">
+        <div className="p-4">
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-2 mb-4">
+            {dayNames.map(day => (
+              <div
+                key={day}
+                className="text-center text-xs font-semibold text-gray-600 uppercase py-2 border-b border-gray-200"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
 
-        {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-2">
-          {calendarData.days.map((date, index) => {
-            const dayTasks = getTasksForDate(date);
-            const isTodayDate = isToday(date);
-            const isCurrentMonthDate = isCurrentMonth(date);
-            const completedCount = dayTasks.filter(t => t.status === "completed").length;
-            const pendingCount = dayTasks.filter(t => t.status !== "completed").length;
-            const hasOverdue = dayTasks.some(t => {
-              return t.status !== "completed" && new Date(t.dueDate) < new Date();
-            });
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-3">
+            {calendarData.days.map((date, index) => {
+              const dayTasks = getTasksForDate(date);
+              const isTodayDate = isToday(date);
+              const isCurrentMonthDate = isCurrentMonth(date);
+              const completedCount = dayTasks.filter(t => t.status === "completed").length;
+              const pendingCount = dayTasks.filter(t => t.status !== "completed").length;
+              const hasOverdue = dayTasks.some(t => {
+                return t.status !== "completed" && new Date(t.dueDate) < new Date();
+              });
 
-            return (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => onDateSelect && onDateSelect(date)}
-                className={`min-h-[100px] p-2 rounded-lg border cursor-pointer transition-all ${
-                  isTodayDate
-                    ? "border-violet-500 bg-violet-500/10"
-                    : isCurrentMonthDate
-                    ? "border-gray-700 hover:border-gray-600 bg-gray-800"
-                    : "border-gray-800 bg-gray-900 opacity-50 hover:opacity-75"
-                }`}
+              return (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => onDateSelect && onDateSelect(date)}
+                  className={cn(
+                    "min-h-[100px] p-3 rounded-lg border cursor-pointer transition-all",
+                    isTodayDate
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : isCurrentMonthDate
+                      ? "border-gray-200 hover:border-gray-300 bg-white hover:shadow-md"
+                      : "border-gray-100 bg-gray-50/50 opacity-50 hover:opacity-75"
+                  )}
               >
                 {/* Date Number */}
                 <div className="flex items-center justify-between mb-2">
                   <span
-                    className={`text-sm font-medium ${
+                    className={cn(
+                      "text-sm font-medium",
                       isTodayDate
-                        ? "text-violet-400"
+                        ? "text-primary font-bold"
                         : isCurrentMonthDate
-                        ? "text-white"
-                        : "text-gray-600"
-                    }`}
+                        ? "text-gray-900"
+                        : "text-gray-400"
+                    )}
                   >
                     {date.getDate()}
                   </span>
                   {dayTasks.length > 0 && (
                     <div className="flex items-center gap-1">
                       {pendingCount > 0 && (
-                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                        <span className={cn(
+                          "text-xs px-1.5 py-0.5 rounded-full font-medium",
                           hasOverdue
-                            ? "bg-red-500/20 text-red-400"
-                            : "bg-blue-500/20 text-blue-400"
-                        }`}>
+                            ? "bg-red-50 text-red-600 border border-red-200"
+                            : "bg-blue-50 text-blue-600 border border-blue-200"
+                        )}>
                           {pendingCount}
                         </span>
                       )}
@@ -226,19 +242,20 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
                         e.stopPropagation();
                         onTaskClick && onTaskClick(task);
                       }}
-                      className={`text-xs p-1 rounded truncate ${
+                      className={cn(
+                        "text-xs p-2 rounded cursor-pointer hover:shadow-sm transition-shadow",
                         task.status === "completed"
-                          ? "bg-gray-700 text-gray-500 line-through"
+                          ? "bg-gray-100 text-gray-500 line-through"
                           : task.priority === "high"
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-violet-500/20 text-violet-400"
-                      }`}
+                          ? "bg-red-50 text-red-700 border border-red-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-200"
+                      )}
                     >
                       {task.title}
                     </div>
                   ))}
                   {dayTasks.length > 3 && (
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-gray-600 text-center py-1">
                       +{dayTasks.length - 3} more
                     </div>
                   )}
@@ -246,24 +263,27 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
               </motion.div>
             );
           })}
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 p-4 border-t border-gray-800 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-violet-500/20"></div>
-          <span className="text-gray-400">Today</span>
+      <Card className="p-4">
+        <div className="flex items-center gap-6 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30"></div>
+            <span className="text-gray-600">Today</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-red-50 border border-red-200"></div>
+            <span className="text-gray-600">High Priority / Overdue</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-gray-100 border border-gray-200"></div>
+            <span className="text-gray-600">Completed</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-red-500/20"></div>
-          <span className="text-gray-400">High Priority / Overdue</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-gray-700"></div>
-          <span className="text-gray-400">Completed</span>
-        </div>
-      </div>
+      </Card>
     </div>
   );
 }

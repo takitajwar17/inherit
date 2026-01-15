@@ -110,7 +110,7 @@ export default function TaskDetail({ task, onClose, onUpdate, onDelete }) {
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                 task.status === "completed"
                   ? "bg-green-500 border-green-500"
-                  : "border-gray-400 hover:border-violet-500"
+                  : "border-gray-300 hover:border-primary"
               }`}
             >
               {task.status === "completed" && <Check className="w-4 h-4 text-white" />}

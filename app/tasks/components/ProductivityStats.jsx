@@ -17,6 +17,8 @@ import {
   Award,
   BarChart3,
 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { SectionHeader } from "@/components/shared";
 
 export default function ProductivityStats({ tasks }) {
   const stats = useMemo(() => {
@@ -132,92 +134,88 @@ export default function ProductivityStats({ tasks }) {
   const maxDayCount = Math.max(...stats.last7Days.map(d => d.count), 1);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-1">Productivity Stats</h2>
-        <p className="text-sm text-gray-400">Track your progress and streaks</p>
-      </div>
+      <SectionHeader
+        title="Productivity Stats"
+        subtitle="Track your progress and streaks"
+      />
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Completion Rate */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-violet-600 to-purple-600 rounded-xl p-4"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <Target className="w-8 h-8 text-white/80" />
-            <span className="text-3xl font-bold text-white">{stats.completionRate}%</span>
-          </div>
-          <div className="text-white/90 font-medium">Completion Rate</div>
-          <div className="text-white/60 text-sm mt-1">
-            {stats.completedTasks} of {stats.totalTasks} tasks
-          </div>
+        <motion.div whileHover={{ scale: 1.02 }}>
+          <Card className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
+            <div className="flex items-center justify-between mb-3">
+              <Target className="w-8 h-8 text-violet-600" />
+              <span className="text-3xl font-bold text-gray-900">{stats.completionRate}%</span>
+            </div>
+            <div className="text-gray-900 font-medium">Completion Rate</div>
+            <div className="text-gray-600 text-sm mt-1">
+              {stats.completedTasks} of {stats.totalTasks} tasks
+            </div>
+          </Card>
         </motion.div>
 
         {/* Current Streak */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-4"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <Flame className="w-8 h-8 text-white/80" />
-            <span className="text-3xl font-bold text-white">{stats.currentStreak}</span>
-          </div>
-          <div className="text-white/90 font-medium">Day Streak</div>
-          <div className="text-white/60 text-sm mt-1">
-            {stats.currentStreak > 0 ? "Keep it up! 🔥" : "Start your streak today"}
-          </div>
+        <motion.div whileHover={{ scale: 1.02 }}>
+          <Card className="p-4 bg-gradient-to-br from-orange-50 to-red-50 border-orange-200">
+            <div className="flex items-center justify-between mb-3">
+              <Flame className="w-8 h-8 text-orange-600" />
+              <span className="text-3xl font-bold text-gray-900">{stats.currentStreak}</span>
+            </div>
+            <div className="text-gray-900 font-medium">Day Streak</div>
+            <div className="text-gray-600 text-sm mt-1">
+              {stats.currentStreak > 0 ? "Keep it up! 🔥" : "Start your streak today"}
+            </div>
+          </Card>
         </motion.div>
 
         {/* Today's Progress */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <Calendar className="w-8 h-8 text-white/80" />
-            <span className="text-3xl font-bold text-white">{stats.todayCompleted}</span>
-          </div>
-          <div className="text-white/90 font-medium">Completed Today</div>
-          <div className="text-white/60 text-sm mt-1">
-            {stats.todayPending > 0 ? `${stats.todayPending} remaining` : "All done! ✨"}
-          </div>
+        <motion.div whileHover={{ scale: 1.02 }}>
+          <Card className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+            <div className="flex items-center justify-between mb-3">
+              <Calendar className="w-8 h-8 text-green-600" />
+              <span className="text-3xl font-bold text-gray-900">{stats.todayCompleted}</span>
+            </div>
+            <div className="text-gray-900 font-medium">Completed Today</div>
+            <div className="text-gray-600 text-sm mt-1">
+              {stats.todayPending > 0 ? `${stats.todayPending} remaining` : "All done! ✨"}
+            </div>
+          </Card>
         </motion.div>
 
         {/* This Week */}
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-4"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <TrendingUp className="w-8 h-8 text-white/80" />
-            <span className="text-3xl font-bold text-white">{stats.thisWeekCount}</span>
-          </div>
-          <div className="text-white/90 font-medium">This Week</div>
-          <div className="text-white/60 text-sm mt-1 flex items-center gap-1">
-            {stats.weeklyChange > 0 ? (
-              <>
-                <TrendingUp className="w-3 h-3" />
-                +{stats.weeklyChange}% from last week
-              </>
-            ) : stats.weeklyChange < 0 ? (
-              <>
-                {stats.weeklyChange}% from last week
-              </>
-            ) : (
-              "Same as last week"
-            )}
-          </div>
+        <motion.div whileHover={{ scale: 1.02 }}>
+          <Card className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+            <div className="flex items-center justify-between mb-3">
+              <TrendingUp className="w-8 h-8 text-blue-600" />
+              <span className="text-3xl font-bold text-gray-900">{stats.thisWeekCount}</span>
+            </div>
+            <div className="text-gray-900 font-medium">This Week</div>
+            <div className="text-gray-600 text-sm mt-1 flex items-center gap-1">
+              {stats.weeklyChange > 0 ? (
+                <>
+                  <TrendingUp className="w-3 h-3" />
+                  +{stats.weeklyChange}% from last week
+                </>
+              ) : stats.weeklyChange < 0 ? (
+                <>
+                  {stats.weeklyChange}% from last week
+                </>
+              ) : (
+                "Same as last week"
+              )}
+            </div>
+          </Card>
         </motion.div>
       </div>
 
       {/* 7-Day Trend Chart */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <Card className="p-6">
         <div className="flex items-center gap-2 mb-6">
-          <BarChart3 className="w-5 h-5 text-violet-400" />
-          <h3 className="text-lg font-semibold text-white">7-Day Completion Trend</h3>
+          <BarChart3 className="w-5 h-5 text-violet-600" />
+          <h3 className="text-lg font-semibold text-gray-900">7-Day Completion Trend</h3>
         </div>
         
         <div className="flex items-end justify-between gap-2 h-40">
@@ -227,25 +225,25 @@ export default function ProductivityStats({ tasks }) {
                 initial={{ height: 0 }}
                 animate={{ height: `${(day.count / maxDayCount) * 100}%` }}
                 transition={{ delay: index * 0.1 }}
-                className="w-full bg-gradient-to-t from-violet-600 to-purple-500 rounded-t-lg min-h-[4px] relative group cursor-pointer"
+                className="w-full bg-gradient-to-t from-violet-500 to-purple-400 rounded-t-lg min-h-[4px] relative group cursor-pointer"
               >
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                   {day.count} tasks
                 </div>
               </motion.div>
-              <span className="text-xs text-gray-500">{day.date}</span>
+              <span className="text-xs text-gray-600">{day.date}</span>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Category & Priority Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Category Breakdown */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Award className="w-5 h-5 text-violet-400" />
-            <h3 className="text-lg font-semibold text-white">By Category</h3>
+            <Award className="w-5 h-5 text-violet-600" />
+            <h3 className="text-lg font-semibold text-gray-900">By Category</h3>
           </div>
           
           <div className="space-y-3">
@@ -257,10 +255,10 @@ export default function ProductivityStats({ tasks }) {
               return (
                 <div key={category}>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-gray-400 capitalize">{category}</span>
-                    <span className="text-white font-medium">{count} tasks</span>
+                    <span className="text-gray-600 capitalize">{category}</span>
+                    <span className="text-gray-900 font-medium">{count} tasks</span>
                   </div>
-                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${percentage}%` }}
@@ -277,22 +275,22 @@ export default function ProductivityStats({ tasks }) {
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Priority Breakdown */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <CheckCircle2 className="w-5 h-5 text-violet-400" />
-            <h3 className="text-lg font-semibold text-white">By Priority</h3>
+            <CheckCircle2 className="w-5 h-5 text-violet-600" />
+            <h3 className="text-lg font-semibold text-gray-900">By Priority</h3>
           </div>
           
           <div className="space-y-3">
             <div>
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-red-400">High Priority</span>
-                <span className="text-white font-medium">{stats.priorityBreakdown.high} tasks</span>
+                <span className="text-red-600">High Priority</span>
+                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.high} tasks</span>
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
@@ -307,10 +305,10 @@ export default function ProductivityStats({ tasks }) {
 
             <div>
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-yellow-400">Medium Priority</span>
-                <span className="text-white font-medium">{stats.priorityBreakdown.medium} tasks</span>
+                <span className="text-yellow-600">Medium Priority</span>
+                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.medium} tasks</span>
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
@@ -325,10 +323,10 @@ export default function ProductivityStats({ tasks }) {
 
             <div>
               <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-blue-400">Low Priority</span>
-                <span className="text-white font-medium">{stats.priorityBreakdown.low} tasks</span>
+                <span className="text-blue-600">Low Priority</span>
+                <span className="text-gray-900 font-medium">{stats.priorityBreakdown.low} tasks</span>
               </div>
-              <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{
@@ -341,7 +339,7 @@ export default function ProductivityStats({ tasks }) {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Motivational Message */}
@@ -349,23 +347,24 @@ export default function ProductivityStats({ tasks }) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/30 rounded-xl p-6 text-center"
         >
-          <div className="text-2xl mb-2">
-            {stats.currentStreak >= 7 ? "🔥" : stats.completionRate >= 80 ? "🌟" : "💪"}
-          </div>
-          <div className="text-lg font-semibold text-white mb-1">
-            {stats.currentStreak >= 7
-              ? "Amazing streak! Keep the momentum going!"
-              : stats.completionRate >= 80
-              ? "Excellent completion rate! You're crushing it!"
-              : stats.completedTasks >= 5
-              ? "Great progress! Keep up the good work!"
-              : "You've got this! Stay focused!"}
-          </div>
-          <div className="text-sm text-gray-400">
-            You've completed {stats.completedTasks} task{stats.completedTasks !== 1 ? 's' : ''} so far
-          </div>
+          <Card className="p-6 text-center bg-gradient-to-r from-violet-50 to-purple-50 border-violet-200">
+            <div className="text-2xl mb-2">
+              {stats.currentStreak >= 7 ? "🔥" : stats.completionRate >= 80 ? "🌟" : "💪"}
+            </div>
+            <div className="text-lg font-semibold text-gray-900 mb-1">
+              {stats.currentStreak >= 7
+                ? "Amazing streak! Keep the momentum going!"
+                : stats.completionRate >= 80
+                ? "Excellent completion rate! You're crushing it!"
+                : stats.completedTasks >= 5
+                ? "Great progress! Keep up the good work!"
+                : "You've got this! Stay focused!"}
+            </div>
+            <div className="text-sm text-gray-600">
+              You've completed {stats.completedTasks} task{stats.completedTasks !== 1 ? 's' : ''} so far
+            </div>
+          </Card>
         </motion.div>
       )}
     </div>

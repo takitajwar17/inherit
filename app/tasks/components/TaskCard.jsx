@@ -19,24 +19,28 @@ import {
   Clock,
 } from "lucide-react";
 import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const priorityConfig = {
-  high: { color: "text-red-400", borderColor: "border-red-400", label: "P1" },
+  high: { color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200", label: "P1" },
   medium: {
-    color: "text-yellow-400",
-    borderColor: "border-yellow-400",
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50",
+    borderColor: "border-yellow-200",
     label: "P2",
   },
-  low: { color: "text-blue-400", borderColor: "border-blue-400", label: "P3" },
+  low: { color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200", label: "P3" },
 };
 
 const categoryConfig = {
-  study: { color: "text-blue-400", label: "Study" },
-  assignment: { color: "text-yellow-400", label: "Assignment" },
-  project: { color: "text-purple-400", label: "Project" },
-  revision: { color: "text-green-400", label: "Revision" },
-  exam: { color: "text-red-400", label: "Exam" },
-  other: { color: "text-gray-400", label: "Other" },
+  study: { color: "text-blue-600", bgColor: "bg-blue-50", label: "Study" },
+  assignment: { color: "text-yellow-600", bgColor: "bg-yellow-50", label: "Assignment" },
+  project: { color: "text-purple-600", bgColor: "bg-purple-50", label: "Project" },
+  revision: { color: "text-green-600", bgColor: "bg-green-50", label: "Revision" },
+  exam: { color: "text-red-600", bgColor: "bg-red-50", label: "Exam" },
+  other: { color: "text-gray-600", bgColor: "bg-gray-50", label: "Other" },
 };
 
 export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
@@ -65,7 +69,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
           month: "short",
           day: "numeric",
         }),
-        color: "text-red-400",
+        color: "text-red-600",
       };
     } else {
       return {
@@ -73,7 +77,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
           month: "short",
           day: "numeric",
         }),
-        color: "text-gray-400",
+        color: "text-gray-600",
       };
     }
   };
@@ -91,29 +95,31 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
         setIsHovered(false);
         setShowActions(false);
       }}
-      className={`group relative rounded-2xl border transition-all duration-300 backdrop-blur-md ${
-        isCompleted
-          ? "bg-black/20 border-white/5 opacity-50"
-          : isOverdue
-          ? "bg-red-900/10 border-red-500/30 hover:bg-red-900/20"
-          : "bg-white/5 border-white/10 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
-      }`}
     >
+      <Card
+        className={cn(
+          "transition-all duration-200 hover:shadow-md",
+          isCompleted && "opacity-60",
+          isOverdue && "border-red-200 bg-red-50/30",
+          isHovered && "shadow-lg"
+        )}
+      >
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Checkbox */}
           <button
             onClick={() => onToggleComplete(task)}
-            className={`flex-shrink-0 mt-0.5 w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center transition-all duration-300 ${
+            className={cn(
+              "flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200",
               isCompleted
-                ? "bg-secondary border-secondary shadow-[0_0_15px_rgba(6,182,212,0.5)]"
+                ? "bg-primary border-primary text-white"
                 : task.priority === "high"
-                ? "border-red-400 hover:border-red-500 hover:bg-red-500/10"
-                : "border-gray-500 hover:border-secondary hover:bg-secondary/10"
-            }`}
+                ? "border-red-400 hover:border-red-500 hover:bg-red-50"
+                : "border-gray-300 hover:border-primary hover:bg-primary/10"
+            )}
           >
             {isCompleted && (
-              <CheckCircle2 className="w-4 h-4 text-black font-bold" />
+              <CheckCircle2 className="w-3 h-3" />
             )}
           </button>
 
@@ -121,11 +127,12 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h3
-                className={`text-sm font-medium transition-colors ${
+                className={cn(
+                  "text-sm font-medium transition-colors",
                   isCompleted
-                    ? "line-through text-gray-500 dark:text-gray-600"
-                    : "text-gray-900 dark:text-gray-100"
-                }`}
+                    ? "line-through text-gray-500"
+                    : "text-gray-900"
+                )}
               >
                 {task.title}
               </h3>
@@ -142,7 +149,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
 
             {/* Description */}
             {task.description && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                 {task.description}
               </p>
             )}
@@ -188,20 +195,24 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
               isHovered ? "opacity-100" : "opacity-0"
             }`}
           >
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onEdit(task)}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="h-8 w-8 p-0"
               title="Edit task"
             >
-              <Edit3 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            </button>
-            <button
+              <Edit3 className="w-4 h-4 text-gray-500" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowActions(!showActions)}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              className="h-8 w-8 p-0"
               title="More actions"
             >
-              <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            </button>
+              <MoreHorizontal className="w-4 h-4 text-gray-500" />
+            </Button>
           </div>
         </div>
       </div>
@@ -211,14 +222,14 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-10"
+          className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10"
         >
           <button
             onClick={() => {
               onEdit(task);
               setShowActions(false);
             }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700"
           >
             <Edit3 className="w-4 h-4" />
             Edit task
@@ -228,7 +239,7 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
               onDelete(task._id);
               setShowActions(false);
             }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600"
           >
             <Trash2 className="w-4 h-4" />
             Delete task
@@ -236,12 +247,13 @@ export default function TaskCard({ task, onToggleComplete, onEdit, onDelete }) {
         </motion.div>
       )}
 
-      {/* Overdue Badge */}
-      {isOverdue && (
-        <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-500 text-white text-xs font-semibold rounded-full">
-          Overdue
-        </div>
-      )}
+        {/* Overdue Badge */}
+        {isOverdue && (
+          <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-500 text-white text-xs font-semibold rounded-full">
+            Overdue
+          </div>
+        )}
+      </Card>
     </motion.div>
   );
 }

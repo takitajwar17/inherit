@@ -9,6 +9,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PageHeader, PageContainer } from "@/components/shared";
 import {
   Plus,
   Loader2,
@@ -168,64 +171,78 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#050510] to-black text-white overflow-hidden selection:bg-primary/30 selection:text-white">
-      {/* Top Bar - Task Controls */}
-      <div className="relative z-10 flex-shrink-0 h-16 border-b border-white/5 bg-black/20 backdrop-blur-md flex items-center px-4 gap-4">
+    <PageContainer>
+      <PageHeader
+        title="Tasks"
+        subtitle="Manage your daily tasks and boost your productivity"
+        action={
+          <Button
+            onClick={() => setShowQuickAdd(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Task
+          </Button>
+        }
+      />
+      
+      {/* Task Controls */}
+      <Card className="p-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/5 backdrop-blur-sm">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`p-2 rounded-lg transition-all duration-300 ${
-              viewMode === "list"
-                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
-            }`}
-            title="List view"
-          >
-            <List className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setViewMode("board")}
-            className={`p-2 rounded-lg transition-all duration-300 ${
-              viewMode === "board"
-                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
-            }`}
-            title="Kanban Board"
-          >
-            <LayoutGrid className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "calendar"
-                ? "bg-violet-600 text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
-            title="Calendar view"
-          >
-            <CalendarIcon className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setViewMode("stats")}
-            className={`p-2 rounded transition-colors ${
-              viewMode === "stats"
-                ? "bg-violet-600 text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
-            title="Statistics"
-          >
-            <BarChart3 className="w-5 h-5" />
-          </button>
-        </div>
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "list"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("board")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "board"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+              title="Kanban Board"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "calendar"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+              title="Calendar view"
+            >
+              <CalendarIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("stats")}
+              className={`p-2 rounded-md transition-all duration-200 ${
+                viewMode === "stats"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
+              title="Statistics"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+          </div>
 
-        {/* Mobile Current View Selector (replaces TaskSidebar on mobile) */}
-        <div className="xl:hidden">
+          {/* Task Filter Selector */}
           <select
             value={currentView}
             onChange={(e) => setCurrentView(e.target.value)}
-            className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <option value="today">Today</option>
             <option value="upcoming">Upcoming</option>
@@ -233,77 +250,48 @@ export default function TasksPage() {
             <option value="overdue">Overdue</option>
             <option value="all">All Tasks</option>
           </select>
+
+          {/* Keyboard Hint */}
+          <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
+            <kbd className="px-2 py-1 bg-gray-100 text-gray-600 rounded border border-gray-300">⌘K</kbd>
+            <span>Quick add</span>
+          </div>
         </div>
+      </Card>
 
-        <div className="flex-1" />
-
-        {/* Quick Add Button - Neon Glow */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowQuickAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-secondary hover:opacity-90 rounded-xl transition-all font-medium shadow-lg shadow-primary/25"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="hidden sm:inline">Add Task</span>
-        </motion.button>
-
-        {/* Keyboard Hint */}
-        <div className="hidden md:flex items-center gap-2 text-xs text-gray-500">
-          <kbd className="px-2 py-1 bg-gray-800 rounded">⌘K</kbd>
-          <span>Quick add</span>
+      {/* Main Content Area */}
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-96">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Task Sidebar - Only show on desktop as a secondary sidebar */}
-        <div className="hidden xl:block">
-          <TaskSidebar
-            currentView={currentView}
-            onViewChange={setCurrentView}
-            tasks={tasks}
-            isCollapsed={false}
-            onToggleCollapse={() => {}}
-          />
-        </div>
-
-        {/* Main Content Area */}
-        <div className="flex-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            </div>
-          ) : viewMode === "list" ? (
-            <TaskList
-              tasks={tasks}
-              currentView={currentView}
-              onToggleComplete={toggleComplete}
-              onEdit={setEditingTask}
-              onDelete={handleDeleteTask}
-            />
-          ) : viewMode === "board" ? (
-            <TaskBoard
-              tasks={tasks}
-              onToggleComplete={toggleComplete}
-              onEdit={setEditingTask}
-              onDelete={handleDeleteTask}
-              onQuickAdd={() => setShowQuickAdd(true)}
-            />
-          ) : viewMode === "calendar" ? (
-            <CalendarView
-              tasks={tasks}
-              onDateSelect={(date) => {
-                // Filter tasks by selected date
-                console.log("Selected date:", date);
-              }}
-              onTaskClick={(task) => setSelectedTask(task)}
-            />
-          ) : (
-            <ProductivityStats tasks={tasks} />
-          )}
-        </div>
-      </div>
+      ) : viewMode === "list" ? (
+        <TaskList
+          tasks={tasks}
+          currentView={currentView}
+          onToggleComplete={toggleComplete}
+          onEdit={setEditingTask}
+          onDelete={handleDeleteTask}
+        />
+      ) : viewMode === "board" ? (
+        <TaskBoard
+          tasks={tasks}
+          onToggleComplete={toggleComplete}
+          onEdit={setEditingTask}
+          onDelete={handleDeleteTask}
+          onQuickAdd={() => setShowQuickAdd(true)}
+        />
+      ) : viewMode === "calendar" ? (
+        <CalendarView
+          tasks={tasks}
+          onDateSelect={(date) => {
+            // Filter tasks by selected date
+            console.log("Selected date:", date);
+          }}
+          onTaskClick={(task) => setSelectedTask(task)}
+        />
+      ) : (
+        <ProductivityStats tasks={tasks} />
+      )}
 
       {/* Quick Add Modal */}
       <QuickAdd
@@ -448,6 +436,6 @@ export default function TasksPage() {
           </motion.div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

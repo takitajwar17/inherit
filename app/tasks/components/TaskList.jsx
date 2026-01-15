@@ -9,6 +9,8 @@
 import { AnimatePresence } from "framer-motion";
 import TaskCard from "./TaskCard";
 import { Calendar, CheckCircle2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { SectionHeader } from "@/components/shared";
 
 export default function TaskList({
   tasks,
@@ -140,82 +142,82 @@ export default function TaskList({
   const groupedTasks = isGrouped ? groupTasksByDate(filteredTasks) : null;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="space-y-6">
       {/* View Header */}
-      <div className="sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-4 z-10">
-        <h1 className="text-2xl font-bold text-white">{getViewTitle()}</h1>
-        <p className="text-sm text-gray-400 mt-1">{getViewDescription()}</p>
-        {filteredTasks.length > 0 && (
-          <p className="text-xs text-gray-500 mt-2">
-            {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
-          </p>
-        )}
-      </div>
+      <SectionHeader
+        title={getViewTitle()}
+        subtitle={getViewDescription()}
+      />
+      
+      {filteredTasks.length > 0 && (
+        <div className="text-sm text-gray-600">
+          {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
+        </div>
+      )}
 
       {/* Task List */}
-      <div className="p-6">
-        {filteredTasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 mb-4 rounded-full bg-gray-800 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-gray-600" />
+      {filteredTasks.length === 0 ? (
+        <Card className="p-12">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-400 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No tasks here
             </h3>
-            <p className="text-sm text-gray-500 max-w-sm">
+            <p className="text-sm text-gray-600 max-w-sm">
               {currentView === "today" 
                 ? "You're all caught up for today! 🎉"
                 : "Create a task to get started"}
             </p>
           </div>
-        ) : isGrouped && groupedTasks ? (
-          // Grouped by date (Upcoming view)
-          <div className="space-y-6">
-            {Object.entries(groupedTasks).map(([date, dateTasks]) => (
-              <div key={date}>
-                <div className="flex items-center gap-2 mb-3 sticky top-20 bg-gray-900 py-2">
-                  <Calendar className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-400">
-                    {date}
-                  </h3>
-                  <span className="text-xs text-gray-600">
-                    ({dateTasks.length})
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <AnimatePresence>
-                    {dateTasks.map(task => (
-                      <TaskCard
-                        key={task._id}
-                        task={task}
-                        onToggleComplete={onToggleComplete}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
+        </Card>
+      ) : isGrouped && groupedTasks ? (
+        // Grouped by date (Upcoming view)
+        <div className="space-y-8">
+          {Object.entries(groupedTasks).map(([date, dateTasks]) => (
+            <div key={date}>
+              <div className="flex items-center gap-3 mb-4 border-b border-gray-200 pb-2">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  {date}
+                </h3>
+                <span className="text-xs text-gray-500">
+                  ({dateTasks.length})
+                </span>
               </div>
+              <div className="space-y-2">
+                <AnimatePresence>
+                  {dateTasks.map(task => (
+                    <TaskCard
+                      key={task._id}
+                      task={task}
+                      onToggleComplete={onToggleComplete}
+                      onEdit={onEdit}
+                      onDelete={onDelete}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // Simple list
+        <div className="space-y-3">
+          <AnimatePresence>
+            {filteredTasks.map(task => (
+              <TaskCard
+                key={task._id}
+                task={task}
+                onToggleComplete={onToggleComplete}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
             ))}
-          </div>
-        ) : (
-          // Simple list
-          <div className="space-y-2">
-            <AnimatePresence>
-              {filteredTasks.map(task => (
-                <TaskCard
-                  key={task._id}
-                  task={task}
-                  onToggleComplete={onToggleComplete}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
-
