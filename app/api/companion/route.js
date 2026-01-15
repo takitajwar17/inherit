@@ -131,9 +131,6 @@ async function handlePost(request) {
       
       ...context,
     };
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/2196eccc-e8fe-4ec3-87bd-0060f37d358f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/companion/route.js:agentContext',message:'agentContext prepared',data:{hasClerkId:!!agentContext.clerkId,contextKeys:Object.keys(agentContext),hasUserContext:!!agentContext.userContext,hasUserName:!!agentContext.userName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     logger.debug("Starting orchestrator processing", { 
       userId, 
@@ -147,9 +144,6 @@ async function handlePost(request) {
     });
     
     const orchestrator = getInitializedOrchestrator();
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/2196eccc-e8fe-4ec3-87bd-0060f37d358f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/api/companion/route.js:beforeProcessMessage',message:'calling orchestrator.processMessage',data:{hasClerkId:!!agentContext.clerkId,contextKeyCount:Object.keys(agentContext).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     const result = await orchestrator.processMessage(message, agentContext);
 
     logger.debug("Orchestrator completed", {
@@ -168,11 +162,30 @@ async function handlePost(request) {
         timestamp: new Date(),
       });
 
+      // Ensure response content is NEVER empty/undefined (required by schema)
+      let responseContent = "";
+      if (result && result.response && typeof result.response.content === "string") {
+        responseContent = result.response.content.trim();
+      }
+      
+      // Fallback if still empty
+      if (!responseContent) {
+        responseContent = language === "bn"
+          ? "আপনার অনুরোধ প্রক্রিয়া করা হয়েছে।"
+          : "Your request has been processed.";
+        logger.warn("Empty response content, using fallback", {
+          hasResult: !!result,
+          hasResponse: !!result?.response,
+          contentType: typeof result?.response?.content,
+          agent: result?.routedTo,
+        });
+      }
+
       // Add assistant response
       conversation.messages.push({
         role: "assistant",
-        content: result.response?.content || "",
-        agent: result.routedTo,
+        content: responseContent,
+        agent: result.routedTo || "general",
         language,
         timestamp: new Date(),
       });
