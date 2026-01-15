@@ -72,8 +72,15 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
+    
+    const isTodayDate = isToday(date);
 
-    return tasks.filter(task => {
+    const matchingTasks = tasks.filter(task => {
+      // Include unscheduled tasks for Today
+      if (isTodayDate && !task.dueDate && task.status !== 'completed') {
+        return true;
+      }
+      
       if (!task?.dueDate) return false;
       try {
         // Task due date is UTC 00:00:00 (usually)
@@ -89,6 +96,8 @@ export default function CalendarView({ tasks, onDateSelect, onTaskClick }) {
         return false;
       }
     });
+    
+    return matchingTasks;
   };
 
   // Navigation

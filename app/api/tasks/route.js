@@ -48,8 +48,8 @@ export async function GET(request) {
     if (priority) filter.priority = priority;
 
     const tasks = await Task.find(filter)
-      .sort({ order: 1, dueDate: 1, priority: -1, createdAt: -1 })
-      .limit(Math.min(limit, 100));
+      .sort({ priorityRank: 1, order: 1, dueDate: 1, createdAt: -1 })
+      .limit(Math.min(limit, 1000));
 
     return successResponse({ tasks });
   } catch (error) {

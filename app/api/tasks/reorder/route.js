@@ -46,8 +46,7 @@ export async function PUT(request) {
     }));
 
     if (operations.length > 0) {
-      const result = await Task.bulkWrite(operations);
-      logger.info("Bulk write result", { result, userId, requestId });
+      await Task.bulkWrite(operations);
     }
 
     logger.info("Tasks reordered", { userId, count: tasks.length, requestId });
