@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createRoadmap, getUserRoadmaps } from "@/lib/actions/roadmap";
+import { createRoadmap, getUserRoadmaps, deleteRoadmap } from "@/lib/actions/roadmap";
 import { getRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import { FaYoutube } from "react-icons/fa";
-import { FiExternalLink, FiChevronRight } from "react-icons/fi";
+import { FiExternalLink, FiChevronRight, FiTrash2 } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 // Lightning-fast fetch function
 const fetchUserRoadmaps = async (userId) => {
@@ -49,6 +50,8 @@ export default function RoadmapsPage() {
     prompt: "",
   });
   const [error, setError] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [roadmapToDelete, setRoadmapToDelete] = useState(null);
 
   // Lightning-fast query with aggressive caching
   const { data: roadmaps, isLoading: isLoadingRoadmaps } = useQuery({
@@ -72,6 +75,7 @@ export default function RoadmapsPage() {
       setOpen(false);
       setFormData({ title: "", prompt: "" });
       setError("");
+      toast.success("Roadmap created successfully! 🚀");
     },
     onError: (error) => {
       console.error("Error creating roadmap:", error);
@@ -86,6 +90,24 @@ export default function RoadmapsPage() {
     }
   });
 
+  // Delete roadmap mutation
+  const deleteRoadmapMutation = useMutation({
+    mutationFn: ({ roadmapId, userId }) => deleteRoadmap(roadmapId, userId),
+    onSuccess: () => {
+      // Instantly update cache
+      queryClient.invalidateQueries(['roadmaps', user?.id]);
+      setDeleteConfirmOpen(false);
+      setRoadmapToDelete(null);
+      toast.success("Roadmap deleted successfully! 🗑️");
+    },
+    onError: (error) => {
+      console.error("Error deleting roadmap:", error);
+      toast.error(error.message || "Failed to delete roadmap. Please try again.");
+      setDeleteConfirmOpen(false);
+      setRoadmapToDelete(null);
+    }
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -94,6 +116,21 @@ export default function RoadmapsPage() {
       prompt: formData.prompt,
       userId: user.id
     });
+  };
+
+  const handleDeleteClick = (e, roadmap) => {
+    e.stopPropagation(); // Prevent navigation to roadmap detail
+    setRoadmapToDelete(roadmap);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (roadmapToDelete) {
+      deleteRoadmapMutation.mutate({
+        roadmapId: roadmapToDelete._id,
+        userId: user.id
+      });
+    }
   };
 
   return (
@@ -239,8 +276,17 @@ export default function RoadmapsPage() {
                     onClick={() => router.push(`/roadmaps/${roadmap._id}`)}
                     className="group relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer"
                   >
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => handleDeleteClick(e, roadmap)}
+                      className="absolute top-4 right-4 z-10 p-2 bg-white/90 hover:bg-red-50 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200"
+                      title="Delete roadmap"
+                    >
+                      <FiTrash2 className="w-4 h-4 text-gray-600 hover:text-red-600 transition-colors" />
+                    </button>
+
                     <div className="bg-gradient-to-r from-[#101826] to-[#1c2c47] p-6">
-                      <h2 className="text-lg font-semibold text-white">
+                      <h2 className="text-lg font-semibold text-white pr-8">
                         {roadmap.title}
                       </h2>
                     </div>
@@ -389,6 +435,56 @@ export default function RoadmapsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Delete Roadmap?
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-gray-900">
+                "{roadmapToDelete?.title}"
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setRoadmapToDelete(null);
+              }}
+              disabled={deleteRoadmapMutation.isPending}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={deleteRoadmapMutation.isPending}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleteRoadmapMutation.isPending ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
+                  Deleting...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <FiTrash2 className="w-4 h-4" />
+                  Delete
+                </div>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

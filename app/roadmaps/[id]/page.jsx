@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FaYoutube, FaCheckCircle, FaLock } from "react-icons/fa";
-import { FiExternalLink, FiArrowLeft, FiClock, FiBookOpen } from "react-icons/fi";
-import { getRoadmapById } from "@/lib/actions/roadmap";
+import { FiExternalLink, FiArrowLeft, FiClock, FiBookOpen, FiTrash2 } from "react-icons/fi";
+import { getRoadmapById, deleteRoadmap } from "@/lib/actions/roadmap";
+import { useUser } from "@clerk/nextjs";
+import toast from "react-hot-toast";
 import Progress from "@/components/Progress";
 import { useRoadmapProgress } from "@/hooks/useRoadmapProgress";
 import dynamic from 'next/dynamic';
@@ -35,10 +37,12 @@ const sanitizeUrl = (url) => {
 export default function RoadmapDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useUser();
   const [roadmap, setRoadmap] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 0,
     height: typeof window !== 'undefined' ? window.innerHeight : 0
@@ -111,6 +115,24 @@ export default function RoadmapDetailPage() {
       fetchRoadmap();
     }
   }, [params.id]);
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${roadmap?.title}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteRoadmap(params.id, user.id);
+      toast.success("Roadmap deleted successfully! 🗑️");
+      router.push("/roadmaps");
+    } catch (error) {
+      console.error("Error deleting roadmap:", error);
+      toast.error(error.message || "Failed to delete roadmap. Please try again.");
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const scrollToContent = () => {
@@ -285,7 +307,7 @@ export default function RoadmapDetailPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/roadmaps')}
-              className="inline-flex items-center text-gray-600 hover:text-gray-900"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <FiArrowLeft className="mr-2" />
               Back to Roadmaps
@@ -297,6 +319,24 @@ export default function RoadmapDetailPage() {
               <div className="w-32">
                 <Progress value={progressPercentage} className="h-2" />
               </div>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Delete roadmap"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-t-2 border-b-2 border-red-600 rounded-full animate-spin"></div>
+                    <span className="text-sm font-medium">Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <FiTrash2 className="w-4 h-4" />
+                    <span className="text-sm font-medium hidden sm:inline">Delete</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
